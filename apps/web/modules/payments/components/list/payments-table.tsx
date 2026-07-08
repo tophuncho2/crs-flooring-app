@@ -9,10 +9,15 @@ export function PaymentsTable({
   rows,
   onOpenPayment,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: PaymentListRow[]
   onOpenPayment: (row: PaymentListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<PaymentListRow>
@@ -25,6 +30,8 @@ export function PaymentsTable({
       getRowAriaLabel={(row) => `Open payment ${row.paymentNumber}`}
       renderCell={renderPaymentRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

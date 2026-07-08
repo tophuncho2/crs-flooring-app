@@ -12,6 +12,8 @@ export function TemplatesTable({
   onSync,
   syncingId,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: TemplateListRow[]
   onOpen: (row: TemplateListRow) => void
@@ -20,6 +22,9 @@ export function TemplatesTable({
   /** The template currently syncing (disables every row's item while in flight). */
   syncingId: string | null
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<TemplateListRow>
@@ -35,6 +40,8 @@ export function TemplatesTable({
       getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
       renderCell={renderTemplateRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

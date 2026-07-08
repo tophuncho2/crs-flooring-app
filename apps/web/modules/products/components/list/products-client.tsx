@@ -123,6 +123,8 @@ export default function ProductsClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<ProductListRow, EngineProductsFilters>({
     mode: "fetch",
     queryKey: [...PRODUCTS_LIST_QUERY_KEY],
@@ -366,6 +368,8 @@ export default function ProductsClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

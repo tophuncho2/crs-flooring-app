@@ -168,6 +168,8 @@ export default function InventoryClient({
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<InventoryRow, EngineInventoryFilters>({
     mode: "fetch",
     queryKey: [...INVENTORY_LIST_QUERY_KEY],
@@ -567,6 +569,8 @@ export default function InventoryClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
         // Stock-balance total over the full filtered set (server aggregate).
         rollups={totals ? [{ label: "Total Stock", value: totals.stockBalance }] : undefined}
       />

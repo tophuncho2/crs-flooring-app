@@ -97,6 +97,8 @@ export default function WorkOrdersClient({
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<WorkOrderListRow, WorkOrdersListFilters>({
     mode: "fetch",
     queryKey: [...WORK_ORDERS_LIST_QUERY_KEY],
@@ -583,6 +585,8 @@ export default function WorkOrdersClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

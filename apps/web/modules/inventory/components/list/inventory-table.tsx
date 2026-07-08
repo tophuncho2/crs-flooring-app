@@ -19,6 +19,8 @@ export function InventoryTable({
   onAddAdjustment,
   selection,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
   rollups,
 }: {
   rows: InventoryRow[]
@@ -29,6 +31,9 @@ export function InventoryTable({
   /** Row-selection state — drives the checkbox column + Select-All (CSV export scope). */
   selection?: ListSelection
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
   /** Pinned-footer totals (stock-balance total over the filtered set). */
   rollups?: ReadonlyArray<DataTableRollup>
 }) {
@@ -73,6 +78,8 @@ export function InventoryTable({
       getRowAriaLabel={(row) => `Open inventory item ${row.inventoryNumber}`}
       renderCell={renderInventoryRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

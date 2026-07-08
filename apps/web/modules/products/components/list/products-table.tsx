@@ -9,12 +9,17 @@ export type ProductsTableProps = {
   rows: ProductListRow[]
   onOpenProduct: (id: string) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }
 
 export function ProductsTable({
   rows,
   onOpenProduct,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: ProductsTableProps) {
   return (
     <DataTable<ProductListRow>
@@ -27,6 +32,8 @@ export function ProductsTable({
       getRowAriaLabel={(row) => `Open product ${row.name || row.style || row.id}`}
       renderCell={renderProductRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

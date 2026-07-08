@@ -9,10 +9,15 @@ export function InvitesTable({
   rows,
   onOpenInvite,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: InviteListRow[]
   onOpenInvite: (row: InviteListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<InviteListRow>
@@ -25,6 +30,8 @@ export function InvitesTable({
       getRowAriaLabel={(row) => `Open invite ${row.email}`}
       renderCell={renderInviteRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

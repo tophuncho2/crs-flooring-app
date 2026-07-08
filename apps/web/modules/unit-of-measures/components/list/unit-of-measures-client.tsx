@@ -36,6 +36,8 @@ export default function UnitOfMeasuresClient({ initialPage }: UnitOfMeasuresClie
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<UnitOfMeasureListRow, Record<string, never>>({
     mode: "fetch",
     queryKey: [...UNIT_OF_MEASURES_LIST_QUERY_KEY],
@@ -67,6 +69,8 @@ export default function UnitOfMeasuresClient({ initialPage }: UnitOfMeasuresClie
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

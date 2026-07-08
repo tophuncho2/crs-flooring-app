@@ -9,10 +9,15 @@ export function EntityTypesTable({
   rows,
   onOpenEntityType,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: EntityTypeListRow[]
   onOpenEntityType: (row: EntityTypeListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<EntityTypeListRow>
@@ -25,6 +30,8 @@ export function EntityTypesTable({
       getRowAriaLabel={(row) => `Open entity type ${row.type}`}
       renderCell={renderEntityTypeRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

@@ -33,6 +33,8 @@ export default function UsersClient({ initialPage }: UsersClientProps) {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<UserListRow, Record<string, never>>({
     mode: "fetch",
     queryKey: [...USERS_LIST_QUERY_KEY],
@@ -64,6 +66,8 @@ export default function UsersClient({ initialPage }: UsersClientProps) {
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

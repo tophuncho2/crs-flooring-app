@@ -13,6 +13,12 @@ import type {
   ListControllerOutput,
   ListFilterValueMap,
 } from "./contracts/list-controller-output"
+import {
+  clearListPreferences,
+  readListPreferences,
+  writeListPreferences,
+  type ListPreferencesSnapshot,
+} from "./list-preferences-storage"
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -349,6 +355,10 @@ export function useSsrListController<TRow, TFilters>(
     page,
     pageSize,
     totalPages,
+    // Column-width persistence is a fetch-mode feature only; the retained-but-
+    // unused SSR controller exposes inert stubs to satisfy the shared contract.
+    columnWidths: {},
+    onColumnWidthsChange: () => {},
 
     onSearchQueryChange,
     onSortChange,
@@ -391,6 +401,9 @@ export function useFetchListController<TRow, TFilters>(
   const consumerQueryKey = input.queryKey
   const listFn = input.listFn
   const initialData = input.initialData
+  // Persistence key for this list's remembered tool-state (search/sort/filters/
+  // column widths). Absent → persistence is off for this list.
+  const tableKey = input.tableKey
   const initialFiltersMap = useMemo(
     () => normalizeInitialFilters(input.initialFilters, filterableFields),
     [filterableFields, input.initialFilters],
@@ -425,6 +438,9 @@ export function useFetchListController<TRow, TFilters>(
   const [filters, setFilters] = useState<ListFilterValueMap>(() =>
     readFiltersFromSearchParams(searchParams, filterableFields, initialFiltersMap),
   )
+  // Column widths (px) for the resizable DataTable. Owned here so the single
+  // "Clear All" resets them with the other tools and they persist across nav.
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
   const [searchInputValue, setSearchInputValue] = useState(searchUrlValue)
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -648,7 +664,119 @@ export function useFetchListController<TRow, TFilters>(
         return next
       })
     }
-  }, [multiSort, filterableFields, setFilters])
+
+    // Column widths are one of the "tools" Clear All resets: emptying them flips
+    // the DataTable back to auto content-fit. The write-through effect below then
+    // sees an all-default state and removes the stored snapshot — but wipe the
+    // key here too so the reset is immediate even if the effect is coalesced.
+    setColumnWidths({})
+    if (tableKey) clearListPreferences(tableKey)
+  }, [multiSort, filterableFields, setFilters, tableKey])
+
+  // --- Sticky preferences (localStorage, per `tableKey`) -------------------
+  // Hydrate ONCE on mount, and only when the URL carries no tool params — a
+  // shared/bookmarked link or a back-button restore always wins. Replaying the
+  // snapshot's URL-owned params (q / sort / sorts) in a single `replaceState`
+  // mirrors the Clear-All write technique so nuqs re-adopts them without a race;
+  // filters + column widths (React state, not nuqs) are then set directly. Runs
+  // in an effect because the first client render must byte-match the SSR-derived
+  // query key — reading localStorage during render would break hydration.
+  const hydratedRef = useRef(false)
+  useEffect(() => {
+    if (hydratedRef.current) return
+    hydratedRef.current = true
+    if (!tableKey || typeof window === "undefined") return
+
+    const live = new URLSearchParams(window.location.search)
+    const urlHasToolParam =
+      live.has("q") ||
+      live.has("sort") ||
+      live.has("sortField") ||
+      live.has("sorts") ||
+      live.has("page") ||
+      (filterableFields?.some((key) => live.has(key)) ?? false)
+    if (urlHasToolParam) return
+
+    const snapshot = readListPreferences(tableKey)
+    if (!snapshot) return
+
+    const params = new URLSearchParams(window.location.search)
+    if (snapshot.q) params.set("q", snapshot.q)
+    if (snapshot.sorts && snapshot.sorts.length > 0) {
+      if (multiSort) {
+        params.set("sorts", encodeSorts(snapshot.sorts))
+      } else {
+        const primary = snapshot.sorts[0]
+        if (primary) {
+          if (primary.field && primary.field !== initialFieldKey) {
+            params.set("sortField", primary.field)
+          }
+          params.set("sort", primary.direction)
+        }
+      }
+    }
+    if (filterableFields && snapshot.filters) {
+      for (const key of filterableFields) {
+        params.delete(key)
+        for (const value of snapshot.filters[key] ?? []) params.append(key, value)
+      }
+    }
+    params.delete("page")
+    const qs = params.toString()
+    const href = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+    window.history.replaceState(window.history.state, "", href)
+
+    if (filterableFields && snapshot.filters) {
+      const nextFilters: ListFilterValueMap = {}
+      for (const key of filterableFields) nextFilters[key] = [...(snapshot.filters[key] ?? [])]
+      setFilters(nextFilters)
+    }
+    if (snapshot.columnWidths) setColumnWidths(snapshot.columnWidths)
+    // Mount-only replay of persisted state after SSR hydration — deliberately
+    // not re-run on state changes (that is the write-through effect's job).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Write-through: persist the live NON-default tool-state, or remove the key
+  // when everything is back to default (so Clear All → default state → key gone).
+  // The first invocation (mount) is skipped so it can't wipe the snapshot before
+  // the hydration effect's `setState` has committed.
+  const writeThroughReadyRef = useRef(false)
+  useEffect(() => {
+    if (!tableKey) return
+    if (!writeThroughReadyRef.current) {
+      writeThroughReadyRef.current = true
+      return
+    }
+    const snapshot: ListPreferencesSnapshot = {}
+    const trimmedQuery = searchUrlValue?.trim()
+    if (trimmedQuery) snapshot.q = trimmedQuery
+    if (hasNonDefaultSort && sorts.length > 0) snapshot.sorts = sorts
+    if (filterableFields) {
+      const activeFilters: ListFilterValueMap = {}
+      let anyFilter = false
+      for (const key of filterableFields) {
+        const values = filters[key]
+        if (values && values.length > 0) {
+          activeFilters[key] = values
+          anyFilter = true
+        }
+      }
+      if (anyFilter) snapshot.filters = activeFilters
+    }
+    if (Object.keys(columnWidths).length > 0) snapshot.columnWidths = columnWidths
+
+    if (Object.keys(snapshot).length === 0) clearListPreferences(tableKey)
+    else writeListPreferences(tableKey, snapshot)
+  }, [
+    tableKey,
+    searchUrlValue,
+    hasNonDefaultSort,
+    sorts,
+    filters,
+    filterableFields,
+    columnWidths,
+  ])
 
   const goToPage = useCallback(
     (next: number) => {
@@ -679,6 +807,8 @@ export function useFetchListController<TRow, TFilters>(
     page: pageValue,
     pageSize,
     totalPages,
+    columnWidths,
+    onColumnWidthsChange: setColumnWidths,
 
     onSearchQueryChange,
     onSortChange,

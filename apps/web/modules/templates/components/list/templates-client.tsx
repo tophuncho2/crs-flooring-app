@@ -74,6 +74,8 @@ export default function TemplatesClient({
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<TemplateListRow, TemplatesListFilters>({
     mode: "fetch",
     queryKey: [...TEMPLATES_LIST_QUERY_KEY],
@@ -275,6 +277,8 @@ export default function TemplatesClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

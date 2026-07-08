@@ -9,10 +9,15 @@ export function UnitOfMeasuresTable({
   rows,
   onOpenUnitOfMeasure,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: UnitOfMeasureListRow[]
   onOpenUnitOfMeasure: (row: UnitOfMeasureListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<UnitOfMeasureListRow>
@@ -25,6 +30,8 @@ export function UnitOfMeasuresTable({
       getRowAriaLabel={(row) => `Open unit of measure ${row.name}`}
       renderCell={renderUnitOfMeasureRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

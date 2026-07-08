@@ -9,10 +9,15 @@ export function EntitiesTable({
   rows,
   onOpenEntity,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: EntityListRow[]
   onOpenEntity: (row: EntityListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<EntityListRow>
@@ -25,6 +30,8 @@ export function EntitiesTable({
       getRowAriaLabel={(row) => `Open entity ${row.entity}`}
       renderCell={renderEntityRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

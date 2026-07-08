@@ -34,6 +34,8 @@ export default function InvitesClient({ initialPage }: InvitesClientProps) {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<InviteListRow, Record<string, never>>({
     mode: "fetch",
     queryKey: [...INVITES_LIST_QUERY_KEY],
@@ -66,6 +68,8 @@ export default function InvitesClient({ initialPage }: InvitesClientProps) {
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

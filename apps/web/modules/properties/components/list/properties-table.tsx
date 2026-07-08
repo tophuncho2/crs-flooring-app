@@ -9,10 +9,15 @@ export function PropertiesTable({
   rows,
   onOpenProperty,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: PropertyListRow[]
   onOpenProperty: (row: PropertyListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<PropertyListRow>
@@ -25,6 +30,8 @@ export function PropertiesTable({
       getRowAriaLabel={(row) => `Open property ${row.name}`}
       renderCell={renderPropertyRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

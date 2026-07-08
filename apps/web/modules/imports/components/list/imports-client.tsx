@@ -103,6 +103,8 @@ export default function ImportsClient({
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<ImportRow, EngineImportsFilters>({
     mode: "fetch",
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
@@ -278,6 +280,8 @@ export default function ImportsClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

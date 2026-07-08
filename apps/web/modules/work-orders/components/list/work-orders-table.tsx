@@ -13,12 +13,17 @@ export function WorkOrdersTable({
   onOpenWorkOrder,
   selection,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: WorkOrderListRow[]
   onOpenWorkOrder: (id: string) => void
   /** Row-selection state — drives the checkbox column + Select-All (CSV export scope). */
   selection?: ListSelection
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<WorkOrderListRow>
@@ -42,6 +47,8 @@ export function WorkOrdersTable({
       renderCell={renderWorkOrderRowCell}
       rowActions={(row) => renderWorkOrderRowActions(row)}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

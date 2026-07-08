@@ -13,10 +13,15 @@ export function ImportsTable({
   rows,
   onOpenImport,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: ImportRow[]
   onOpenImport: (id: string) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<ImportRow>
@@ -29,6 +34,8 @@ export function ImportsTable({
       getRowAriaLabel={(row) => `Open import ${formatImportNumber(row.importNumber)}`}
       renderCell={renderImportsRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

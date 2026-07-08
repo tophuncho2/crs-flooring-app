@@ -25,6 +25,16 @@ export type ListControllerOutput<TRow> = {
   pageSize: number
   totalPages: number
 
+  /**
+   * Persisted column widths (px), keyed by column key — the controller owns this
+   * so it survives navigation (localStorage) and the single action-bar "Clear
+   * All" resets it alongside search/sort/filters. Pass straight into the
+   * `DataTable`'s `columnWidths`/`onColumnWidthsChange` controlled seam. Empty
+   * `{}` means "un-customised" (the table falls back to auto content-fit).
+   */
+  columnWidths: Record<string, number>
+  onColumnWidthsChange: (next: Record<string, number>) => void
+
   onSearchQueryChange: (next: string) => void
   /** Replace the sort with a single column (header-click path). */
   onSortChange: (next: ListSort | null) => void

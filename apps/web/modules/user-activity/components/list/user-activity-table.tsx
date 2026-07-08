@@ -8,9 +8,14 @@ import { renderUserActivityRowCell } from "./table/user-activity-row-cell"
 export function UserActivityTable({
   rows,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: UserLoginActivityListRow[]
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<UserLoginActivityListRow>
@@ -21,6 +26,8 @@ export function UserActivityTable({
       empty="No login activity yet."
       renderCell={renderUserActivityRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

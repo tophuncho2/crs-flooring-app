@@ -117,6 +117,8 @@ export default function PropertiesClient({
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<PropertyListRow, EnginePropertiesFilters>({
     mode: "fetch",
     queryKey: [...PROPERTIES_LIST_QUERY_KEY],
@@ -303,6 +305,8 @@ export default function PropertiesClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

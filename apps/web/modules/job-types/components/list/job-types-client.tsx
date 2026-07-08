@@ -81,6 +81,8 @@ export default function JobTypesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<JobTypeListRow, EngineJobTypeFilters>({
     mode: "fetch",
     queryKey: [...JOB_TYPES_LIST_QUERY_KEY],
@@ -160,6 +162,8 @@ export default function JobTypesClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

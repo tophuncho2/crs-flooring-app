@@ -17,6 +17,8 @@ export function AdjustmentsTable({
   onSplitOff,
   selection,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
   rollups,
 }: {
   rows: EnrichedInventoryAdjustmentRow[]
@@ -26,6 +28,9 @@ export function AdjustmentsTable({
   /** Row-selection state — drives the checkbox column + Select-All (CSV export scope). */
   selection?: ListSelection
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
   /** Pinned-footer totals (net quantity over the filtered set). */
   rollups?: ReadonlyArray<DataTableRollup>
 }) {
@@ -52,6 +57,8 @@ export function AdjustmentsTable({
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
       renderCell={renderAdjustmentsRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

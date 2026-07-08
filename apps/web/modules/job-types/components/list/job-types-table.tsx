@@ -9,10 +9,15 @@ export function JobTypesTable({
   rows,
   onOpenJobType,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: JobTypeListRow[]
   onOpenJobType: (row: JobTypeListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<JobTypeListRow>
@@ -25,6 +30,8 @@ export function JobTypesTable({
       getRowAriaLabel={(row) => `Open job type ${row.name}`}
       renderCell={renderJobTypeRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

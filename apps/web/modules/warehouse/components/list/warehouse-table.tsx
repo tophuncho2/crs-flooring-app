@@ -9,10 +9,15 @@ export function WarehouseTable({
   rows,
   onOpen,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: WarehouseListRow[]
   onOpen: (row: WarehouseListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<WarehouseListRow>
@@ -25,6 +30,8 @@ export function WarehouseTable({
       getRowAriaLabel={(row) => `Open warehouse ${row.name}`}
       renderCell={renderWarehouseRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

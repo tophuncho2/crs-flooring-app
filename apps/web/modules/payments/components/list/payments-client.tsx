@@ -75,6 +75,8 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
     goToNextPage,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<PaymentListRow, EnginePaymentsFilters>({
     mode: "fetch",
     queryKey: [...PAYMENTS_LIST_QUERY_KEY],
@@ -157,6 +159,8 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

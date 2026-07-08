@@ -36,6 +36,8 @@ export default function CategoriesClient({ initialPage }: CategoriesClientProps)
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<CategoryListRow, Record<string, never>>({
     mode: "fetch",
     queryKey: [...CATEGORIES_LIST_QUERY_KEY],
@@ -67,6 +69,8 @@ export default function CategoriesClient({ initialPage }: CategoriesClientProps)
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

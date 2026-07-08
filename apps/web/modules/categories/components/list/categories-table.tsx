@@ -9,10 +9,15 @@ export function CategoriesTable({
   rows,
   onOpenCategory,
   pagination,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   rows: CategoryListRow[]
   onOpenCategory: (row: CategoryListRow) => void
   pagination?: PaginateContract
+  /** Persisted column widths (px) + setter — the DataTable resize seam. */
+  columnWidths?: Record<string, number>
+  onColumnWidthsChange?: (next: Record<string, number>) => void
 }) {
   return (
     <DataTable<CategoryListRow>
@@ -25,6 +30,8 @@ export function CategoriesTable({
       getRowAriaLabel={(row) => `Open category ${row.name}`}
       renderCell={renderCategoryRowCell}
       pagination={pagination}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={onColumnWidthsChange}
     />
   )
 }

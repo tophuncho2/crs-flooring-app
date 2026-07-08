@@ -80,6 +80,8 @@ export default function WarehouseClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<WarehouseListRow, EngineWarehouseFilters>({
     mode: "fetch",
     queryKey: [...WAREHOUSE_LIST_QUERY_KEY],
@@ -88,6 +90,7 @@ export default function WarehouseClient({
     initialPage,
     initialFilters: toEngineFilters(initialStoreNumber ? { storeNumber: initialStoreNumber } : {}),
     pageSize: LIST_WAREHOUSES_PAGE_SIZE,
+    tableKey: "warehouse-main",
     filterableFields: WAREHOUSE_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
@@ -156,6 +159,8 @@ export default function WarehouseClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

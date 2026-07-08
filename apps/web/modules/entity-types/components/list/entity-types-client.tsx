@@ -81,6 +81,8 @@ export default function EntityTypesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<EntityTypeListRow, EngineEntityTypeFilters>({
     mode: "fetch",
     queryKey: [...ENTITY_TYPES_LIST_QUERY_KEY],
@@ -160,6 +162,8 @@ export default function EntityTypesClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )

@@ -145,6 +145,8 @@ export default function AdjustmentsClient({
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<EnrichedInventoryAdjustmentRow, EngineAdjustmentFilters>({
     mode: "fetch",
     queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY],
@@ -456,6 +458,8 @@ export default function AdjustmentsClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
         // Net quantity total over the full filtered set (server aggregate).
         rollups={totals ? [{ label: "Net Quantity", value: totals.quantityNet }] : undefined}
       />

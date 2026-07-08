@@ -33,6 +33,8 @@ export default function UserActivityClient({ initialPage }: UserActivityClientPr
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    columnWidths,
+    onColumnWidthsChange,
   } = useFetchListController<UserLoginActivityListRow, Record<string, never>>({
     mode: "fetch",
     queryKey: [...USER_ACTIVITY_LIST_QUERY_KEY],
@@ -63,6 +65,8 @@ export default function UserActivityClient({ initialPage }: UserActivityClientPr
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        columnWidths={columnWidths}
+        onColumnWidthsChange={onColumnWidthsChange}
       />
     </ListPageShell>
   )
