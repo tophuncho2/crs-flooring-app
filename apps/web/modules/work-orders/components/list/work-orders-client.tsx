@@ -525,6 +525,7 @@ export default function WorkOrdersClient({
                 pagedSearchFn={searchWarehouseOptionsRequest}
                 toOption={toWarehouseFilterOption}
                 initialOptions={initialWarehouseOptions}
+                placeholder="Warehouse"
               />
               <MultiFilterPickerChip<JobTypeOption>
                 values={selectedJobTypeIds}
@@ -538,6 +539,7 @@ export default function WorkOrdersClient({
                 searchFn={searchJobTypeOptionsRequest}
                 toOption={toJobTypeFilterOption}
                 initialOptions={initialJobTypeOptions}
+                placeholder="Job types"
               />
               <VacancyFilterChip value={selectedVacancy} onChange={handleVacancyChange} />
             </div>
