@@ -1,0 +1,79 @@
+import { updateCertificateUseCase } from "@builders/application"
+import { getCertificateById } from "@builders/db"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
+import { parseUuidParam } from "@/server/http/api-helpers"
+import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import {
+  applyRoutePolicy,
+  assertExpectedUpdatedAt,
+  enforceMutationReceipt,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
+import { validateUpdateCertificateInput } from "../../../_validators"
+
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
+
+export async function PATCH(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    rateLimit: {
+      ...CRUD_UPDATE_SECTION,
+      scope: "certificates.primary.section.replace",
+      route: "/api/certificates/[id]/primary/section",
+    },
+  })
+  if (access instanceof Response) return access
+
+  try {
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateCertificateInput, {
+      requireExpectedUpdatedAt: true,
+    })
+
+    const currentSnapshot = await getCertificateById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { certificate: currentSnapshot },
+      message: "Certificate changed before section save completed. Refresh and try again.",
+    })
+
+    const receipt = await enforceMutationReceipt({
+      scope: "certificates.primary.section.replace",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
+    const result = await withMutationTelemetry(
+      access,
+      {
+        message: "Certificate primary section replaced",
+        action: "certificates.primary.section.replace",
+        route: "/api/certificates/[id]/primary/section",
+        entityType: "certificate",
+        entityId: id,
+      },
+      () => updateCertificateUseCase(id, input, access.user.email),
+    )
+
+    const responseBody = { certificate: result }
+    await finalizeMutationReceipt({
+      scope: "certificates.primary.section.replace",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
+    return routeError(access, error)
+  }
+}
