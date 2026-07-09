@@ -46,6 +46,7 @@ import {
   WORK_ORDERS_MAX_SORT_LEVELS,
   WORK_ORDERS_SORT_OPTIONS,
 } from "./table/work-orders-list-columns"
+import { FilterGroupLabel } from "./toolbar-controls/filter-group-label"
 import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-body"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 
@@ -408,94 +409,113 @@ export default function WorkOrdersClient({
           />
         </ToolbarMenuButton>
 
-        {/* Filter — Entity → Property → Template (cascade) + Warehouse / Job Type
-            / Vacancy (independent) + the scheduled-for date range. Pickers are
-            composed directly (NOT a self-triggering FilterControl). */}
+        {/* Filter — two grouped columns (Scope cascade | Attributes) over the
+            full-width scheduled-for date range, so the date filters stay in view
+            without scrolling. Pickers are composed directly (NOT a
+            self-triggering FilterControl). */}
         <ToolbarMenuButton
           label="Filter"
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
+          bodyClassName="w-[30rem]"
+          maxHeight={560}
         >
-          <FilterPickerChip<EntityOption>
-            value={selectedEntityId}
-            onChange={handleEntityChange}
-            selectedLabel={entityFilter.selectedLabel}
-            onOptionSelected={entityFilter.onOptionSelected}
-            nounSingular="Entity"
-            nounPlural="entities"
-            subject="work orders"
-          >
-            {(chrome) => (
-              <EntityTypePicker {...chrome} initialOptions={initialEntityOptions} />
-            )}
-          </FilterPickerChip>
-          <FilterPickerChip<PropertyOption>
-            value={selectedPropertyId}
-            onChange={handlePropertyChange}
-            selectedLabel={propertyFilter.selectedLabel}
-            onOptionSelected={propertyFilter.onOptionSelected}
-            nounSingular="Property"
-            nounPlural="properties"
-            subject="work orders"
-          >
-            {(chrome) => (
-              <PropertyPicker
-                {...chrome}
-                entityId={selectedEntityId}
-                initialOptions={initialPropertyOptions}
-              />
-            )}
-          </FilterPickerChip>
-          <FilterPickerChip<TemplateOption>
-            value={selectedTemplateId}
-            onChange={handleTemplateChange}
-            selectedLabel={templateFilter.selectedLabel}
-            onOptionSelected={templateFilter.onOptionSelected}
-            nounSingular="Template"
-            nounPlural="templates"
-            subject="work orders"
-          >
-            {(chrome) => (
-              <TemplatePicker
-                {...chrome}
-                propertyId={selectedPropertyId}
-                entityId={selectedEntityId}
-                initialOptions={initialTemplateOptions}
-              />
-            )}
-          </FilterPickerChip>
-          <FilterPickerChip<WarehouseOption>
-            value={selectedWarehouseId}
-            onChange={handleWarehouseChange}
-            selectedLabel={warehouseFilter.selectedLabel}
-            onOptionSelected={warehouseFilter.onOptionSelected}
-            nounSingular="Warehouse"
-            nounPlural="warehouses"
-            subject="work orders"
-          >
-            {(chrome) => (
-              <WarehousePicker {...chrome} initialOptions={initialWarehouseOptions} />
-            )}
-          </FilterPickerChip>
-          <FilterPickerChip<JobTypeOption>
-            value={selectedJobTypeId}
-            onChange={handleJobTypeChange}
-            selectedLabel={jobTypeFilter.selectedLabel}
-            onOptionSelected={jobTypeFilter.onOptionSelected}
-            nounSingular="Job type"
-            nounPlural="job types"
-            subject="work orders"
-          >
-            {(chrome) => (
-              <JobTypePicker {...chrome} initialOptions={initialJobTypeOptions} />
-            )}
-          </FilterPickerChip>
-          <VacancyFilterChip value={selectedVacancy} onChange={handleVacancyChange} />
-          <ScheduledForFilterBody
-            start={selectedScheduledStart}
-            end={selectedScheduledEnd}
-            onChange={handleScheduledForChange}
-          />
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            {/* Scope — the Entity → Property → Template dependent cascade. */}
+            <div className="flex flex-col gap-2">
+              <FilterGroupLabel>Scope</FilterGroupLabel>
+              <FilterPickerChip<EntityOption>
+                value={selectedEntityId}
+                onChange={handleEntityChange}
+                selectedLabel={entityFilter.selectedLabel}
+                onOptionSelected={entityFilter.onOptionSelected}
+                nounSingular="Entity"
+                nounPlural="entities"
+                subject="work orders"
+              >
+                {(chrome) => (
+                  <EntityTypePicker {...chrome} initialOptions={initialEntityOptions} />
+                )}
+              </FilterPickerChip>
+              <FilterPickerChip<PropertyOption>
+                value={selectedPropertyId}
+                onChange={handlePropertyChange}
+                selectedLabel={propertyFilter.selectedLabel}
+                onOptionSelected={propertyFilter.onOptionSelected}
+                nounSingular="Property"
+                nounPlural="properties"
+                subject="work orders"
+              >
+                {(chrome) => (
+                  <PropertyPicker
+                    {...chrome}
+                    entityId={selectedEntityId}
+                    initialOptions={initialPropertyOptions}
+                  />
+                )}
+              </FilterPickerChip>
+              <FilterPickerChip<TemplateOption>
+                value={selectedTemplateId}
+                onChange={handleTemplateChange}
+                selectedLabel={templateFilter.selectedLabel}
+                onOptionSelected={templateFilter.onOptionSelected}
+                nounSingular="Template"
+                nounPlural="templates"
+                subject="work orders"
+              >
+                {(chrome) => (
+                  <TemplatePicker
+                    {...chrome}
+                    propertyId={selectedPropertyId}
+                    entityId={selectedEntityId}
+                    initialOptions={initialTemplateOptions}
+                  />
+                )}
+              </FilterPickerChip>
+            </div>
+
+            {/* Attributes — independent narrowing filters. */}
+            <div className="flex flex-col gap-2">
+              <FilterGroupLabel>Attributes</FilterGroupLabel>
+              <FilterPickerChip<WarehouseOption>
+                value={selectedWarehouseId}
+                onChange={handleWarehouseChange}
+                selectedLabel={warehouseFilter.selectedLabel}
+                onOptionSelected={warehouseFilter.onOptionSelected}
+                nounSingular="Warehouse"
+                nounPlural="warehouses"
+                subject="work orders"
+              >
+                {(chrome) => (
+                  <WarehousePicker {...chrome} initialOptions={initialWarehouseOptions} />
+                )}
+              </FilterPickerChip>
+              <FilterPickerChip<JobTypeOption>
+                value={selectedJobTypeId}
+                onChange={handleJobTypeChange}
+                selectedLabel={jobTypeFilter.selectedLabel}
+                onOptionSelected={jobTypeFilter.onOptionSelected}
+                nounSingular="Job type"
+                nounPlural="job types"
+                subject="work orders"
+              >
+                {(chrome) => (
+                  <JobTypePicker {...chrome} initialOptions={initialJobTypeOptions} />
+                )}
+              </FilterPickerChip>
+              <VacancyFilterChip value={selectedVacancy} onChange={handleVacancyChange} />
+            </div>
+          </div>
+
+          {/* Scheduled-for date range — full width beneath the two columns. */}
+          <div className="flex flex-col gap-2 border-t border-[var(--panel-border)] pt-3">
+            <FilterGroupLabel>Scheduled for</FilterGroupLabel>
+            <ScheduledForFilterBody
+              start={selectedScheduledStart}
+              end={selectedScheduledEnd}
+              onChange={handleScheduledForChange}
+            />
+          </div>
         </ToolbarMenuButton>
 
         {/* Search — the per-column identity bars + WO # exact number. */}

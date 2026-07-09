@@ -35,7 +35,7 @@ export function ScheduledForFilterBody({ start, end, onChange }: ScheduledForFil
   const applyPreset = (range: ScheduledForRange) => onChange(range.start, range.end)
 
   return (
-    <div className="flex w-[15rem] flex-col gap-3 normal-case tracking-normal">
+    <div className="flex w-full flex-col gap-3 normal-case tracking-normal">
       <div className="flex flex-wrap gap-1.5">
         <button type="button" className={PRESET_CLASS_NAME} onClick={() => applyPreset(todayEastern())}>
           Today
