@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
-import { RESTRICTED_MODULE_MIN_RANK } from "@builders/domain"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import { listJobTypesUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireRankAtLeast } from "@/server/auth/session"
@@ -14,7 +14,7 @@ export default async function FlooringJobTypesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireRankAtLeast(RESTRICTED_MODULE_MIN_RANK)
+  await requireRankAtLeast(ELEVATED_MODULE_MIN_RANK)
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseJobTypesListInputFromSearchParams(resolvedSearchParams)

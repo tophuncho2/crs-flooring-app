@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   canManageUsers,
+  ELEVATED_MODULE_MIN_RANK,
   hasRankAtLeast,
   RESTRICTED_MODULE_MIN_RANK,
   USER_MANAGEMENT_MIN_RANK,
@@ -40,7 +41,7 @@ describe("canManageUsers", () => {
 })
 
 describe("RESTRICTED_MODULE_MIN_RANK", () => {
-  it("gates the Payments + Job Types modules at TIER_2", () => {
+  it("gates the Payments module at TIER_2", () => {
     expect(RESTRICTED_MODULE_MIN_RANK).toBe("TIER_2")
   })
 
@@ -49,5 +50,18 @@ describe("RESTRICTED_MODULE_MIN_RANK", () => {
     expect(hasRankAtLeast("TIER_1", RESTRICTED_MODULE_MIN_RANK)).toBe(true)
     expect(hasRankAtLeast("TIER_2", RESTRICTED_MODULE_MIN_RANK)).toBe(true)
     expect(hasRankAtLeast("TIER_3", RESTRICTED_MODULE_MIN_RANK)).toBe(false)
+  })
+})
+
+describe("ELEVATED_MODULE_MIN_RANK", () => {
+  it("gates the Warehouse + Certificate Tracking + Job Types modules at TIER_1", () => {
+    expect(ELEVATED_MODULE_MIN_RANK).toBe("TIER_1")
+  })
+
+  it("admits DEVELOPER/TIER_1 and rejects TIER_2/TIER_3", () => {
+    expect(hasRankAtLeast("DEVELOPER", ELEVATED_MODULE_MIN_RANK)).toBe(true)
+    expect(hasRankAtLeast("TIER_1", ELEVATED_MODULE_MIN_RANK)).toBe(true)
+    expect(hasRankAtLeast("TIER_2", ELEVATED_MODULE_MIN_RANK)).toBe(false)
+    expect(hasRankAtLeast("TIER_3", ELEVATED_MODULE_MIN_RANK)).toBe(false)
   })
 })

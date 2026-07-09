@@ -1,4 +1,4 @@
-import { RESTRICTED_MODULE_MIN_RANK } from "@builders/domain"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { requireRankAtLeast } from "@/server/auth/session"
@@ -13,7 +13,7 @@ export default async function JobTypeDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireRankAtLeast(RESTRICTED_MODULE_MIN_RANK)
+  await requireRankAtLeast(ELEVATED_MODULE_MIN_RANK)
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined

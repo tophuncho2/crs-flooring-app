@@ -20,12 +20,24 @@ describe("isNavItemVisible", () => {
     expect(isNavItemVisible(workOrders, "TIER_3")).toBe(true)
   })
 
-  it("gates Payments + Job Types at TIER_2 (hidden from TIER_3)", () => {
-    for (const slug of ["flooring-payments", "flooring-job-types"]) {
+  it("gates Payments at TIER_2 (hidden from TIER_3)", () => {
+    const navItem = item("flooring-payments")
+    expect(navItem.minRank).toBe("TIER_2")
+    expect(isNavItemVisible(navItem, "TIER_2")).toBe(true)
+    expect(isNavItemVisible(navItem, "TIER_1")).toBe(true)
+    expect(isNavItemVisible(navItem, "TIER_3")).toBe(false)
+  })
+
+  it("gates Warehouse + Certificate Tracking + Job Types at TIER_1 (hidden from TIER_2 + TIER_3)", () => {
+    for (const slug of [
+      "flooring-warehouse",
+      "flooring-certificate-tracking",
+      "flooring-job-types",
+    ]) {
       const navItem = item(slug)
-      expect(navItem.minRank).toBe("TIER_2")
-      expect(isNavItemVisible(navItem, "TIER_2")).toBe(true)
+      expect(navItem.minRank).toBe("TIER_1")
       expect(isNavItemVisible(navItem, "TIER_1")).toBe(true)
+      expect(isNavItemVisible(navItem, "TIER_2")).toBe(false)
       expect(isNavItemVisible(navItem, "TIER_3")).toBe(false)
     }
   })

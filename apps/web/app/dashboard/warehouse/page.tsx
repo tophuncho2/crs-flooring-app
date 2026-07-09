@@ -1,7 +1,8 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import { listWarehousesUseCase } from "@builders/application"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireSessionUser } from "@/server/auth/session"
+import { requireRankAtLeast } from "@/server/auth/session"
 import WarehouseClient from "@/modules/warehouse/components/list/warehouse-client"
 import {
   WAREHOUSE_LIST_QUERY_KEY,
@@ -13,7 +14,7 @@ export default async function FlooringWarehousePage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireRankAtLeast(ELEVATED_MODULE_MIN_RANK)
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const initialInput = parseWarehousesListInputFromSearchParams(resolvedSearchParams)
 

@@ -1,4 +1,6 @@
 import { createCertificateFileDownloadUrlUseCase } from "@builders/application"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
+import { enforceRankAtLeast } from "@/server/auth/route-auth"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { getStorageEnvironment } from "@/server/platform/env"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -15,6 +17,9 @@ type RouteContext = {
 export async function GET(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
+
+  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
+  if (forbidden) return forbidden
 
   const rateLimited = await enforceQueryRateLimit(
     request,

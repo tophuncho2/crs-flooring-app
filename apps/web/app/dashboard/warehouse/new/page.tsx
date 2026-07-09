@@ -1,4 +1,5 @@
-import { requireSessionUser } from "@/server/auth/session"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
+import { requireRankAtLeast } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { WarehouseCreateClient } from "@/modules/warehouse/components/record/warehouse-create-client"
 
@@ -7,7 +8,7 @@ export default async function WarehouseCreatePage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireRankAtLeast(ELEVATED_MODULE_MIN_RANK)
 
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 

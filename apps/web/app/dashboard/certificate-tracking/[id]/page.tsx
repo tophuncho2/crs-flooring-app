@@ -1,6 +1,7 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
-import { requireSessionUser } from "@/server/auth/session"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
+import { requireRankAtLeast } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { getCertificateDetailPageData } from "@/modules/certificates/data/queries"
 import { CertificateDetailClient } from "@/modules/certificates/components/record/certificate-detail-client"
@@ -12,7 +13,7 @@ export default async function CertificateDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireRankAtLeast(ELEVATED_MODULE_MIN_RANK)
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined

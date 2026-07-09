@@ -1,4 +1,6 @@
 import { createCertificateUseCase, listCertificatesUseCase } from "@builders/application"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
+import { enforceRankAtLeast } from "@/server/auth/route-auth"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -14,6 +16,9 @@ import { validateCreateCertificateInput, validateListCertificatesQuery } from ".
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
+
+  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
+  if (forbidden) return forbidden
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/certificates")
   if (rateLimited) return rateLimited
@@ -37,6 +42,9 @@ export async function POST(request: Request) {
     },
   })
   if (access instanceof Response) return access
+
+  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
+  if (forbidden) return forbidden
 
   try {
     const body = (await request.json()) as Record<string, unknown>

@@ -4,8 +4,9 @@ import {
   searchEntityOptionsUseCase,
 } from "@builders/application"
 import type { EntityOption } from "@builders/domain"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireSessionUser } from "@/server/auth/session"
+import { requireRankAtLeast } from "@/server/auth/session"
 import CertificatesClient from "@/modules/certificates/components/list/certificates-client"
 import {
   CERTIFICATES_LIST_QUERY_KEY,
@@ -19,7 +20,7 @@ export default async function CertificateTrackingPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireRankAtLeast(ELEVATED_MODULE_MIN_RANK)
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseCertificatesListInputFromSearchParams(resolvedSearchParams)

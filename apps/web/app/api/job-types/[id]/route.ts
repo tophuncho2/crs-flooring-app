@@ -1,4 +1,4 @@
-import { RESTRICTED_MODULE_MIN_RANK } from "@builders/domain"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import { deleteJobTypeUseCase, JobTypeExecutionError } from "@builders/application"
 import { getJobTypeById, getJobTypeDetailById } from "@builders/db"
 import { enforceRankAtLeast } from "@/server/auth/route-auth"
@@ -23,7 +23,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
-  const forbidden = enforceRankAtLeast(access, RESTRICTED_MODULE_MIN_RANK)
+  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
   if (forbidden) return forbidden
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/job-types/[id]")
@@ -56,7 +56,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   })
   if (access instanceof Response) return access
 
-  const forbidden = enforceRankAtLeast(access, RESTRICTED_MODULE_MIN_RANK)
+  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
   if (forbidden) return forbidden
 
   try {

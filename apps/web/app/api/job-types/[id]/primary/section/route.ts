@@ -1,4 +1,4 @@
-import { RESTRICTED_MODULE_MIN_RANK } from "@builders/domain"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import { updateJobTypeUseCase } from "@builders/application"
 import { getJobTypeById } from "@builders/db"
 import { enforceRankAtLeast } from "@/server/auth/route-auth"
@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   })
   if (access instanceof Response) return access
 
-  const forbidden = enforceRankAtLeast(access, RESTRICTED_MODULE_MIN_RANK)
+  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
   if (forbidden) return forbidden
 
   try {
