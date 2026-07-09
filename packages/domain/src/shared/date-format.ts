@@ -14,7 +14,14 @@ const stableDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 })
 
-function toStableDate(value: string | Date) {
+/**
+ * The shared date parser behind every formatter here — the single source of
+ * truth for turning a stored value into a UTC-stable `Date`. A bare
+ * `YYYY-MM-DD` (a `@db.Date` value) is pinned to UTC midnight so it never drifts
+ * a day across timezones; anything else defers to the native `Date` parser
+ * (callers guard `Number.isNaN(getTime())` for unparseable input).
+ */
+export function toStableDate(value: string | Date) {
   if (value instanceof Date) {
     return value
   }
