@@ -5,6 +5,7 @@ import {
   getWorkOrderNeighborsById,
   isPrismaNotFoundError,
   listAdjustmentsForWorkOrder,
+  listPaymentsByWorkOrder,
   listWorkOrderMaterialItems,
   listWorkOrderPlannedPayments,
   type PrismaDetailPageResult,
@@ -12,6 +13,7 @@ import {
 } from "@builders/db"
 import type {
   EnrichedInventoryAdjustmentRow,
+  Payment,
   WorkOrderDetail,
   WorkOrderFileGenerationInput,
   WorkOrderMaterialItemRow,
@@ -40,18 +42,27 @@ export type WorkOrderDetailPageData = {
    * panel's own state — NOT nested into WorkOrderDetail.
    */
   plannedPayments: WorkOrderPlannedPaymentRow[]
+  /**
+   * The real payments (`FlooringPayment`) linked to this work order, newest-first
+   * (createdAt desc). Loaded separately (sibling-prop pattern) and read straight
+   * from the server prop by the read-only Payments section — NOT frozen in state
+   * (like adjustmentsForWorkOrder; a create/delete re-runs this loader).
+   */
+  payments: Payment[]
 }
 
 export async function getWorkOrderDetailPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderDetailPageData>> {
   try {
-    const [workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments] = await Promise.all([
-      getWorkOrderDetailById(id),
-      listWorkOrderMaterialItems(id),
-      listAdjustmentsForWorkOrder(id),
-      listWorkOrderPlannedPayments(id),
-    ])
+    const [workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments, payments] =
+      await Promise.all([
+        getWorkOrderDetailById(id),
+        listWorkOrderMaterialItems(id),
+        listAdjustmentsForWorkOrder(id),
+        listWorkOrderPlannedPayments(id),
+        listPaymentsByWorkOrder(id),
+      ])
 
     if (!workOrder) {
       return { ok: false, notFound: true }
@@ -59,7 +70,7 @@ export async function getWorkOrderDetailPageData(
 
     return {
       ok: true,
-      data: { workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments },
+      data: { workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments, payments },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

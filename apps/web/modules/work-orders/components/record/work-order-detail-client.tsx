@@ -9,6 +9,7 @@ import {
 } from "@/engines/record-view"
 import type {
   EnrichedInventoryAdjustmentRow,
+  Payment,
   WorkOrderDetail,
   WorkOrderNeighbor,
   WorkOrderMaterialItemRow,
@@ -21,12 +22,14 @@ export function WorkOrderDetailClient({
   initialMaterialItems,
   initialAdjustmentsForWorkOrder,
   initialPlannedPayments,
+  initialPayments,
   backHref,
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
   initialPlannedPayments: WorkOrderPlannedPaymentRow[]
+  initialPayments: Payment[]
   backHref: string
 }) {
   const router = useRouter()
@@ -74,6 +77,7 @@ export function WorkOrderDetailClient({
             initialMaterialItems={initialMaterialItems}
             initialAdjustmentsForWorkOrder={initialAdjustmentsForWorkOrder}
             initialPlannedPayments={initialPlannedPayments}
+            initialPayments={initialPayments}
           />
         </>
       )}

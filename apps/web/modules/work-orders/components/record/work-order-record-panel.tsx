@@ -9,6 +9,7 @@ import {
 } from "@/engines/record-view"
 import type {
   EnrichedInventoryAdjustmentRow,
+  Payment,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
   WorkOrderPlannedPaymentRow,
@@ -20,6 +21,7 @@ import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fiel
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
 import { WorkOrderPlannedPaymentsSection } from "./planned-payments/work-order-planned-payments-section"
+import { WorkOrderPaymentsSection } from "./payments/work-order-payments-section"
 import { WorkOrderRecordFooter } from "./footer"
 
 export function WorkOrderRecordPanel({
@@ -28,12 +30,14 @@ export function WorkOrderRecordPanel({
   initialMaterialItems,
   initialAdjustmentsForWorkOrder,
   initialPlannedPayments,
+  initialPayments,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
   initialPlannedPayments: WorkOrderPlannedPaymentRow[]
+  initialPayments: Payment[]
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
@@ -44,6 +48,11 @@ export function WorkOrderRecordPanel({
   // in through this prop and the Adjustments grid re-groups. Editing an existing
   // adjustment happens on the inventory record view; returning here reloads fresh.
   const adjustmentsForWorkOrder = initialAdjustmentsForWorkOrder
+  // Read-only payments snapshot, same server-prop-direct contract as adjustments
+  // (NOT frozen in state): the Payments section creates via a modal and deletes
+  // via a row menu, then `router.refresh()` re-runs the loader so the fresh set
+  // flows back through this prop. Editing a payment happens on its own record view.
+  const payments = initialPayments
 
   // Lifted to the panel so its dirty state registers with the multi-section
   // close-guard (matches the primary slot + the templates planned-products precedent).
@@ -181,6 +190,20 @@ export function WorkOrderRecordPanel({
               <WorkOrderPlannedPaymentsSection
                 key={controller.record.id}
                 section={plannedPaymentsSection}
+              />
+            ),
+          },
+          {
+            // Read-only Payments section — no controller (nothing to save, so it
+            // never joins the close-guard). Server-prop-direct like Adjustments.
+            key: "payments",
+            type: "item",
+            order: 30,
+            render: () => (
+              <WorkOrderPaymentsSection
+                key={controller.record.id}
+                workOrder={controller.record}
+                payments={payments}
               />
             ),
           },

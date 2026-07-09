@@ -89,6 +89,26 @@ export async function listPaymentsForListView(
   }
 }
 
+/**
+ * Every payment linked to a single work order, newest-first. Powers the read-only
+ * Payments section on the work-order record view (sibling-prop pattern, like
+ * `listWorkOrderPlannedPayments` / `listAdjustmentsForWorkOrder`). Backed by the
+ * `@@index([workOrderId])`. Hydrated with the same `paymentLinksInclude` display
+ * fields as the list read, so each row carries `entityName`/`workOrderLabel`.
+ * Unpaginated — a work order's payment count is bounded.
+ */
+export async function listPaymentsByWorkOrder(
+  workOrderId: string,
+  client: PaymentsDbClient = db,
+): Promise<Payment[]> {
+  const rows = await client.flooringPayment.findMany({
+    where: { workOrderId },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    include: paymentLinksInclude,
+  })
+  return rows.map((row) => normalizePayment({ ...row, ...projectPaymentLinks(row) }))
+}
+
 /** Single payment by id, or `null` when it does not exist. */
 export async function getPaymentById(
   id: string,

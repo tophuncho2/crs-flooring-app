@@ -67,6 +67,7 @@ export function PaymentPrimaryFieldsSection({
   workOrderLabel,
   entityTypes,
   linkedEntityId,
+  hideWorkOrder = false,
   createdAt,
   updatedAt,
   createdBy,
@@ -80,6 +81,12 @@ export function PaymentPrimaryFieldsSection({
   workOrderLabel?: string | null
   entityTypes?: EntityTypeRef[]
   linkedEntityId?: string | null
+  /**
+   * Omit the Work Order picker entirely. Set when the payment's work order is
+   * pinned by context (the WO record-view create modal), so the link is fixed on
+   * the draft and must not be user-editable.
+   */
+  hideWorkOrder?: boolean
   createdAt?: string
   updatedAt?: string
   createdBy?: string | null
@@ -164,26 +171,28 @@ export function PaymentPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Work Order">
-                <WorkOrderPicker
-                  value={draft.workOrderId}
-                  selectedLabel={workOrderSelectedLabel}
-                  onChange={(id) => {
-                    onFieldChange("workOrderId", id)
-                    if (id === null) setWorkOrderPick({ id: null, label: null })
-                  }}
-                  onOptionSelected={(option: WorkOrderOption | null) =>
-                    setWorkOrderPick({
-                      id: option?.id ?? null,
-                      label: option ? formatWorkOrderOptionTitle(option) : null,
-                    })
-                  }
-                  disabled={!editable}
-                  ariaLabel="Work order"
-                />
-              </FormField>
-            </CellAt>
+            {hideWorkOrder ? null : (
+              <CellAt col={1} colSpan={8}>
+                <FormField label="Work Order">
+                  <WorkOrderPicker
+                    value={draft.workOrderId}
+                    selectedLabel={workOrderSelectedLabel}
+                    onChange={(id) => {
+                      onFieldChange("workOrderId", id)
+                      if (id === null) setWorkOrderPick({ id: null, label: null })
+                    }}
+                    onOptionSelected={(option: WorkOrderOption | null) =>
+                      setWorkOrderPick({
+                        id: option?.id ?? null,
+                        label: option ? formatWorkOrderOptionTitle(option) : null,
+                      })
+                    }
+                    disabled={!editable}
+                    ariaLabel="Work order"
+                  />
+                </FormField>
+              </CellAt>
+            )}
             <CellAt col={1} colSpan={8}>
               <FormField label="Entity">
                 <EntityTypePicker
