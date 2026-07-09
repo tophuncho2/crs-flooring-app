@@ -1,4 +1,5 @@
-import { canManageUsers } from "@builders/domain"
+import type { UserRank } from "@builders/db"
+import { hasRankAtLeast, USER_MANAGEMENT_MIN_RANK } from "@builders/domain"
 import { getSessionUser, type SessionUser } from "@/server/auth/session"
 import { getClientIp, getRequestId, jsonWithRequestId } from "@/server/platform/request-context"
 
@@ -26,14 +27,25 @@ export async function authorizeRouteAccess(
 }
 
 /**
- * Route guard for the user-management endpoints. Returns a 403 Response when the
- * authorized caller ranks below the management threshold (TIER_2/TIER_3), or
- * `null` to let the handler proceed. DEVELOPER + TIER_1 pass.
+ * Generic route rank guard. Returns `null` to let the handler proceed when the
+ * authorized caller ranks at or above `minimum`, else a 403 Response. The
+ * reusable seam every module-level API rank gate hooks into.
  */
-export function enforceManageUsersAccess(access: AuthorizedRouteContext): Response | null {
-  if (canManageUsers(access.user.rank)) {
+export function enforceRankAtLeast(
+  access: AuthorizedRouteContext,
+  minimum: UserRank,
+): Response | null {
+  if (hasRankAtLeast(access.user.rank, minimum)) {
     return null
   }
 
   return jsonWithRequestId({ error: "Forbidden" }, access.requestId, { status: 403 })
+}
+
+/**
+ * Route guard for the user-management endpoints. DEVELOPER + TIER_1 pass. Thin
+ * wrapper over `enforceRankAtLeast`.
+ */
+export function enforceManageUsersAccess(access: AuthorizedRouteContext): Response | null {
+  return enforceRankAtLeast(access, USER_MANAGEMENT_MIN_RANK)
 }

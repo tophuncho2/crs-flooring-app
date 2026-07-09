@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Circle, PanelLeftOpen } from "lucide-react"
-import { canManageUsers, type UserRank } from "@builders/domain"
+import type { UserRank } from "@builders/domain"
 import { SidePanel } from "./side-panel"
 import UserMenu from "./user-menu"
 import {
@@ -18,6 +18,7 @@ import {
   NAV_RAIL_WIDTH_CLASS,
   isActiveFlooringItem,
   isFlooringRoute,
+  isNavItemVisible,
 } from "@/modules/app-shell/navigation/definitions"
 import { NAV_ICONS } from "@/modules/app-shell/navigation/nav-icons"
 
@@ -30,9 +31,10 @@ export default function NavRail({ email, rank }: NavRailProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  // Rank gate: only DEVELOPER + TIER_1 see the "Users" nav group (Users + Login
-  // Activity). Lower ranks lose the links; the pages/APIs enforce this too.
-  const canManageUserPages = canManageUsers(rank as UserRank)
+  // Per-item rank gate (`minRank` via `isNavItemVisible`): e.g. the "Users" group
+  // needs TIER_1, Payments + Job Types need TIER_2. Lower ranks lose the links;
+  // the pages/APIs enforce this too.
+  const viewerRank = rank as UserRank
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
@@ -103,7 +105,7 @@ export default function NavRail({ email, rank }: NavRailProps) {
           <div aria-hidden="true" className="mx-3 my-1 border-t border-[var(--panel-border)]/70" />
           {FLOORING_NAV_GROUPS.map((group, groupIndex) => {
             const groupItems = FLOORING_NAV_ITEMS.filter(
-              (item) => item.group === group.id && (canManageUserPages || group.id !== "users"),
+              (item) => item.group === group.id && isNavItemVisible(item, viewerRank),
             )
             if (groupItems.length === 0) return null
 
@@ -179,7 +181,7 @@ export default function NavRail({ email, rank }: NavRailProps) {
           <div aria-hidden="true" className="mx-4 my-2 border-t border-[var(--panel-border)]/70" />
           {FLOORING_NAV_GROUPS.map((group, groupIndex) => {
             const groupItems = FLOORING_NAV_ITEMS.filter(
-              (item) => item.group === group.id && (canManageUserPages || group.id !== "users"),
+              (item) => item.group === group.id && isNavItemVisible(item, viewerRank),
             )
             if (groupItems.length === 0) return null
 

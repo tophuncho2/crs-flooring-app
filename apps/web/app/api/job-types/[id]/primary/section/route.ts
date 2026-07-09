@@ -1,5 +1,7 @@
+import { RESTRICTED_MODULE_MIN_RANK } from "@builders/domain"
 import { updateJobTypeUseCase } from "@builders/application"
 import { getJobTypeById } from "@builders/db"
+import { enforceRankAtLeast } from "@/server/auth/route-auth"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
@@ -26,6 +28,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     },
   })
   if (access instanceof Response) return access
+
+  const forbidden = enforceRankAtLeast(access, RESTRICTED_MODULE_MIN_RANK)
+  if (forbidden) return forbidden
 
   try {
     const { id: rawId } = await params

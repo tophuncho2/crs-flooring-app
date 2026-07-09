@@ -7,7 +7,7 @@ description: Operational runbook + helper-command skill for the Better Auth + Go
 
 `/auth-ops <what you want to do>` operates and explains the live auth surface: **Better Auth + Google Workspace SSO**, passwordless, invite-gated, domain-locked to `@crsfloorcovering.com`, with authorization by `UserRank`. Reach for it to invite or revoke a user, change a rank, deactivate/reactivate, restore the owner via break-glass, wire env vars + Google Cloud redirect URIs, or set up multi-port local dev — and to answer "how does X work / who can do Y" about auth.
 
-This is a **runbook + helper-command** skill. It runs the documented operational commands (e.g. `npm run db:upsert-owner`) and guides the UI/console steps; it does **not** edit the auth code, the migrations, or commit. To *change* how auth behaves, hand off to `/session-new` over `apps/web/server/auth` + `packages/{domain,application,db}/src/management`.
+This is a **runbook + helper-command** skill. It runs the documented operational commands (e.g. `npm run db:upsert-owner`) and guides the UI/console steps; it does **not** edit the auth code, the migrations, or commit. To *change* how auth behaves, hand off to `/session-new` over `apps/web/server/auth` + the flattened `packages/{domain,application}/src/{users,invites,user-activity}` modules (the old `management/` area wrapper was flattened away).
 
 ## The auth surface (terms before rules)
 
@@ -16,7 +16,8 @@ This is a **runbook + helper-command** skill. It runs the documented operational
 - **Invite gate** = the `user.create.before` hook (`better-auth.ts:65`) runs **only for brand-new users**; it calls `resolveSignupInviteRank(email)` and fails closed with no open invite. Existing users link to Google via `accountLinking` (`better-auth.ts:39`) and **bypass the gate**. The `after` hook calls `markSignupInviteAccepted` (`better-auth.ts:88`) to retire the invite.
 - **Invite semantics** = **email-match, no token, no link, no email sent.** An invite is one `UserInvite` row (email + rank + 7-day `expiresAt`). Single-use via `acceptedAt` (stamped by `updateMany`, never deleted). The only delete path today is **revoke**. The "invite link" is just the `/login` URL.
 - **Authorization** = `UserRank` (`DEVELOPER, TIER_1, TIER_2, TIER_3`). Lower `RANK_ORDER` = higher privilege. **Management** (invite / change-rank / deactivate / see Users + Login Activity) requires `canManageUsers` = **DEVELOPER + TIER_1**.
-- **Strictly-below rule** = one predicate `canInviteRank` (`packages/domain/src/management/invites/invite-rules.ts:10`) gates invites, rank-change, AND deactivate: an actor may only act on a rank **strictly below** their own (`RANK_ORDER[target] > RANK_ORDER[inviter]`). So a TIER_1 cannot act on another TIER_1, and **DEVELOPER is script-only/immutable** — no app path creates or edits a DEVELOPER. The UI mirror is `assignableRanks`/`canEditRank` (`apps/web/modules/users/rank-presentation.ts`).
+- **Module rank gates** = threshold-based, generalized off the same rank foundation (`packages/domain/src/users/rank.ts`). `hasRankAtLeast(viewer, minimum)` is the generic predicate; a named `*_MIN_RANK` const pins each feature's floor. Live gates: `USER_MANAGEMENT_MIN_RANK = TIER_1` (Users/Invites/Login Activity), `RESTRICTED_MODULE_MIN_RANK = TIER_2` (**Payments + Job Types** — TIER_3 excluded). See "Rank-gating a module" below.
+- **Strictly-below rule** = one predicate `canInviteRank` (`packages/domain/src/invites/invite-rules.ts:10`) gates invites, rank-change, AND deactivate: an actor may only act on a rank **strictly below** their own (`RANK_ORDER[target] > RANK_ORDER[inviter]`). So a TIER_1 cannot act on another TIER_1, and **DEVELOPER is script-only/immutable** — no app path creates or edits a DEVELOPER. The UI mirror is `assignableRanks`/`canEditRank` (`apps/web/modules/users/rank-presentation.ts`).
 - **Deactivate** = `User.isActive=false` **and** delete the user's `Session` rows for instant lockout (`set-user-active.ts`). `getSessionUser` rejects `isActive===false` (`apps/web/server/auth/session.ts:25`) to cover the brief cookie-cache window.
 - **Login Activity** = live `Session` rows (current/active sessions), **not** a historical login log — there is no all-time login history table.
 - **The four env vars (per env)** = `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Validated **fail-closed at boot** via `getAuthEnvironment()` (`apps/web/server/platform/env.ts`) — a missing/blank value throws at server start; `better-auth.ts` consumes the validated object, not raw `process.env`. On a deployed Railway service `BETTER_AUTH_URL` must be a public https URL or the prod-URL assert throws.
@@ -37,10 +38,11 @@ This is a **runbook + helper-command** skill. It runs the documented operational
 Before acting, confirm the surface against the code — never from memory. The canonical files:
 
 - `apps/web/server/auth/better-auth.ts` — auth instance, hooks, `hd` lock, `additionalFields` (`rank` + `isActive`), `baseURL = process.env.BETTER_AUTH_URL`.
-- `apps/web/server/auth/session.ts` — `getSessionUser` (rejects `isActive===false`), `requireManageUsersAccess`.
-- `apps/web/server/auth/route-auth.ts` — `authorizeRouteAccess`, `enforceManageUsersAccess`.
-- `packages/domain/src/management/{invites/invite-rules.ts,users/rank.ts}` — `canInviteRank` (strict `>`), `RANK_ORDER`, `canManageUsers`.
-- `packages/application/src/management/{invites,users}/` — `createInviteUseCase`, `listInvitesUseCase`, `revokeInviteUseCase`, `updateUserRankUseCase`, `setUserActiveUseCase`, `resolveSignupInviteRank`, `markSignupInviteAccepted`.
+- `apps/web/server/auth/session.ts` — `getSessionUser` (rejects `isActive===false`), `requireSessionUser`, generic `requireRankAtLeast(min)`, and its wrapper `requireManageUsersAccess`. Page-loader guards.
+- `apps/web/server/auth/route-auth.ts` — `authorizeRouteAccess`, generic `enforceRankAtLeast(access, min)`, and its wrapper `enforceManageUsersAccess`. API-route guards (403).
+- `packages/domain/src/{invites/invite-rules.ts,users/rank.ts}` — `canInviteRank` (strict `>`), `RANK_ORDER`, `hasRankAtLeast`, `canManageUsers`, `USER_MANAGEMENT_MIN_RANK`, `RESTRICTED_MODULE_MIN_RANK`.
+- `packages/application/src/{invites,users}/` — `createInviteUseCase`, `listInvitesUseCase`, `revokeInviteUseCase`, `updateUserRankUseCase`, `setUserActiveUseCase`, `resolveSignupInviteRank`, `markSignupInviteAccepted`.
+- `apps/web/modules/app-shell/navigation/definitions.ts` — `FLOORING_NAV_ITEMS` (each item's optional `minRank`) + `isNavItemVisible`, the shared nav/home tile rank filter.
 - `apps/web/app/api/invites/*` + `apps/web/app/api/users/[id]/{rank,active}/route.ts` — the routes.
 - `packages/db/scripts/owner-recovery.js` (`db:upsert-owner`) — passwordless DEVELOPER bootstrap (sole path).
 
@@ -48,7 +50,7 @@ Before acting, confirm the surface against the code — never from memory. The c
 
 **Invite (the normal path — UI):** sign in as DEVELOPER/TIER_1 → `/dashboard/invites` → create form → email + a rank **strictly below yours** → submit. The invitee then opens `/login` and signs in with Google; the gate provisions them at the invited rank and retires the invite. No link or email is sent — you tell them to sign in.
 
-- **Behind the UI:** `POST /api/invites` → `createInviteUseCase` (`packages/application/src/management/invites/create-invite.ts`). It re-checks `canManageUsers` + `canInviteRank`, lowercases the email, sets `expiresAt = now + INVITE_EXPIRY_MS` (7 days), and inserts one `UserInvite` row. There is **no** secret token.
+- **Behind the UI:** `POST /api/invites` → `createInviteUseCase` (`packages/application/src/invites/create-invite.ts`). It re-checks `canManageUsers` + `canInviteRank`, lowercases the email, sets `expiresAt = now + INVITE_EXPIRY_MS` (7 days), and inserts one `UserInvite` row. There is **no** secret token.
 - **Revoke:** `/dashboard/invites` → revoke on the pending row → `DELETE /api/invites/[id]` → `revokeInviteUseCase`. Revoke is the only delete path for invites.
 - **Caveat:** inviting an **already-existing** user is a harmless no-op today (existing users bypass the gate via `accountLinking`) — the row just expires unused. (Hardening this is a Checklist-2 item.)
 
@@ -87,6 +89,19 @@ npm run db:upsert-owner -- otto@crsfloorcovering.com
 **Google Cloud OAuth client (redirect URIs):** in the Google Cloud Console → APIs & Services → Credentials → the OAuth 2.0 Client, every base URL that signs in must have its callback registered under **Authorized redirect URIs**: `<BETTER_AUTH_URL>/api/auth/callback/google`. Server-side auth-code flow means **Authorized JavaScript origins are NOT needed.**
 
 **Multi-port local dev:** each worktree `.env` sets its own `PORT` + `BETTER_AUTH_URL` (dev-4 = `3004`, so `http://localhost:3004`). Each port needs its own redirect URI registered: `http://localhost:<port>/api/auth/callback/google`. These `.env` edits are per-worktree local config (often gitignored) — not part of any commit.
+
+## Rank-gating a module (the generalized seam)
+
+Restricting a feature to a minimum rank is **four small edits off one threshold const** — the same shape the Users group and the Payments + Job Types modules use. This is a code change (hand off to `/session-new`); `/auth-ops` only *explains* it.
+
+1. **Domain** (`packages/domain/src/users/rank.ts`) — add a named floor: `export const <FEATURE>_MIN_RANK: UserRank = "TIER_2"`. Reuse the existing generic predicate `hasRankAtLeast(viewer, minimum)`; don't write a new one. Rebuild `@builders/domain` (consumers resolve its compiled `dist/`).
+2. **Page loaders** (`apps/web/app/dashboard/<module>/**/page.tsx`) — first await becomes `await requireRankAtLeast(<FEATURE>_MIN_RANK)` (redirects under-ranked users to the default dashboard).
+3. **API routes** (`apps/web/app/api/<module>/**/route.ts`) — in **every handler**, right after `if (access instanceof Response) return access`, add `const forbidden = enforceRankAtLeast(access, <FEATURE>_MIN_RANK); if (forbidden) return forbidden` (403). Mind shared "options"/picker endpoints consumed by *other* modules — leave those open unless the reference itself must be blocked (Job Types leaves `/api/job-types/options` open).
+4. **Nav visibility** (`navigation/definitions.ts`) — set `minRank` on the module's `FLOORING_NAV_ITEMS` entry; `isNavItemVisible` (shared by the nav rail, drawer, and home launcher) hides the tile/icon automatically.
+
+Defense-in-depth: nav hides it, the page redirects, the API 403s. **Caveat:** `getSessionUser` reads `rank` off the Better Auth session token, so a demotion can lag until the session refreshes — the DB is source of truth only in the layout's `getDashboardLayoutUser`. Same property every rank gate shares.
+
+**The home page** (new): the post-login landing is `apps/web/app/dashboard/home/page.tsx` (server component, `requireSessionUser`) → `HomeLauncher`, which renders module tiles from the **same** `FLOORING_NAV_ITEMS` + `isNavItemVisible` filter as the nav rail — so tile and rail visibility never diverge. `apps/web/app/dashboard/page.tsx` just redirects to `DEFAULT_DASHBOARD_ROUTE`. When gating a module, no home-page edit is needed beyond the `minRank` field.
 
 ## Step 6 — Report
 

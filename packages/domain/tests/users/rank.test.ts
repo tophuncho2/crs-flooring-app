@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   canManageUsers,
   hasRankAtLeast,
+  RESTRICTED_MODULE_MIN_RANK,
   USER_MANAGEMENT_MIN_RANK,
 } from "../../src/users/rank.js"
 
@@ -35,5 +36,18 @@ describe("canManageUsers", () => {
 
   it("gates on the management threshold constant", () => {
     expect(USER_MANAGEMENT_MIN_RANK).toBe("TIER_1")
+  })
+})
+
+describe("RESTRICTED_MODULE_MIN_RANK", () => {
+  it("gates the Payments + Job Types modules at TIER_2", () => {
+    expect(RESTRICTED_MODULE_MIN_RANK).toBe("TIER_2")
+  })
+
+  it("admits DEVELOPER/TIER_1/TIER_2 and rejects TIER_3", () => {
+    expect(hasRankAtLeast("DEVELOPER", RESTRICTED_MODULE_MIN_RANK)).toBe(true)
+    expect(hasRankAtLeast("TIER_1", RESTRICTED_MODULE_MIN_RANK)).toBe(true)
+    expect(hasRankAtLeast("TIER_2", RESTRICTED_MODULE_MIN_RANK)).toBe(true)
+    expect(hasRankAtLeast("TIER_3", RESTRICTED_MODULE_MIN_RANK)).toBe(false)
   })
 })

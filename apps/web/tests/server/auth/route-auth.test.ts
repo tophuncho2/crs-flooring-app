@@ -8,7 +8,9 @@ vi.mock("@/server/auth/session", () => ({
   getSessionUser: getSessionUserMock,
 }))
 
-const { authorizeRouteAccess, enforceManageUsersAccess } = await import("@/server/auth/route-auth")
+const { authorizeRouteAccess, enforceManageUsersAccess, enforceRankAtLeast } = await import(
+  "@/server/auth/route-auth"
+)
 
 function buildManageUsersAccess(rank: string) {
   return {
@@ -50,6 +52,25 @@ describe("authorizeRouteAccess", () => {
       expect(result.user.email).toBe("admin@test.com")
       expect(result.requestId).toBeTruthy()
       expect(result.clientIp).toBe("unknown")
+    }
+  })
+})
+
+describe("enforceRankAtLeast", () => {
+  it("admits ranks at or above the given minimum", () => {
+    expect(enforceRankAtLeast(buildManageUsersAccess("DEVELOPER"), "TIER_2")).toBeNull()
+    expect(enforceRankAtLeast(buildManageUsersAccess("TIER_1"), "TIER_2")).toBeNull()
+    expect(enforceRankAtLeast(buildManageUsersAccess("TIER_2"), "TIER_2")).toBeNull()
+  })
+
+  it("returns a request-id tagged 403 for ranks below the given minimum", async () => {
+    const response = enforceRankAtLeast(buildManageUsersAccess("TIER_3"), "TIER_2")
+
+    expect(response).toBeInstanceOf(Response)
+    if (response instanceof Response) {
+      expect(response.status).toBe(403)
+      expect(response.headers.get("x-request-id")).toBe("req-1")
+      await expect(response.json()).resolves.toEqual({ error: "Forbidden" })
     }
   })
 })

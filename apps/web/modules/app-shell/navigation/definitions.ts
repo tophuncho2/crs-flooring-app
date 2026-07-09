@@ -1,3 +1,5 @@
+import { hasRankAtLeast, type UserRank } from "@builders/domain"
+
 export type FlooringNavGroupId = "management" | "operations" | "accounting" | "catalog" | "users"
 
 export type FlooringNavGroup = {
@@ -18,6 +20,18 @@ export type FlooringNavItem = {
   name: string
   href: string
   group: FlooringNavGroupId
+  // Optional minimum rank to see this item in the nav rail + home launcher.
+  // Absent = visible to everyone. The declarative rank gate both surfaces read.
+  minRank?: UserRank
+}
+
+/**
+ * Whether `rank` may see `item` in the nav surfaces. Items with no `minRank` are
+ * universal; otherwise the viewer must rank at or above it. The single predicate
+ * the rail, drawer, and home launcher share so their visibility never diverges.
+ */
+export function isNavItemVisible(item: FlooringNavItem, rank: UserRank): boolean {
+  return item.minRank ? hasRankAtLeast(rank, item.minRank) : true
 }
 
 // Standalone Home entry — pinned above the grouped rail and used as the
@@ -43,17 +57,17 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   },
   { slug: "flooring-entity-types", name: "Entity Types", href: "/dashboard/entity-types", group: "management" },
   { slug: "flooring-adjustments", name: "Adjustments", href: "/dashboard/adjustments", group: "operations" },
-  { slug: "flooring-payments", name: "Payments", href: "/dashboard/payments", group: "accounting" },
+  { slug: "flooring-payments", name: "Payments", href: "/dashboard/payments", group: "accounting", minRank: "TIER_2" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", group: "operations" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", group: "operations" },
   { slug: "products", name: "Products", href: "/dashboard/products", group: "operations" },
   { slug: "flooring-warehouse", name: "Warehouse", href: "/dashboard/warehouse", group: "operations" },
-  { slug: "flooring-job-types", name: "Job Types", href: "/dashboard/job-types", group: "catalog" },
+  { slug: "flooring-job-types", name: "Job Types", href: "/dashboard/job-types", group: "catalog", minRank: "TIER_2" },
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", group: "catalog" },
   { slug: "flooring-categories", name: "Categories", href: "/dashboard/categories", group: "catalog" },
-  { slug: "flooring-users", name: "Users", href: "/dashboard/users", group: "users" },
-  { slug: "flooring-invites", name: "Invites", href: "/dashboard/invites", group: "users" },
-  { slug: "flooring-user-activity", name: "Login Activity", href: "/dashboard/user-activity", group: "users" },
+  { slug: "flooring-users", name: "Users", href: "/dashboard/users", group: "users", minRank: "TIER_1" },
+  { slug: "flooring-invites", name: "Invites", href: "/dashboard/invites", group: "users", minRank: "TIER_1" },
+  { slug: "flooring-user-activity", name: "Login Activity", href: "/dashboard/user-activity", group: "users", minRank: "TIER_1" },
 ]
 
 // Persistent nav rail geometry — kept here so the rail and the dashboard layout

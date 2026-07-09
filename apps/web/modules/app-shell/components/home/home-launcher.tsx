@@ -1,9 +1,10 @@
 import Link from "next/link"
 import { Circle } from "lucide-react"
-import { canManageUsers, type UserRank } from "@builders/domain"
+import type { UserRank } from "@builders/domain"
 import {
   FLOORING_NAV_GROUPS,
   FLOORING_NAV_ITEMS,
+  isNavItemVisible,
 } from "@/modules/app-shell/navigation/definitions"
 import { NAV_ICONS } from "@/modules/app-shell/navigation/nav-icons"
 
@@ -15,11 +16,11 @@ type HomeLauncherProps = {
 /**
  * The post-login landing — a branded launcher of module shortcut tiles. Reuses
  * the nav rail's source of truth (groups + items + icon map) and its exact
- * rank-aware filter, so the tiles and the rail always agree and the user-page
- * gate carries over: only ranks that pass `canManageUsers` see the "users" group.
+ * rank-aware filter (`isNavItemVisible`), so the tiles and the rail always agree
+ * and every per-item `minRank` gate carries over identically.
  */
 export default function HomeLauncher({ name, rank }: HomeLauncherProps) {
-  const canManageUserPages = canManageUsers(rank as UserRank)
+  const viewerRank = rank as UserRank
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
@@ -35,7 +36,7 @@ export default function HomeLauncher({ name, rank }: HomeLauncherProps) {
       <div className="flex flex-col gap-10">
         {FLOORING_NAV_GROUPS.map((group) => {
           const groupItems = FLOORING_NAV_ITEMS.filter(
-            (item) => item.group === group.id && (canManageUserPages || group.id !== "users"),
+            (item) => item.group === group.id && isNavItemVisible(item, viewerRank),
           )
           if (groupItems.length === 0) return null
 

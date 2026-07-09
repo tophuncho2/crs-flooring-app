@@ -1,5 +1,5 @@
 import type { UserRank } from "@builders/db"
-import { canManageUsers } from "@builders/domain"
+import { hasRankAtLeast, USER_MANAGEMENT_MIN_RANK } from "@builders/domain"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth } from "@/server/auth/better-auth"
@@ -39,16 +39,24 @@ export async function requireSessionUser(): Promise<SessionUser> {
 }
 
 /**
- * Page-loader guard for the user-management area (Users, Login Activity). Builds
- * on `requireSessionUser`, then redirects ranks below the management threshold
- * away to the default dashboard. DEVELOPER + TIER_1 pass.
+ * Generic page-loader rank guard. Builds on `requireSessionUser`, then redirects
+ * any rank below `minimum` away to the default dashboard. The reusable seam every
+ * module-level rank gate hooks into (Users, Payments, Job Types, …).
  */
-export async function requireManageUsersAccess(): Promise<SessionUser> {
+export async function requireRankAtLeast(minimum: UserRank): Promise<SessionUser> {
   const user = await requireSessionUser()
 
-  if (!canManageUsers(user.rank)) {
+  if (!hasRankAtLeast(user.rank, minimum)) {
     redirect(DEFAULT_DASHBOARD_ROUTE)
   }
 
   return user
+}
+
+/**
+ * Page-loader guard for the user-management area (Users, Login Activity).
+ * DEVELOPER + TIER_1 pass. Thin wrapper over `requireRankAtLeast`.
+ */
+export async function requireManageUsersAccess(): Promise<SessionUser> {
+  return requireRankAtLeast(USER_MANAGEMENT_MIN_RANK)
 }

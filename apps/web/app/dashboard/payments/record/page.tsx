@@ -1,7 +1,7 @@
-import type { PaymentDetail } from "@builders/domain"
+import { RESTRICTED_MODULE_MIN_RANK, type PaymentDetail } from "@builders/domain"
 import { getPaymentDetailUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireSessionUser } from "@/server/auth/session"
+import { requireRankAtLeast } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { PaymentCreateClient } from "@/modules/payments/components/record/payment-create-client"
 import { PaymentDetailClient } from "@/modules/payments/components/record/payment-detail-client"
@@ -16,7 +16,7 @@ export default async function FlooringPaymentRecordPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireRankAtLeast(RESTRICTED_MODULE_MIN_RANK)
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const rawId = resolvedSearchParams?.paymentId
   const paymentId = Array.isArray(rawId) ? rawId[0] : rawId

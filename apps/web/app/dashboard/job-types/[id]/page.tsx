@@ -1,6 +1,7 @@
+import { RESTRICTED_MODULE_MIN_RANK } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
-import { requireSessionUser } from "@/server/auth/session"
+import { requireRankAtLeast } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { getJobTypeDetailPageData } from "@/modules/job-types/data/queries"
 import { JobTypeDetailClient } from "@/modules/job-types/components/record/job-type-detail-client"
@@ -12,7 +13,7 @@ export default async function JobTypeDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireRankAtLeast(RESTRICTED_MODULE_MIN_RANK)
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined

@@ -52,3 +52,8 @@ export const USER_MANAGEMENT_MIN_RANK: UserRank = "TIER_1"
 export function canManageUsers(rank: UserRank): boolean {
   return hasRankAtLeast(rank, USER_MANAGEMENT_MIN_RANK)
 }
+
+// Minimum rank for the Payments and Job Types modules. DEVELOPER + TIER_1 +
+// TIER_2 qualify; TIER_3 does not. Mirrors USER_MANAGEMENT_MIN_RANK's shape —
+// the threshold consumed by the generic page/route/nav rank guards.
+export const RESTRICTED_MODULE_MIN_RANK: UserRank = "TIER_2"
