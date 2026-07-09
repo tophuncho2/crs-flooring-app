@@ -75,13 +75,16 @@ export function WorkOrderPaymentsSection({
   return (
     <RecordItemSection
       title="Payments"
-      capabilities={{ editable: false }}
+      // Read-only grid (no managed save/discard) — but the "+ Add Payment"
+      // action must render, so opt into supportsAddRow while leaving editable
+      // false. The `item` default suppresses add-row actions, which is why the
+      // button was invisible.
+      capabilities={{ editable: false, supportsAddRow: true }}
       subHeader={{
-        statusLeading: (
-          <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
-            {count} payment{count === 1 ? "" : "s"}
-          </span>
-        ),
+        // Count as the section summary (renders under supportsSummary, on by
+        // default) rather than statusLeading, which only shows with a
+        // save-state pill this read-only section doesn't have.
+        summary: `${count} payment${count === 1 ? "" : "s"}`,
         isDirty: false,
         isSaving: false,
         hasConflict: false,

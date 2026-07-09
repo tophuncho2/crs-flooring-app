@@ -70,6 +70,7 @@ export function WorkOrderPaymentCreateModal({
     <QuickCreateModal
       open
       title="Add payment"
+      widthClassName="max-w-5xl"
       onClose={onClose}
       onCreate={handleCreate}
       canCreate={canCreate}
