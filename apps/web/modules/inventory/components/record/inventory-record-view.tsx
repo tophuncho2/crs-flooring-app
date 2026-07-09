@@ -252,6 +252,16 @@ export function InventoryRecordView({
           onDiscard={primary.discard}
           actions={[
             {
+              key: "export",
+              label: "Export",
+              tone: "neutral",
+              // Opens the standalone print/export viewport (CSV + Print) in a new
+              // tab, mirroring the work-order Export entry point.
+              onClick: () => {
+                window.open(`/print/inventory/${entry.id}`, "_blank", "noopener,noreferrer")
+              },
+            },
+            {
               key: "duplicate",
               label: "Duplicate",
               tone: "neutral",
