@@ -1,6 +1,12 @@
 import { hasRankAtLeast, type UserRank } from "@builders/domain"
 
-export type FlooringNavGroupId = "management" | "operations" | "accounting" | "catalog" | "users"
+export type FlooringNavGroupId =
+  | "management"
+  | "operations"
+  | "accounting"
+  | "catalog"
+  | "tracking"
+  | "users"
 
 export type FlooringNavGroup = {
   id: FlooringNavGroupId
@@ -9,9 +15,10 @@ export type FlooringNavGroup = {
 
 export const FLOORING_NAV_GROUPS: FlooringNavGroup[] = [
   { id: "management", label: "Management" },
-  { id: "operations", label: "Operations" },
-  { id: "accounting", label: "Accounting" },
+  { id: "operations", label: "Inventory Operations" },
+  { id: "accounting", label: "Business operations" },
   { id: "catalog", label: "Catalog" },
+  { id: "tracking", label: "Tracking" },
   { id: "users", label: "Users" },
 ]
 
@@ -55,12 +62,12 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     href: "/dashboard/entities",
     group: "management",
   },
-  { slug: "flooring-entity-types", name: "Entity Types", href: "/dashboard/entity-types", group: "management", minRank: "TIER_1" },
+  { slug: "flooring-entity-types", name: "Entity Types", href: "/dashboard/entity-types", group: "catalog", minRank: "TIER_1" },
   {
     slug: "flooring-certificate-tracking",
     name: "Certificate Tracking",
     href: "/dashboard/certificate-tracking",
-    group: "management",
+    group: "tracking",
     minRank: "TIER_1",
   },
   { slug: "flooring-adjustments", name: "Adjustments", href: "/dashboard/adjustments", group: "operations" },
@@ -68,7 +75,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", group: "operations" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", group: "operations" },
   { slug: "products", name: "Products", href: "/dashboard/products", group: "operations" },
-  { slug: "flooring-warehouse", name: "Warehouse", href: "/dashboard/warehouse", group: "operations", minRank: "TIER_1" },
+  { slug: "flooring-warehouse", name: "Warehouse", href: "/dashboard/warehouse", group: "accounting", minRank: "TIER_1" },
   { slug: "flooring-job-types", name: "Job Types", href: "/dashboard/job-types", group: "catalog", minRank: "TIER_1" },
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", group: "catalog" },
   { slug: "flooring-categories", name: "Categories", href: "/dashboard/categories", group: "catalog" },
