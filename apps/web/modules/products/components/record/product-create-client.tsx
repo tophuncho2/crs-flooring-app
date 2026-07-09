@@ -39,6 +39,10 @@ const EMPTY_PRODUCT: ProductRecord = {
   // No coverage unit until the user picks one (UoM epic 1a).
   coverageUnitId: "",
   coverageUnit: null,
+  // No cost / cost unit until the user sets them.
+  cost: "",
+  costUnitId: "",
+  costUnit: null,
   productNamingAddon: "",
   createdAt: "",
   updatedAt: "",
@@ -67,6 +71,7 @@ function ProductCreatePanel({
       const validationError = validateProductPrimaryForm({
         categoryId: localValue.categoryId,
         unitId: localValue.unitId,
+        cost: localValue.cost,
       })
       if (validationError) {
         throw createRecordSectionError({

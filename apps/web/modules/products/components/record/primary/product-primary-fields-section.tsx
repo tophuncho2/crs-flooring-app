@@ -5,6 +5,7 @@ import {
   CellAt,
   FieldSection,
   FormField,
+  MoneyCell,
   NumberCell,
   RecordColumnBreak,
   RecordSectionDivider,
@@ -114,6 +115,17 @@ export function ProductPrimaryFieldsSection({
     setPickedCoverageUnitLabel(null)
   }
 
+  // Cost unit picker — the product's OWN cost-unit FK (the unit `cost` is priced
+  // per). Independent of the main unit and the coverage unit. Same async
+  // label-binding contract: hold the in-flight pick label, reset on save / swap.
+  const savedCostUnitName = product.costUnit?.name ?? null
+  const [pickedCostUnitLabel, setPickedCostUnitLabel] = useState<string | null>(null)
+  const [seenCostUnitName, setSeenCostUnitName] = useState(savedCostUnitName)
+  if (seenCostUnitName !== savedCostUnitName) {
+    setSeenCostUnitName(savedCostUnitName)
+    setPickedCostUnitLabel(null)
+  }
+
   // All spec fields, shared by both flows. Detail puts these in the left flank;
   // create renders them as a single column. Top down: PROD # + Palette paired
   // (detail-only) / Category + Stock Unit paired (equal width) / Coverage·Unit +
@@ -212,6 +224,37 @@ export function ProductPrimaryFieldsSection({
               disabled={disabled}
               placeholder="Select a unit"
               ariaLabel="Coverage unit"
+            />
+          )}
+        </FormField>
+      </CellAt>
+      {/* Cost·Unit + its cost-unit picker paired (4 + 4), under Coverage. The
+          MoneyCell is the money-standard input; when read-only it renders the
+          formatted $ value. The picker sets the unit the cost is priced per
+          (independent of the main + coverage units). */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Cost">
+          <MoneyCell
+            editable={editable}
+            value={draft.cost}
+            onChange={(next) => onFieldChange("cost", next)}
+            ariaLabel="Cost"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="Cost Unit">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{savedCostUnitName || "—"}</StaticFieldValue>
+          ) : (
+            <UnitOfMeasurePicker
+              value={draft.costUnitId || null}
+              onChange={(nextUnitId) => onFieldChange("costUnitId", nextUnitId ?? "")}
+              onOptionSelected={(opt) => setPickedCostUnitLabel(opt?.name ?? null)}
+              selectedLabel={draft.costUnitId ? pickedCostUnitLabel ?? savedCostUnitName : null}
+              disabled={disabled}
+              placeholder="Select a unit"
+              ariaLabel="Cost unit"
             />
           )}
         </FormField>

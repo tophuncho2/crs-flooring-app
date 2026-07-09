@@ -8,6 +8,7 @@ import type {
 } from "@builders/application"
 import {
   isPaletteColor,
+  isValidMoneyAmount,
   LIST_PRODUCTS_MAX_PAGE_SIZE,
   LIST_PRODUCTS_PAGE_SIZE,
   PALETTE_COLOR_INVALID_MESSAGE,
@@ -44,6 +45,24 @@ function parseCoveragePerUnit(value: unknown): string | null {
   return trimmed
 }
 
+// Cost — money-standard value, optional on create AND update. Unlike
+// `coveragePerUnit` (which hands its raw string straight to Decimal.js), `cost`
+// is run through `normalizeMoneyAmount` before write — and that helper returns
+// "" for inputs its strict regex rejects (e.g. scientific "5e3"), which Prisma
+// then can't coerce to a Decimal. So validate here with the SAME rule the data
+// layer normalizes against (`isValidMoneyAmount`: non-negative, ≤2 decimals,
+// ≤MONEY_MAX_INTEGER_DIGITS) — a bad amount fails the edge cleanly (400) instead
+// of surfacing as a Prisma 500. Blank or a lone "." clears it (unset).
+function parseCost(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  const trimmed = String(value).trim()
+  if (trimmed === "" || trimmed === ".") return null
+  if (!isValidMoneyAmount(trimmed)) {
+    fail("cost must be a valid money amount", "cost")
+  }
+  return trimmed
+}
+
 // Palette color — non-semantic visual tag. Strictly validated when present on
 // update (the edit form always carries the current color). Create never accepts
 // it: new rows fall to the DB default (SLATE).
@@ -71,6 +90,11 @@ function parseSharedFields(body: Record<string, unknown>) {
     // Product's own coverage unit FK (UoM epic 1a). Optional — blank clears it.
     // Structural parse only; the DB FK's RESTRICT is the existence backstop.
     coverageUnitId: parseOptionalString(body.coverageUnitId),
+    // Money cost + the unit it's priced per (independent of the main unit).
+    // Optional — blank clears. Structural parse only; the DB FK's RESTRICT is
+    // the existence backstop for costUnitId.
+    cost: parseCost(body.cost),
+    costUnitId: parseOptionalString(body.costUnitId),
     productNamingAddon: parseOptionalString(body.productNamingAddon),
   }
 }

@@ -1,6 +1,8 @@
 // Pure business rules for the product domain. Consumed by the use-case layer
 // (packages/application) — no I/O, no framework imports.
 
+import { isValidMoneyAmount } from "../shared/money.js"
+
 /**
  * Count shape returned by `getProductDeleteState` in @builders/db. Kept here
  * so domain rules express their contract without reaching into data-layer types.
@@ -55,12 +57,18 @@ export function isProductNameConflict(a: string, b: string): boolean {
 export function validateProductPrimaryForm(input: {
   categoryId: string
   unitId: string
+  cost?: string
 }): string {
   if (!input.categoryId.trim()) {
     return "Category is required"
   }
   if (!input.unitId.trim()) {
     return "Unit is required"
+  }
+  // Cost is optional (empty = unset). When present it must be a well-formed
+  // money amount. No cross-field rule: a cost does not require a cost-unit.
+  if (input.cost && input.cost.trim() && !isValidMoneyAmount(input.cost)) {
+    return "Cost is not a valid amount"
   }
   return ""
 }

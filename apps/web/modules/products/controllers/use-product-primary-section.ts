@@ -42,6 +42,7 @@ export function useProductPrimarySection({
       const validationError = validateProductPrimaryForm({
         categoryId: localValue.categoryId,
         unitId: localValue.unitId,
+        cost: localValue.cost,
       })
       if (validationError) {
         throw createRecordSectionError({

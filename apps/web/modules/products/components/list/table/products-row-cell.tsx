@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
-import { formatEasternDateTime, type ProductListRow } from "@builders/domain"
+import { formatEasternDateTime, formatMoney, type ProductListRow } from "@builders/domain"
 
 export function renderProductRowCell(
   column: DataTableColumn<ProductListRow>,
@@ -29,6 +29,14 @@ export function renderProductRowCell(
       return row.coveragePerUnit
         ? `${row.coveragePerUnit} ${row.coverageUnit?.abbreviation ?? ""}`.trim()
         : "-"
+    case "cost": {
+      // Money cost paired with the unit it's priced per (e.g. "$5.00 / sq ft").
+      // Mirrors the coveragePerUnit cell but formats the value as money.
+      if (!row.cost) return "-"
+      const price = formatMoney(row.cost)
+      const abbr = row.costUnit?.abbreviation
+      return abbr ? `${price} / ${abbr}` : price
+    }
     case "productNumber":
       return <CellChip paletteColor={row.paletteColor}>{row.productNumber}</CellChip>
     case "createdAt":

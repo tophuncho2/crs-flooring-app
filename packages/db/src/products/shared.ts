@@ -40,6 +40,17 @@ export const productRowSelect = {
       abbreviation: true,
     },
   },
+  // Money-standard cost + the unit it's priced per (record view + list "Cost /
+  // Unit" cell). Nullable — null until the user sets them.
+  cost: true,
+  costUnitId: true,
+  costUnit: {
+    select: {
+      id: true,
+      name: true,
+      abbreviation: true,
+    },
+  },
   productNamingAddon: true,
   createdAt: true,
   updatedAt: true,

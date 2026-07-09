@@ -40,6 +40,9 @@ describe("normalizeProductRow", () => {
       unit: { id: "u-sf", name: "Square Feet", abbreviation: "sq ft" },
       coverageUnitId: "u-box",
       coverageUnit: { id: "u-box", name: "Box", abbreviation: "box" },
+      cost: "5",
+      costUnitId: "u-sf",
+      costUnit: { id: "u-sf", name: "Square Feet", abbreviation: "sq ft" },
       entityId: null,
       style: "Plank",
       color: "Ash",
@@ -57,6 +60,11 @@ describe("normalizeProductRow", () => {
     // Coverage unit resolves off its own FK, independent of the main unit (1a).
     expect(withUnit.coverageUnitId).toBe("u-box")
     expect(withUnit.coverageUnit).toEqual({ id: "u-box", name: "Box", abbreviation: "box" })
+    // Cost is money-normalized on read ("5" → "5.00"); cost unit resolves off its
+    // own FK, independent of the main + coverage units.
+    expect(withUnit.cost).toBe("5.00")
+    expect(withUnit.costUnitId).toBe("u-sf")
+    expect(withUnit.costUnit).toEqual({ id: "u-sf", name: "Square Feet", abbreviation: "sq ft" })
 
     const withoutUnit = normalizeProductRow({
       id: "prod-4",
@@ -66,6 +74,9 @@ describe("normalizeProductRow", () => {
       unit: null,
       coverageUnitId: null,
       coverageUnit: null,
+      cost: null,
+      costUnitId: null,
+      costUnit: null,
       entityId: null,
       style: null,
       color: null,

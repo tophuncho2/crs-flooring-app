@@ -48,6 +48,15 @@ export type ProductRow = {
   // from the main `unitId`; drives the coverage-per-unit suffix in the record view.
   coverageUnitId: string
   coverageUnit: ProductRowUnit | null
+  // Money-standard cost (Decimal(12,2) column). Stored as a normalized string
+  // here ("" when null); the read normalizer runs it through normalizeMoneyAmount
+  // so trailing zeros are canonical (no falsely-dirty rows). Pasted into a
+  // template's planned product when this product is picked (future consumer).
+  cost: string
+  // The unit `cost` is priced per (e.g. $/sq ft) — the product's OWN cost-unit FK
+  // + resolved unit. Optional ("" / null until picked). Independent of `unitId`.
+  costUnitId: string
+  costUnit: ProductRowUnit | null
   productNamingAddon: string
   createdAt: string
   updatedAt: string
@@ -81,6 +90,10 @@ export type ProductCreateForm = {
   // The product's own coverage unit FK (UoM epic 1a). Optional — "" clears it.
   // Chosen via a second UoM picker, independent of the required main `unitId`.
   coverageUnitId: string
+  // Money-standard cost + the unit it's priced per. Both optional ("" clears).
+  // Editable on create AND update, independent of each other and of `unitId`.
+  cost: string
+  costUnitId: string
   productNamingAddon: string
   // Non-semantic palette tag. Carried on the shared draft so the record-view
   // edit form can re-pick it; the create flow never renders a picker and the
@@ -122,6 +135,8 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   color: "",
   coveragePerUnit: "",
   coverageUnitId: "",
+  cost: "",
+  costUnitId: "",
   productNamingAddon: "",
   paletteColor: DEFAULT_PALETTE_COLOR,
 }
@@ -135,6 +150,8 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     color: row.color,
     coveragePerUnit: row.coveragePerUnit,
     coverageUnitId: row.coverageUnitId,
+    cost: row.cost,
+    costUnitId: row.costUnitId,
     productNamingAddon: row.productNamingAddon,
     paletteColor: row.paletteColor,
   }

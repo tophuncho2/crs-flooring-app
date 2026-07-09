@@ -1,6 +1,6 @@
 import { db } from "../client.js"
 import type { Prisma } from "../generated/prisma/client.js"
-import type { PaletteColor, ProductOption, ProductStats } from "@builders/domain"
+import { normalizeMoneyAmount, type PaletteColor, type ProductOption, type ProductStats } from "@builders/domain"
 import {
   listCategories,
   type CategoryRecord,
@@ -51,6 +51,11 @@ export type ProductRecord = {
   // "" / null until the user picks one. Independent of the main `unitId`.
   coverageUnitId: string
   coverageUnit: ProductRecordUnit | null
+  // Money-standard cost (normalized string, "" when unset) + the unit it's priced
+  // per. Both optional and independent of each other and of the main `unitId`.
+  cost: string
+  costUnitId: string
+  costUnit: ProductRecordUnit | null
   productNamingAddon: string
   createdAt: string
   updatedAt: string
@@ -134,6 +139,17 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
           id: product.coverageUnit.id,
           name: product.coverageUnit.name,
           abbreviation: product.coverageUnit.abbreviation,
+        }
+      : null,
+    // Money-standard: normalize on read so trailing zeros are canonical and the
+    // record form isn't falsely dirty (Decimal.toString() alone would drift).
+    cost: product.cost ? normalizeMoneyAmount(product.cost.toString()) : "",
+    costUnitId: product.costUnitId ?? "",
+    costUnit: product.costUnit
+      ? {
+          id: product.costUnit.id,
+          name: product.costUnit.name,
+          abbreviation: product.costUnit.abbreviation,
         }
       : null,
     productNamingAddon: product.productNamingAddon ?? "",

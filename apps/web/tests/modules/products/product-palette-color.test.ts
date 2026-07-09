@@ -74,3 +74,31 @@ describe("product paletteColor — create validator never accepts it (DB default
     expect("paletteColor" in input).toBe(false)
   })
 })
+
+// Cost is money-standard validated at the edge with the SAME rule the data layer
+// normalizes against, so a bad amount fails 400 here instead of surfacing as a
+// Prisma 500 (normalizeMoneyAmount would return "", which Prisma can't coerce).
+describe("product cost — create/update validator (money-standard, edge-strict)", () => {
+  it("accepts a well-formed amount and passes it through", () => {
+    expect(validateCreateProductInput({ ...baseUpdateBody, cost: "5.00" }).cost).toBe("5.00")
+    expect(validateCreateProductInput({ ...baseUpdateBody, cost: "5" }).cost).toBe("5")
+  })
+
+  it("treats blank / lone-dot / absent as unset (null)", () => {
+    expect(validateCreateProductInput({ ...baseUpdateBody, cost: "" }).cost).toBeNull()
+    expect(validateCreateProductInput({ ...baseUpdateBody, cost: "." }).cost).toBeNull()
+    expect(validateCreateProductInput(baseUpdateBody).cost).toBeNull()
+  })
+
+  it("rejects amounts that pass Number() but not the money regex (would 500 downstream)", () => {
+    expect(() => validateCreateProductInput({ ...baseUpdateBody, cost: "5e3" })).toThrow(
+      "cost must be a valid money amount",
+    )
+    expect(() => validateUpdateProductInput({ ...baseUpdateBody, cost: "5.123" })).toThrow(
+      "cost must be a valid money amount",
+    )
+    expect(() => validateCreateProductInput({ ...baseUpdateBody, cost: "-5" })).toThrow(
+      "cost must be a valid money amount",
+    )
+  })
+})

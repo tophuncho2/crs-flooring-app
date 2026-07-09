@@ -18,6 +18,10 @@ export type CreateProductInput = {
   // The product's own coverage unit FK (UoM epic 1a). Optional — null clears it.
   // Independent of the required main `unitId`.
   coverageUnitId: string | null
+  // Money-standard cost (normalized at the data layer; null clears) + the unit
+  // it's priced per. Optional and independent of each other and of `unitId`.
+  cost: string | null
+  costUnitId: string | null
   productNamingAddon: string | null
 }
 

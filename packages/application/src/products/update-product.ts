@@ -91,6 +91,10 @@ export async function updateProductUseCase(
     // Coverage unit FK (UoM epic 1a) — independent of the main unit; does not
     // affect the stored-name recompute below.
     if ("coverageUnitId" in input) patch.coverageUnitId = input.coverageUnitId
+    // Money cost + its unit — independent of each other and of the main unit;
+    // neither affects the stored-name recompute below.
+    if ("cost" in input) patch.cost = input.cost
+    if ("costUnitId" in input) patch.costUnitId = input.costUnitId
     if ("productNamingAddon" in input) patch.productNamingAddon = input.productNamingAddon
     // Non-semantic palette tag — metadata-only passthrough. Never read here: it
     // does not affect the stored name, coverage, or any recompute.
