@@ -1,6 +1,5 @@
 export * from "./read-repository.js"
 export * from "./write-repository.js"
 export * from "./planned-products/index.js"
-export * from "./invoice-products/index.js"
 export * from "./planned-payments/index.js"
 export * from "./invoice-items/index.js"

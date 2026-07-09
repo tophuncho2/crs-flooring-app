@@ -77,7 +77,6 @@ describe("normalizeTemplate neighbors", () => {
     internalNotes: null,
     installerInstructions: null,
     plannedProducts: [],
-    invoiceProducts: [],
     plannedPayments: [],
     invoiceItems: [],
     createdAt: "2026-06-08T00:00:00.000Z",

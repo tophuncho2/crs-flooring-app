@@ -1,6 +1,5 @@
 import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
-import type { TemplateInvoiceProductRow } from "./invoice-products/types.js"
 import type { TemplatePlannedPaymentRow } from "./planned-payments/types.js"
 import type { TemplateInvoiceItemRow } from "./invoice-items/types.js"
 
@@ -50,10 +49,6 @@ export type TemplateDetail = TemplateListRow & {
   propertyPostalCode: string
   propertyInstructions: string
   plannedProducts: TemplatePlannedProductRow[]
-  // Products placed onto the template's invoice — a structural mirror of
-  // plannedProducts (separate table). No count surfaced this pass; the record
-  // view reads the array directly.
-  invoiceProducts: TemplateInvoiceProductRow[]
   // Planned payments on the template — the §3 payment plan (own table). Read as an
   // array by the record view; no count surfaced. Entity link arrives in a later pass.
   plannedPayments: TemplatePlannedPaymentRow[]

@@ -42,7 +42,7 @@ export function normalizeTemplatePlannedPayment(
     notes: item.notes ?? "",
     entityId: item.entityId ?? null,
     // Flatten the nested entity join into the flat read-only display fields
-    // (mirrors normalizeTemplateInvoiceProduct's product/unit flatten).
+    // (mirrors the planned-product product/unit flatten).
     entityName: item.entity?.entity ?? null,
     entityTypes: (item.entity?.entityTypes ?? []).map((link) => link.entityType),
     createdAt: toIso(item.createdAt),

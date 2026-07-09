@@ -2,7 +2,6 @@ import { z } from "zod"
 import {
   TemplateExecutionError,
   TemplateInvoiceItemExecutionError,
-  TemplateInvoiceProductExecutionError,
   TemplatePlannedPaymentExecutionError,
   TemplatePlannedProductExecutionError,
 } from "@builders/application"
@@ -25,7 +24,6 @@ import {
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_INVOICE_ITEM_NOTES_MAX,
-  TEMPLATE_INVOICE_PRODUCT_NOTES_MAX,
   TEMPLATE_PLANNED_PAYMENT_NOTES_MAX,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
@@ -33,8 +31,6 @@ import {
   type PaletteColor,
   type TemplateInvoiceItemForm,
   type TemplateInvoiceItemsDiff,
-  type TemplateInvoiceProductForm,
-  type TemplateInvoiceProductsDiff,
   type TemplatePlannedPaymentForm,
   type TemplatePlannedPaymentsDiff,
   type TemplatePlannedProductForm,
@@ -53,15 +49,6 @@ function failTemplate(message: string, field?: string): never {
 function failDiff(message: string, field?: string): never {
   throw new TemplatePlannedProductExecutionError({
     code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
-    message,
-    status: 400,
-    field,
-  })
-}
-
-function failInvoiceDiff(message: string, field?: string): never {
-  throw new TemplateInvoiceProductExecutionError({
-    code: "TEMPLATE_INVOICE_PRODUCT_VALIDATION_FAILED",
     message,
     status: 400,
     field,
@@ -245,62 +232,6 @@ export function validateTemplatePlannedProductsDiffInput(
   const deleted = requireArray(body.deleted, "deleted").map((entry, idx) => {
     const obj = requireObject(entry, `deleted[${idx}]`)
     return { id: requireString(obj.id, `deleted[${idx}].id`, failDiff) }
-  })
-
-  return { added, modified, deleted }
-}
-
-// --- Invoice-products section diff validator ---
-// A structural mirror of the planned-products diff, throwing the invoice error
-// class so the client can key off its distinct code.
-
-function requireInvoiceArray(value: unknown, path: string): unknown[] {
-  if (!Array.isArray(value)) failInvoiceDiff(`${path} must be an array`, path)
-  return value
-}
-
-function requireInvoiceObject(value: unknown, path: string): Record<string, unknown> {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    failInvoiceDiff(`${path} must be an object`, path)
-  }
-  return value as Record<string, unknown>
-}
-
-function validateInvoiceProductForm(value: unknown, path: string): TemplateInvoiceProductForm {
-  const obj = requireInvoiceObject(value, path)
-  return {
-    productId: requireString(obj.productId, `${path}.productId`, failInvoiceDiff),
-    // Editable unit FK (UoM epic 2C); "" = no unit.
-    unitId: optionalString(obj.unitId) ?? "",
-    quantity: optionalQuantity(obj.quantity),
-    notes:
-      optionalBoundedText(obj.notes, TEMPLATE_INVOICE_PRODUCT_NOTES_MAX, `${path}.notes`, failInvoiceDiff) ?? "",
-    cost: optionalMoney(obj.cost, `${path}.cost`, failInvoiceDiff),
-  }
-}
-
-export function validateTemplateInvoiceProductsDiffInput(
-  body: Record<string, unknown>,
-): TemplateInvoiceProductsDiff {
-  const added = requireInvoiceArray(body.added, "added").map((entry, idx) => {
-    const obj = requireInvoiceObject(entry, `added[${idx}]`)
-    return {
-      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failInvoiceDiff),
-      form: validateInvoiceProductForm(obj.form, `added[${idx}].form`),
-    }
-  })
-
-  const modified = requireInvoiceArray(body.modified, "modified").map((entry, idx) => {
-    const obj = requireInvoiceObject(entry, `modified[${idx}]`)
-    return {
-      id: requireString(obj.id, `modified[${idx}].id`, failInvoiceDiff),
-      form: validateInvoiceProductForm(obj.form, `modified[${idx}].form`),
-    }
-  })
-
-  const deleted = requireInvoiceArray(body.deleted, "deleted").map((entry, idx) => {
-    const obj = requireInvoiceObject(entry, `deleted[${idx}]`)
-    return { id: requireString(obj.id, `deleted[${idx}].id`, failInvoiceDiff) }
   })
 
   return { added, modified, deleted }

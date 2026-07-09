@@ -107,25 +107,6 @@ const templateDetailSelect = {
     },
     orderBy: { createdAt: "asc" as const },
   },
-  // Invoice products — a structural mirror of plannedProducts (separate table).
-  // Detail-only: the record view reads the array directly; no _count surfaced.
-  invoiceProducts: {
-    select: {
-      id: true,
-      productId: true,
-      product: { select: { name: true, category: { select: { name: true } } } },
-      quantity: true,
-      unitId: true,
-      unit: { select: { name: true, abbreviation: true } },
-      notes: true,
-      cost: true,
-      createdAt: true,
-      updatedAt: true,
-      createdBy: true,
-      updatedBy: true,
-    },
-    orderBy: { createdAt: "asc" as const },
-  },
   // Planned payments — the §3 payment plan (own table). Detail-only; the record
   // view reads the array directly. Entity link arrives in a later pass.
   plannedPayments: {
