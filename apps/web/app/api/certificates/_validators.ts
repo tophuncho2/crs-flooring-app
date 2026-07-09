@@ -8,10 +8,15 @@ import type {
   UpdateCertificateUseCaseInput,
 } from "@builders/application"
 import {
+  CERTIFICATE_FILE_REQUIRED_MESSAGE,
+  CERTIFICATE_FILE_TOO_LARGE_MESSAGE,
+  CERTIFICATE_FILE_TYPE_NOT_ALLOWED_MESSAGE,
   CERTIFICATE_NOTES_MAX_LENGTH,
   CERTIFICATE_NOTES_TOO_LONG_MESSAGE,
   LIST_CERTIFICATES_MAX_PAGE_SIZE,
   LIST_CERTIFICATES_PAGE_SIZE,
+  isAllowedCertificateFileContentType,
+  isAllowedCertificateFileSize,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -79,6 +84,35 @@ export function validateUpdateCertificateInput(
   if ("expirationDate" in body) input.expirationDate = optionalDate(body.expirationDate, "expirationDate")
   if ("internalNotes" in body) input.internalNotes = optionalNotes(body.internalNotes)
   return input
+}
+
+// --- File upload metadata validator ---
+
+export type CertificateFileUploadMetadata = {
+  fileName: string
+  contentType: string
+  sizeBytes: number
+}
+
+/**
+ * Gate the extracted multipart file metadata at the edge (early 400s). The
+ * upload use case re-checks the same rules against the real byte length —
+ * defense in depth — so this never loosens the server-side gate.
+ */
+export function validateCertificateFileUpload(input: {
+  fileName: string | null
+  contentType: string | null
+  sizeBytes: number
+}): CertificateFileUploadMetadata {
+  const fileName = input.fileName?.trim()
+  if (!fileName) fail(CERTIFICATE_FILE_REQUIRED_MESSAGE, "file")
+  if (!input.contentType || !isAllowedCertificateFileContentType(input.contentType)) {
+    fail(CERTIFICATE_FILE_TYPE_NOT_ALLOWED_MESSAGE, "file")
+  }
+  if (!isAllowedCertificateFileSize(input.sizeBytes)) {
+    fail(CERTIFICATE_FILE_TOO_LARGE_MESSAGE, "file")
+  }
+  return { fileName, contentType: input.contentType, sizeBytes: input.sizeBytes }
 }
 
 // --- List query validator ---

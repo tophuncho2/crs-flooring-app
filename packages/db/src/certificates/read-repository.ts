@@ -37,15 +37,74 @@ const certificateSelect = {
   },
 } as const
 
+const certificateFileSelect = {
+  id: true,
+  fileName: true,
+  contentType: true,
+  sizeBytes: true,
+  createdAt: true,
+  createdBy: true,
+} as const
+
+/**
+ * Bucket-pointer projection for a single file — carries `certificateId` (for the
+ * ownership check) and `objectKey` (for S3), which the normalized record omits.
+ */
+export type CertificateFileRow = {
+  id: string
+  certificateId: string
+  objectKey: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  createdAt: Date
+  createdBy: string | null
+}
+
 export async function getCertificateById(
   id: string,
   client: CertificatesDbClient = db,
 ): Promise<CertificateDetailRecord> {
   const certificate = await client.certificate.findUniqueOrThrow({
     where: { id },
-    select: certificateSelect,
+    select: {
+      ...certificateSelect,
+      files: { select: certificateFileSelect, orderBy: { createdAt: "asc" } },
+    },
   })
   return normalizeCertificate(certificate)
+}
+
+/** One file row incl. `certificateId` + `objectKey`; null when it doesn't exist. */
+export async function getCertificateFileById(
+  fileId: string,
+  client: CertificatesDbClient = db,
+): Promise<CertificateFileRow | null> {
+  return client.certificateFile.findUnique({
+    where: { id: fileId },
+    select: {
+      id: true,
+      certificateId: true,
+      objectKey: true,
+      fileName: true,
+      contentType: true,
+      sizeBytes: true,
+      createdAt: true,
+      createdBy: true,
+    },
+  })
+}
+
+/** Object keys for every file under a certificate — for S3 cascade cleanup. */
+export async function listCertificateFileKeysByCertificateId(
+  certificateId: string,
+  client: CertificatesDbClient = db,
+): Promise<string[]> {
+  const rows = await client.certificateFile.findMany({
+    where: { certificateId },
+    select: { objectKey: true },
+  })
+  return rows.map((row) => row.objectKey)
 }
 
 export type CertificateListViewOptions = {

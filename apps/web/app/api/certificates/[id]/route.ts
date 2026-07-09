@@ -2,6 +2,7 @@ import { deleteCertificateUseCase } from "@builders/application"
 import { getCertificateById } from "@builders/db"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
+import { getStorageEnvironment } from "@/server/platform/env"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
@@ -78,7 +79,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         entityType: "certificate",
         entityId: id,
       },
-      () => deleteCertificateUseCase(id),
+      () => deleteCertificateUseCase(id, getStorageEnvironment()),
     )
 
     const responseBody = { ok: true as const }

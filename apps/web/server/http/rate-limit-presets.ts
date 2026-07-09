@@ -8,3 +8,6 @@ export const QUERY_DEFAULT = { limit: 12000, windowMs: TEN_MINUTES_MS } as const
 // they get their own tighter bucket — a burst of exports must not drain the
 // shared list-browse allowance.
 export const EXPORT = { limit: 60, windowMs: TEN_MINUTES_MS } as const
+// File uploads stream bytes and hit S3 (heavier than a JSON mutation), so they
+// get their own tighter bucket, separate from the CRUD_CREATE allowance.
+export const UPLOAD = { limit: 60, windowMs: TEN_MINUTES_MS } as const

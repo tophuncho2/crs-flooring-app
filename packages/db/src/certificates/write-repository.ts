@@ -1,6 +1,11 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
-import { normalizeCertificate, type CertificateDetailRecord } from "@builders/domain"
+import {
+  normalizeCertificate,
+  normalizeCertificateFile,
+  type CertificateDetailRecord,
+  type CertificateFileRecord,
+} from "@builders/domain"
 
 type CertificatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -78,4 +83,50 @@ export async function deleteCertificateRecordById(
   client: CertificatesDbClient = db,
 ): Promise<void> {
   await client.certificate.delete({ where: { id } })
+}
+
+const certificateFileSelect = {
+  id: true,
+  fileName: true,
+  contentType: true,
+  sizeBytes: true,
+  createdAt: true,
+  createdBy: true,
+} as const
+
+export type CreateCertificateFileRecordInput = {
+  // App-generated so the S3 object key can be built before the row is inserted.
+  id: string
+  certificateId: string
+  objectKey: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  createdBy: string
+}
+
+export async function createCertificateFileRow(
+  input: CreateCertificateFileRecordInput,
+  client: CertificatesDbClient = db,
+): Promise<CertificateFileRecord> {
+  const file = await client.certificateFile.create({
+    data: {
+      id: input.id,
+      certificateId: input.certificateId,
+      objectKey: input.objectKey,
+      fileName: input.fileName,
+      contentType: input.contentType,
+      sizeBytes: input.sizeBytes,
+      createdBy: input.createdBy,
+    },
+    select: certificateFileSelect,
+  })
+  return normalizeCertificateFile(file)
+}
+
+export async function deleteCertificateFileRow(
+  fileId: string,
+  client: CertificatesDbClient = db,
+): Promise<void> {
+  await client.certificateFile.delete({ where: { id: fileId } })
 }

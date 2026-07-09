@@ -5,6 +5,16 @@ export type CertificateEntity = {
   entity: string
 }
 
+export type CertificateFileRecord = {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  /** ISO-string upload timestamp. */
+  createdAt: string
+  createdBy: string | null
+}
+
 export type CertificateDetailRecord = {
   id: string
   name: string
@@ -17,6 +27,8 @@ export type CertificateDetailRecord = {
   createdBy: string | null
   updatedBy: string | null
   entity: CertificateEntity | null
+  /** Attached files, oldest-first. Empty on list rows (not selected there). */
+  files: CertificateFileRecord[]
 }
 
 export type CertificateListRow = CertificateDetailRecord

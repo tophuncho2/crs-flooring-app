@@ -11,7 +11,9 @@ import {
 import type { CertificateDetailRecord, EntityOption } from "@builders/domain"
 import { useCertificatePrimarySection } from "@/modules/certificates/controllers/record/primary/use-certificate-primary-section"
 import { useCertificateEntityNav } from "@/modules/certificates/controllers/record/use-certificate-entity-nav"
+import { useCertificateFilesSection } from "@/modules/certificates/controllers/record/files/use-certificate-files-section"
 import { CertificatePrimaryFieldsSection } from "./primary/certificate-primary-fields-section"
+import { CertificateFilesSection } from "./files/certificate-files-section"
 
 export function CertificateRecordPanel({
   page,
@@ -25,6 +27,11 @@ export function CertificateRecordPanel({
   const controller = useCertificatePrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
+
+  const filesSection = useCertificateFilesSection({
+    certificateId: record.id,
+    initialFiles: entry.files,
+  })
 
   const selectedEntityId = primary.localValue.entityId || null
 
@@ -83,6 +90,12 @@ export function CertificateRecordPanel({
           />
         </RecordPrimarySectionInstance>
       ),
+    },
+    {
+      key: "files",
+      type: "item",
+      order: 20,
+      render: () => <CertificateFilesSection section={filesSection} />,
     },
   ]
 
