@@ -7,34 +7,17 @@ import {
 } from "./types.js"
 
 /**
- * The named starting points for the inventory print configurator. Each seeds the
- * SAME configurable document; the user then toggles columns/rows on top. Roll tag
- * is intentionally NOT a preset here — it needs its own page size + a stripped
- * style/color/roll# layout, so it will ship as its own list-page print surface.
- *
- *   - inventoryItem                — the inventory record only (no adjustments)
- *   - inventoryItemAndAdjustments  — the inventory record + its adjustments ledger
+ * The centered print title. Inventory has a single document — the record sheet —
+ * so this is a static label, not a selector (adjustments are CSV-only and never
+ * printed, so there is no "& Adjustments" print variant). Roll tag, when built,
+ * will be its own separate small-page print surface.
  */
-export type InventoryPrintPreset = "inventoryItem" | "inventoryItemAndAdjustments"
-
-/**
- * The centered top-section labels the configurator's document-type selector offers,
- * in order. Unlike the work-order selector (label-only), switching the inventory
- * label ALSO toggles the adjustments section — the labels describe content. See
- * {@link applyInventoryDocumentLabel}.
- */
-export const INVENTORY_DOCUMENT_LABELS = ["Inventory Item", "Inventory Item & Adjustments"] as const
-
-export type InventoryDocumentLabel = (typeof INVENTORY_DOCUMENT_LABELS)[number]
-
-const LABEL_TO_PRESET: Record<InventoryDocumentLabel, InventoryPrintPreset> = {
-  "Inventory Item": "inventoryItem",
-  "Inventory Item & Adjustments": "inventoryItemAndAdjustments",
-}
+export const INVENTORY_DOCUMENT_LABEL = "Inventory Item"
 
 /**
  * Inventory columns visible by default (others start unchecked). Keys reference
- * `INVENTORY_EXPORT_COLUMNS`; cost/freight/PO/import/timestamps default off.
+ * `INVENTORY_EXPORT_COLUMNS`; cost/freight/PO/import/timestamps default off. Drives
+ * both the printed record sheet and the CSV record block.
  */
 const DEFAULT_INVENTORY_COLUMNS = new Set<string>([
   "productName",
@@ -46,7 +29,7 @@ const DEFAULT_INVENTORY_COLUMNS = new Set<string>([
   "unit",
 ])
 
-/** Adjustment columns visible by default on the ledger table. */
+/** Adjustment columns visible by default in the CSV ledger block (CSV-only). */
 const DEFAULT_ADJUSTMENT_COLUMNS = new Set<string>([
   "quantity",
   "adjustment",
@@ -72,30 +55,11 @@ function buildAdjustmentColumnVisibility(): AdjustmentColumnVisibility {
   )
 }
 
-/** Build a fresh, fully-mutable config seeded from `preset`. */
-export function buildInventoryPrintConfig(preset: InventoryPrintPreset): InventoryPrintConfig {
-  const withAdjustments = preset === "inventoryItemAndAdjustments"
+/** Build a fresh, fully-mutable config with the default column selections. */
+export function buildInventoryPrintConfig(): InventoryPrintConfig {
   return {
-    documentLabel: withAdjustments ? "Inventory Item & Adjustments" : "Inventory Item",
-    sections: { adjustments: withAdjustments },
+    documentLabel: INVENTORY_DOCUMENT_LABEL,
     inventoryColumns: buildInventoryColumnVisibility(),
     adjustmentColumns: buildAdjustmentColumnVisibility(),
-  }
-}
-
-/**
- * Apply a document-label switch: set the centered title AND toggle the adjustments
- * section to match the label (the two labels describe content). Column selections
- * and selected rows are preserved so the user's fine-tuning survives the switch.
- */
-export function applyInventoryDocumentLabel(
-  config: InventoryPrintConfig,
-  label: InventoryDocumentLabel,
-): InventoryPrintConfig {
-  const withAdjustments = LABEL_TO_PRESET[label] === "inventoryItemAndAdjustments"
-  return {
-    ...config,
-    documentLabel: label,
-    sections: { ...config.sections, adjustments: withAdjustments },
   }
 }

@@ -3,27 +3,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import {
-  applyInventoryDocumentLabel,
   buildInventoryCsv,
   buildInventoryPrintConfig,
   buildInventoryPrintHtml,
-  INVENTORY_DOCUMENT_LABELS,
+  INVENTORY_DOCUMENT_LABEL,
   INVENTORY_PRINT_ADJUSTMENT_COLUMNS,
   INVENTORY_PRINT_FIELD_COLUMNS,
   type InventoryDetail,
-  type InventoryDocumentLabel,
   type InventoryPrintConfig,
-  type InventoryPrintPreset,
 } from "@builders/domain"
 import { RecordStepper } from "@/engines/record-view"
 
 /**
- * On-demand inventory print configurator. Seeds an {@link InventoryPrintConfig}
- * from the entry button's `preset`, renders a screen-only checkbox panel (document
- * type · inventory fields · adjustment columns + per-row), and re-runs the pure
- * domain builder on every toggle to drive a live preview. The panel is
- * `print:hidden`, so the Print button prints only the preview. Mirrors the
- * work-order print configurator.
+ * On-demand inventory print + CSV configurator. Seeds an {@link InventoryPrintConfig},
+ * renders a screen-only checkbox panel, and re-runs the pure domain builders on every
+ * toggle to drive a live preview. The panel is `print:hidden`, so the Print button
+ * prints only the preview.
+ *
+ * Two outputs, shaped to their medium:
+ *   - PRINT — the inventory record sheet (inventory-field checkboxes). Always fits a page.
+ *   - CSV — the record AND the adjustments ledger (adjustment column checkboxes + row
+ *     picker). Adjustments are CSV-only (they never fit a printed sheet), flagged as such.
  */
 const CHECKBOX_CLASS =
   "h-4 w-4 cursor-pointer rounded border-neutral-300 text-sky-600 focus:ring-1 focus:ring-sky-500/40"
@@ -31,13 +31,11 @@ const CHECKBOX_CLASS =
 export function InventoryPrintConfigurator({
   inventory,
   logoUrl,
-  preset,
   previousInventoryId,
   nextInventoryId,
 }: {
   inventory: InventoryDetail
   logoUrl: string | null
-  preset: InventoryPrintPreset
   previousInventoryId: string | null
   nextInventoryId: string | null
 }) {
@@ -58,10 +56,10 @@ export function InventoryPrintConfigurator({
     [inventory.inventoryAdjustments],
   )
 
-  // Seed from the preset, then start with every adjustment row selected so the
-  // preview matches the named document the user clicked into.
+  // Seed the defaults, then start with every adjustment row selected so the CSV
+  // carries the full ledger until the user narrows it.
   const [config, setConfig] = useState<InventoryPrintConfig>(() => ({
-    ...buildInventoryPrintConfig(preset),
+    ...buildInventoryPrintConfig(),
     selectedAdjustmentIds: allAdjustmentIds,
   }))
 
@@ -110,9 +108,9 @@ export function InventoryPrintConfigurator({
     window.print()
   }, [])
 
-  // Export the CURRENT preview as CSV — same `inventory` + `config` the print
-  // builder reads, so the file matches what's on screen (checked fields, the
-  // adjustments columns, and the selected rows). Pure client-side blob download.
+  // Export as CSV — same `inventory` + `config` the preview reads. Unlike the
+  // print, the CSV also carries the adjustments ledger (checked columns × selected
+  // rows). Pure client-side blob download.
   const handleExportCsv = useCallback(() => {
     const csv = buildInventoryCsv(inventory, config)
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
@@ -125,11 +123,6 @@ export function InventoryPrintConfigurator({
     link.remove()
     URL.revokeObjectURL(url)
   }, [inventory, config])
-
-  // Document-type switch sets the centered label AND toggles the adjustments
-  // section (the two labels describe content); column/row selections survive.
-  const setDocumentLabel = (label: InventoryDocumentLabel) =>
-    setConfig((current) => applyInventoryDocumentLabel(current, label))
 
   const toggleInventoryColumn = (key: string) =>
     setConfig((current) => ({
@@ -176,8 +169,8 @@ export function InventoryPrintConfigurator({
           nextAriaLabel="Next inventory"
         />
 
-        {/* Output actions. Both play the SAME checkbox selections below — one
-            drives the browser print, the other the CSV download. */}
+        {/* Output actions. Print emits the inventory record sheet; CSV emits the
+            record + adjustments ledger. Both read the checkbox selections below. */}
         <div className="flex flex-col gap-2">
           <button
             type="button"
@@ -195,21 +188,13 @@ export function InventoryPrintConfigurator({
           </button>
         </div>
 
+        {/* Inventory has a single printed document — the record sheet — so the
+            document type is a static label, not a selector. */}
         <PanelSection title="Document">
-          <div className="flex flex-col gap-1 rounded border border-neutral-200 p-0.5">
-            {INVENTORY_DOCUMENT_LABELS.map((label) => (
-              <ModeButton
-                key={label}
-                active={config.documentLabel === label}
-                onClick={() => setDocumentLabel(label)}
-              >
-                {label}
-              </ModeButton>
-            ))}
+          <div className="rounded border border-neutral-200 bg-white px-2 py-1 text-xs font-medium text-neutral-700">
+            {INVENTORY_DOCUMENT_LABEL}
           </div>
-          <p className="mt-1 text-xs text-neutral-400">
-            Sets the centered title and whether adjustments show.
-          </p>
+          <p className="mt-1 text-xs text-neutral-400">The printed sheet is the inventory record.</p>
         </PanelSection>
 
         <PanelSection title="Inventory fields">
@@ -223,33 +208,36 @@ export function InventoryPrintConfigurator({
           ))}
         </PanelSection>
 
-        {config.sections.adjustments ? (
-          <PanelSection title="Adjustments">
-            <p className="mt-1 mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
-              Columns
-            </p>
-            {INVENTORY_PRINT_ADJUSTMENT_COLUMNS.map((column) => (
-              <CheckRow
-                key={column.key}
-                checked={config.adjustmentColumns[column.key] ?? false}
-                onChange={() => toggleAdjustmentColumn(column.key)}
-                label={column.label}
-              />
-            ))}
-
-            <RowPicker
-              title="Rows"
-              rows={inventory.inventoryAdjustments.map((adjustment) => ({
-                id: adjustment.id,
-                label: rowLabel(adjustment.adjustmentNumber, adjustment.quantity, adjustment.unitAbbrev),
-              }))}
-              selectedIds={selectedAdjustmentIds}
-              onToggle={toggleAdjustmentRow}
-              onAll={setAllAdjustmentRows}
-              emptyLabel="No adjustments on this inventory."
+        {/* Adjustments never print (they overflow any sheet) — these selections
+            shape the CSV export only, flagged by the badge. */}
+        <PanelSection title="Adjustments" badge={<CsvOnlyBadge />}>
+          <p className="-mt-1 mb-1 text-xs text-neutral-400">
+            Not printed — included in the CSV export only.
+          </p>
+          <p className="mt-1 mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Columns
+          </p>
+          {INVENTORY_PRINT_ADJUSTMENT_COLUMNS.map((column) => (
+            <CheckRow
+              key={column.key}
+              checked={config.adjustmentColumns[column.key] ?? false}
+              onChange={() => toggleAdjustmentColumn(column.key)}
+              label={column.label}
             />
-          </PanelSection>
-        ) : null}
+          ))}
+
+          <RowPicker
+            title="Rows"
+            rows={inventory.inventoryAdjustments.map((adjustment) => ({
+              id: adjustment.id,
+              label: rowLabel(adjustment.adjustmentNumber, adjustment.quantity, adjustment.unitAbbrev),
+            }))}
+            selectedIds={selectedAdjustmentIds}
+            onToggle={toggleAdjustmentRow}
+            onAll={setAllAdjustmentRows}
+            emptyLabel="No adjustments on this inventory."
+          />
+        </PanelSection>
       </aside>
 
       <div className="min-w-0 flex-1">
@@ -264,10 +252,29 @@ function rowLabel(adjustmentNumber: string, quantity: string, unitAbbrev: string
   return `${adjustmentNumber} · ${qty}`
 }
 
-function PanelSection({ title, children }: { title: string; children: ReactNode }) {
+function CsvOnlyBadge() {
+  return (
+    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+      CSV only
+    </span>
+  )
+}
+
+function PanelSection({
+  title,
+  badge,
+  children,
+}: {
+  title: string
+  badge?: ReactNode
+  children: ReactNode
+}) {
   return (
     <div>
-      <h3 className="mb-2 text-sm font-semibold">{title}</h3>
+      <div className="mb-2 flex items-center gap-2">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {badge}
+      </div>
       <div className="space-y-1.5">{children}</div>
     </div>
   )
@@ -287,29 +294,6 @@ function CheckRow({
       <input type="checkbox" checked={checked} onChange={onChange} className={CHECKBOX_CLASS} />
       <span className="text-neutral-700">{label}</span>
     </label>
-  )
-}
-
-function ModeButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "flex-1 rounded px-2 py-1 text-xs font-medium",
-        active ? "bg-sky-600 text-white" : "text-neutral-600 hover:bg-neutral-100",
-      ].join(" ")}
-    >
-      {children}
-    </button>
   )
 }
 

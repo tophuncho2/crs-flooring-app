@@ -1,85 +1,40 @@
 import { describe, expect, it } from "vitest"
 import { buildInventoryPrintHtml } from "../../../src/inventory/file-generation/build-inventory-print-html.js"
 import {
-  applyInventoryDocumentLabel,
   buildInventoryPrintConfig,
-  INVENTORY_DOCUMENT_LABELS,
+  INVENTORY_DOCUMENT_LABEL,
 } from "../../../src/inventory/file-generation/print-presets.js"
 import { makeAdjustment, makeInventoryDetail } from "./_fixtures.js"
 
-describe("presets seed the right document", () => {
-  it("inventoryItem → adjustments section OFF, record-only title", () => {
-    const config = buildInventoryPrintConfig("inventoryItem")
-    expect(config.sections).toEqual({ adjustments: false })
-    expect(config.documentLabel).toBe("Inventory Item")
+describe("buildInventoryPrintConfig", () => {
+  it("seeds the static document label", () => {
+    expect(buildInventoryPrintConfig().documentLabel).toBe(INVENTORY_DOCUMENT_LABEL)
+    expect(INVENTORY_DOCUMENT_LABEL).toBe("Inventory Item")
   })
 
-  it("inventoryItemAndAdjustments → adjustments section ON", () => {
-    const config = buildInventoryPrintConfig("inventoryItemAndAdjustments")
-    expect(config.sections).toEqual({ adjustments: true })
-    expect(config.documentLabel).toBe("Inventory Item & Adjustments")
-  })
-
-  it("document-type labels mirror the two preset documentLabels", () => {
-    expect(INVENTORY_DOCUMENT_LABELS).toEqual([
-      buildInventoryPrintConfig("inventoryItem").documentLabel,
-      buildInventoryPrintConfig("inventoryItemAndAdjustments").documentLabel,
-    ])
+  it("seeds column visibility maps (record + adjustment)", () => {
+    const config = buildInventoryPrintConfig()
+    expect(config.inventoryColumns.productName).toBe(true)
+    expect(config.inventoryColumns.cost).toBe(false)
+    expect(config.adjustmentColumns.quantity).toBe(true)
   })
 })
 
-describe("applyInventoryDocumentLabel — label switch toggles the section", () => {
-  it("switching to '& Adjustments' turns the section on and sets the title", () => {
-    const next = applyInventoryDocumentLabel(
-      buildInventoryPrintConfig("inventoryItem"),
-      "Inventory Item & Adjustments",
-    )
-    expect(next.documentLabel).toBe("Inventory Item & Adjustments")
-    expect(next.sections.adjustments).toBe(true)
-  })
-
-  it("switching back to 'Inventory Item' turns the section off", () => {
-    const next = applyInventoryDocumentLabel(
-      buildInventoryPrintConfig("inventoryItemAndAdjustments"),
-      "Inventory Item",
-    )
-    expect(next.documentLabel).toBe("Inventory Item")
-    expect(next.sections.adjustments).toBe(false)
-  })
-
-  it("preserves the user's column + row selections across the switch", () => {
-    const seed = buildInventoryPrintConfig("inventoryItem")
-    const edited = {
-      ...seed,
-      inventoryColumns: { ...seed.inventoryColumns, cost: true },
-      selectedAdjustmentIds: ["adj-1"],
-    }
-    const next = applyInventoryDocumentLabel(edited, "Inventory Item & Adjustments")
-    expect(next.inventoryColumns.cost).toBe(true)
-    expect(next.selectedAdjustmentIds).toEqual(["adj-1"])
-  })
-})
-
-describe("buildInventoryPrintHtml — section gating", () => {
+describe("buildInventoryPrintHtml — record only, never adjustments", () => {
   const inventory = makeInventoryDetail({
-    inventoryAdjustments: [makeAdjustment()],
+    inventoryAdjustments: [makeAdjustment(), makeAdjustment({ id: "adj-2" })],
   })
 
-  it("inventoryItem renders the primary block only (no adjustments table)", () => {
-    const html = buildInventoryPrintHtml(inventory, buildInventoryPrintConfig("inventoryItem"))
+  it("renders the record block", () => {
+    const html = buildInventoryPrintHtml(inventory, buildInventoryPrintConfig())
     expect(html).toContain("Inventory Item")
     expect(html).toContain('<table class="inv-primary-table">')
-    // The `.flat-rows` CSS lives in the style block always — assert on the TABLE.
-    expect(html).not.toContain('<table class="flat-rows">')
   })
 
-  it("inventoryItemAndAdjustments renders the adjustments table too", () => {
-    const html = buildInventoryPrintHtml(
-      inventory,
-      buildInventoryPrintConfig("inventoryItemAndAdjustments"),
-    )
-    expect(html).toContain("Inventory Item &amp; Adjustments")
-    expect(html).toContain('<table class="inv-primary-table">')
-    expect(html).toContain('<table class="flat-rows">')
+  it("never renders an adjustments table, even when adjustments exist", () => {
+    const html = buildInventoryPrintHtml(inventory, buildInventoryPrintConfig())
+    // No ledger table on the printed sheet — adjustments are CSV-only.
+    expect(html).not.toContain('<table class="flat-rows">')
+    expect(html).not.toContain("ADJ-1")
   })
 })

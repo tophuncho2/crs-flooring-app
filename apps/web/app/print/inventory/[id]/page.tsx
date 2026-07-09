@@ -40,13 +40,11 @@ export default async function InventoryPrintPage({
 
   const logoUrl = await getBrandLogoPrintUrl()
 
-  // Seed the record-only document; the user switches to "Inventory Item &
-  // Adjustments" and toggles columns/rows from there.
+  // The printed document is the inventory record sheet; adjustments export to CSV.
   return (
     <InventoryPrintConfigurator
       inventory={result.data.inventory}
       logoUrl={logoUrl}
-      preset="inventoryItem"
       previousInventoryId={result.data.inventory.previousInventory?.id ?? null}
       nextInventoryId={result.data.inventory.nextInventory?.id ?? null}
     />

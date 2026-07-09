@@ -41,22 +41,22 @@ export const INVENTORY_PRINT_ADJUSTMENT_COLUMNS: ReadonlyArray<
 export type InventoryColumnVisibility = Record<string, boolean>
 export type AdjustmentColumnVisibility = Record<string, boolean>
 
-/** Which bottom sections render. Adjustments is the only inventory section. */
-export type InventoryPrintSectionVisibility = {
-  adjustments: boolean
-}
-
 /**
- * The full checkbox-driven configuration for ONE inventory print document. Seeded
- * from a preset (`inventoryItem` / `inventoryItemAndAdjustments`) then mutated by
- * the configurator's checkboxes. `documentLabel` is the centered top tag AND, for
- * inventory, drives whether the adjustments section renders (the two labels
- * describe content, unlike the work-order label-only selector). `selectedAdjustmentIds`
- * undefined ⇒ all adjustment rows.
+ * The full checkbox-driven configuration for ONE inventory export document. Seeded
+ * by {@link import("./print-presets.js").buildInventoryPrintConfig} then mutated by
+ * the configurator's checkboxes.
+ *
+ * Two outputs are shaped to their medium:
+ *   - PRINT — the inventory record only (a single record always fits a page). The
+ *     adjustments ledger is never printed (it would overflow any sheet).
+ *   - CSV — the inventory record AND the adjustments ledger (unbounded rows).
+ *
+ * So `inventoryColumns` drives BOTH surfaces, while `adjustmentColumns` +
+ * `selectedAdjustmentIds` are CSV-only. `documentLabel` is the centered print title
+ * (static "Inventory Item"). `selectedAdjustmentIds` undefined ⇒ all adjustment rows.
  */
 export type InventoryPrintConfig = {
   documentLabel: string
-  sections: InventoryPrintSectionVisibility
   inventoryColumns: InventoryColumnVisibility
   adjustmentColumns: AdjustmentColumnVisibility
   selectedAdjustmentIds?: ReadonlyArray<string>
