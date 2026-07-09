@@ -573,6 +573,7 @@ model FlooringPayment {
   amount           Decimal                  @db.Decimal(12, 2) // unsigned; direction carries the sign
   direction        FlooringPaymentDirection
   color            PaletteColor             @default(SLATE) // non-semantic user palette tag (edit-only)
+  paymentMethod    String?                  @db.VarChar(50) // free-text label: Cash / Check #… / ACH
   paymentDate      DateTime?
   entityId         String?
   entity           Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
