@@ -49,6 +49,8 @@ export function renderPaymentRowCell(
           {row.paymentDate ? formatStableDate(row.paymentDate) : "—"}
         </span>
       )
+    case "paymentMethod":
+      return <span>{row.paymentMethod || "—"}</span>
     case "updatedAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     case "createdAt":

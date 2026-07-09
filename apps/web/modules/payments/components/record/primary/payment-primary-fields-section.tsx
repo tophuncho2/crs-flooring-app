@@ -11,9 +11,11 @@ import {
   RecordSectionDivider,
   SegmentedChoiceCell,
   StaticFieldValue,
+  TextCell,
 } from "@/engines/record-view"
 import {
   formatEasternDateTime,
+  PAYMENT_METHOD_MAX,
   type EntityOption,
   type EntityTypeRef,
   type FlooringPaymentDirection,
@@ -222,6 +224,18 @@ export function PaymentPrimaryFieldsSection({
                   value={draft.paymentDate}
                   onChange={(next) => onFieldChange("paymentDate", next)}
                   ariaLabel="Payment date"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Method">
+                <TextCell
+                  editable={editable}
+                  value={draft.paymentMethod}
+                  onChange={(next) => onFieldChange("paymentMethod", next)}
+                  maxLength={PAYMENT_METHOD_MAX}
+                  placeholder="Cash, Check #…, ACH"
+                  ariaLabel="Payment method"
                 />
               </FormField>
             </CellAt>

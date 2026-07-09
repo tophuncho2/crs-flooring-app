@@ -8,6 +8,7 @@ export const PAYMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PaymentListRow
   { key: "types", label: "Type(s)" },
   { key: "workOrder", label: "WO #" },
   { key: "paymentDate", label: "Date" },
+  { key: "paymentMethod", label: "Method" },
   { key: "direction", label: "Direction" },
   { key: "updatedAt", label: "Updated" },
   { key: "createdAt", label: "Created" },

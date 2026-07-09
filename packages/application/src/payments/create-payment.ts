@@ -22,6 +22,8 @@ export async function createPaymentUseCase(
       // satisfy the form shape. Create never persists it — new rows fall to the DB
       // default (SLATE) since `input` (CreatePaymentUseCaseInput) carries no color.
       color: DEFAULT_PALETTE_COLOR,
+      // Free-text label with no validation rule; pass through to satisfy the form shape.
+      paymentMethod: input.paymentMethod ?? "",
       paymentDate: "",
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,

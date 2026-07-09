@@ -13,6 +13,7 @@ import {
   LIST_PAYMENTS_MAX_PAGE_SIZE,
   LIST_PAYMENTS_PAGE_SIZE,
   PALETTE_COLOR_INVALID_MESSAGE,
+  PAYMENT_METHOD_MAX,
   type FlooringPaymentDirection,
   type PaletteColor,
 } from "@builders/domain"
@@ -30,6 +31,15 @@ function optionalString(value: unknown, field: string): string | undefined {
   if (value === undefined || value === null) return undefined
   if (typeof value !== "string") fail(`${field} must be a string`, field)
   return (value as string).trim()
+}
+
+// Trimmed optional string with a max-length cap (mirrors the DB VarChar size).
+function optionalBoundedString(value: unknown, max: number, field: string): string | undefined {
+  const trimmed = optionalString(value, field)
+  if (trimmed !== undefined && trimmed.length > max) {
+    fail(`${field} must be at most ${max} characters`, field)
+  }
+  return trimmed
 }
 
 // Nullable link id: `undefined` = omitted (leave as-is on update), `null`/"" =
@@ -93,6 +103,7 @@ export function validateCreatePaymentInput(
   return {
     amount: requireAmount(body.amount, "amount"),
     direction: requireDirection(body.direction, "direction"),
+    paymentMethod: optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod"),
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
     entityId: optionalLinkId(body.entityId, "entityId"),
     workOrderId: optionalLinkId(body.workOrderId, "workOrderId"),
@@ -106,6 +117,8 @@ export function validateUpdatePaymentInput(
   if ("amount" in body) input.amount = optionalAmount(body.amount, "amount")
   if ("direction" in body) input.direction = optionalDirection(body.direction, "direction")
   if ("color" in body) input.color = requireColor(body.color, "color")
+  if ("paymentMethod" in body)
+    input.paymentMethod = optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod")
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
   if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
   if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")

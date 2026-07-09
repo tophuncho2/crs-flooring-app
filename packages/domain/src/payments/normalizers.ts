@@ -10,6 +10,7 @@ type PaymentInput = {
   amount: { toString(): string }
   direction: FlooringPaymentDirection
   color: PaletteColor
+  paymentMethod?: string | null
   paymentDate: Date | string | null
   entityId?: string | null
   workOrderId?: string | null
@@ -37,6 +38,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     amount: normalizeMoneyAmount(payment.amount.toString()),
     direction: payment.direction,
     color: payment.color,
+    paymentMethod: payment.paymentMethod ?? "",
     paymentDate: toIso(payment.paymentDate),
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,

@@ -1,0 +1,5 @@
+// Length caps for payments free-text columns. Enforced at the API boundary and
+// mirrored by the DB VarChar sizes (single source of truth for both).
+
+/** Max length of the free-text `paymentMethod` label (matches VARCHAR(50)). */
+export const PAYMENT_METHOD_MAX = 50

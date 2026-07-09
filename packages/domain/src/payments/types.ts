@@ -22,6 +22,9 @@ export type Payment = {
   direction: FlooringPaymentDirection
   // Non-semantic palette tag. Metadata only — never feeds any computation.
   color: PaletteColor
+  // Free-text method label ("Cash", "Check #…", "ACH"). Nullable DB column
+  // surfaced as "" so the UI never juggles null.
+  paymentMethod: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -67,6 +70,7 @@ export type PaymentForm = {
   amount: string
   direction: FlooringPaymentDirection
   color: PaletteColor
+  paymentMethod: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -76,6 +80,7 @@ export const EMPTY_PAYMENT_FORM: PaymentForm = {
   amount: "",
   direction: "REVENUE",
   color: DEFAULT_PALETTE_COLOR,
+  paymentMethod: "",
   paymentDate: "",
   entityId: null,
   workOrderId: null,
@@ -86,6 +91,7 @@ export function toPaymentForm(payment: Payment): PaymentForm {
     amount: payment.amount,
     direction: payment.direction,
     color: payment.color,
+    paymentMethod: payment.paymentMethod,
     paymentDate: payment.paymentDate,
     entityId: payment.entityId,
     workOrderId: payment.workOrderId,

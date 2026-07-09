@@ -14,6 +14,7 @@ type PaymentsDbClient = PrismaClient | Prisma.TransactionClient
 export type CreatePaymentRecordInput = {
   amount: string
   direction: FlooringPaymentDirection
+  paymentMethod?: string | null
   paymentDate?: string
   // Optional, single links. `null`/omitted = unlinked.
   entityId?: string | null
@@ -27,6 +28,7 @@ export type UpdatePaymentRecordInput = {
   direction?: FlooringPaymentDirection
   // Non-semantic palette tag. Metadata only — never triggers a recompute.
   color?: PaletteColor
+  paymentMethod?: string | null
   paymentDate?: string
   // Tri-state: `undefined` = leave as-is, `null` = clear the link, string = set.
   entityId?: string | null
@@ -50,6 +52,7 @@ export async function createPaymentRecord(
     data: {
       amount: normalizeMoneyAmount(input.amount),
       direction: input.direction,
+      paymentMethod: input.paymentMethod?.trim() || null,
       paymentDate: optionalDate(input.paymentDate) ?? null,
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,
@@ -71,6 +74,7 @@ export async function updatePaymentRecord(
   if (input.amount !== undefined) data.amount = normalizeMoneyAmount(input.amount)
   if (input.direction !== undefined) data.direction = input.direction
   if (input.color !== undefined) data.color = input.color
+  if (input.paymentMethod !== undefined) data.paymentMethod = input.paymentMethod?.trim() || null
   if (input.paymentDate !== undefined) data.paymentDate = optionalDate(input.paymentDate)
   if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.workOrderId !== undefined) data.workOrderId = input.workOrderId
