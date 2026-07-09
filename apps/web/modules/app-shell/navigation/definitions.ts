@@ -56,6 +56,12 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     group: "management",
   },
   { slug: "flooring-entity-types", name: "Entity Types", href: "/dashboard/entity-types", group: "management" },
+  {
+    slug: "flooring-certificate-tracking",
+    name: "Certificate Tracking",
+    href: "/dashboard/certificate-tracking",
+    group: "management",
+  },
   { slug: "flooring-adjustments", name: "Adjustments", href: "/dashboard/adjustments", group: "operations" },
   { slug: "flooring-payments", name: "Payments", href: "/dashboard/payments", group: "accounting", minRank: "TIER_2" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", group: "operations" },
