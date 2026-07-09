@@ -40,6 +40,7 @@ export default async function WorkOrderDetailPage({
       initialWorkOrder={result.data.workOrder}
       initialMaterialItems={result.data.materialItems}
       initialAdjustmentsForWorkOrder={result.data.adjustmentsForWorkOrder}
+      initialPlannedPayments={result.data.plannedPayments}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/work-orders")}
     />
   )

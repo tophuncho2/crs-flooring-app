@@ -6,6 +6,7 @@ import {
   isPrismaNotFoundError,
   listAdjustmentsForWorkOrder,
   listWorkOrderMaterialItems,
+  listWorkOrderPlannedPayments,
   type PrismaDetailPageResult,
   type WorkOrderNeighbors,
 } from "@builders/db"
@@ -14,6 +15,7 @@ import type {
   WorkOrderDetail,
   WorkOrderFileGenerationInput,
   WorkOrderMaterialItemRow,
+  WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
 
 // All form-option fields are powered by async pickers
@@ -32,16 +34,23 @@ export type WorkOrderDetailPageData = {
    * decoupled — there is no per-material-item bucketing.
    */
   adjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
+  /**
+   * The work order's planned payments (per-job payment plan), ordered createdAt
+   * asc. Loaded separately (sibling-prop pattern) and threaded into the record
+   * panel's own state — NOT nested into WorkOrderDetail.
+   */
+  plannedPayments: WorkOrderPlannedPaymentRow[]
 }
 
 export async function getWorkOrderDetailPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderDetailPageData>> {
   try {
-    const [workOrder, materialItems, adjustmentsForWorkOrder] = await Promise.all([
+    const [workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments] = await Promise.all([
       getWorkOrderDetailById(id),
       listWorkOrderMaterialItems(id),
       listAdjustmentsForWorkOrder(id),
+      listWorkOrderPlannedPayments(id),
     ])
 
     if (!workOrder) {
@@ -50,7 +59,7 @@ export async function getWorkOrderDetailPageData(
 
     return {
       ok: true,
-      data: { workOrder, materialItems, adjustmentsForWorkOrder },
+      data: { workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

@@ -12,6 +12,7 @@ import type {
   WorkOrderDetail,
   WorkOrderNeighbor,
   WorkOrderMaterialItemRow,
+  WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
 import { WorkOrderRecordPanel } from "./work-order-record-panel"
 
@@ -19,11 +20,13 @@ export function WorkOrderDetailClient({
   initialWorkOrder,
   initialMaterialItems,
   initialAdjustmentsForWorkOrder,
+  initialPlannedPayments,
   backHref,
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
+  initialPlannedPayments: WorkOrderPlannedPaymentRow[]
   backHref: string
 }) {
   const router = useRouter()
@@ -70,6 +73,7 @@ export function WorkOrderDetailClient({
             entry={initialWorkOrder}
             initialMaterialItems={initialMaterialItems}
             initialAdjustmentsForWorkOrder={initialAdjustmentsForWorkOrder}
+            initialPlannedPayments={initialPlannedPayments}
           />
         </>
       )}

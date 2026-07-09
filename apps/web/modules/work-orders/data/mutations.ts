@@ -10,6 +10,8 @@ import type {
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
   WorkOrderMaterialItemsDiff,
+  WorkOrderPlannedPaymentRow,
+  WorkOrderPlannedPaymentsDiff,
 } from "@builders/domain"
 
 export async function createWorkOrderRequest(input: CreateWorkOrderUseCaseInput) {
@@ -54,6 +56,25 @@ export async function saveWorkOrderMaterialItemsSectionRequest(
     tempIdMap: Record<string, string>
   }>(
     `/api/work-orders/${workOrderId}/material-items/section`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta(diff as unknown as Record<string, unknown>, revisionKey)),
+    },
+  )
+}
+
+export async function saveWorkOrderPlannedPaymentsSectionRequest(
+  workOrderId: string,
+  diff: WorkOrderPlannedPaymentsDiff,
+  revisionKey: string,
+) {
+  return requestJson<{
+    workOrder: WorkOrderDetail
+    plannedPayments: WorkOrderPlannedPaymentRow[]
+    tempIdMap: Record<string, string>
+  }>(
+    `/api/work-orders/${workOrderId}/planned-payments/section`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

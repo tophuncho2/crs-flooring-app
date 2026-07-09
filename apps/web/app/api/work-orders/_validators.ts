@@ -2,6 +2,7 @@ import { z } from "zod"
 import {
   WorkOrderExecutionError,
   WorkOrderMaterialItemExecutionError,
+  WorkOrderPlannedPaymentExecutionError,
 } from "@builders/application"
 import type {
   CreateWorkOrderUseCaseInput,
@@ -25,11 +26,17 @@ import {
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
+  WORK_ORDER_PLANNED_PAYMENT_NOTES_MAX,
   isPaletteColor,
+  isValidMoneyAmount,
+  normalizeMoneyAmount,
+  type FlooringPaymentDirection,
   type PaletteColor,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemUpdateForm,
   type WorkOrderMaterialItemsDiff,
+  type WorkOrderPlannedPaymentForm,
+  type WorkOrderPlannedPaymentsDiff,
 } from "@builders/domain"
 import { parseExportEnvelope } from "@/server/http/export-request"
 
@@ -300,6 +307,93 @@ export function validateWorkOrderMaterialItemsDiffInput(
   const deleted = requireArray(body.deleted, "deleted", failMaterialItem).map((entry, idx) => {
     const obj = requireObject(entry, `deleted[${idx}]`, failMaterialItem)
     return { id: requireString(obj.id, `deleted[${idx}].id`, failMaterialItem) }
+  })
+
+  return { added, modified, deleted }
+}
+
+// ---------------------------------------------------------------------------
+// Planned payments diff
+// ---------------------------------------------------------------------------
+// The §3 payment plan on a work order. Mirrors the templates planned-payments
+// validator but throws the WO planned-payment error class so the client keys off
+// its distinct code. Fields: amount (required money), direction (REVENUE|EXPENSE),
+// notes (bounded), entityId (optional link).
+
+function failPlannedPayment(message: string, field?: string): never {
+  throw new WorkOrderPlannedPaymentExecutionError({
+    code: "WORK_ORDER_PLANNED_PAYMENT_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+// Required money field (money standard): present → valid → canonicalized. The
+// domain rule additionally enforces > 0 on the use-case side.
+function requirePlannedPaymentAmount(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.trim() === "") {
+    failPlannedPayment(`${path} is required`, path)
+  }
+  if (!isValidMoneyAmount(value as string)) {
+    failPlannedPayment(`${path} must be a valid amount`, path)
+  }
+  return normalizeMoneyAmount(value as string)
+}
+
+function requirePlannedPaymentDirection(value: unknown, path: string): FlooringPaymentDirection {
+  if (value === "REVENUE" || value === "EXPENSE") return value
+  failPlannedPayment(`${path} must be REVENUE or EXPENSE`, path)
+}
+
+// Nullable entity link id: null/undefined/"" = unlinked, a non-empty string =
+// the linked entity. Folds missing → null (the grid always sends the field, but
+// stays defensive). Referential validity is enforced by the FK (P2003), not here.
+function optionalPlannedPaymentEntityId(value: unknown, field: string): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") failPlannedPayment(`${field} must be a string`, field)
+  const trimmed = (value as string).trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function validatePlannedPaymentForm(value: unknown, path: string): WorkOrderPlannedPaymentForm {
+  const obj = requireObject(value, path, failPlannedPayment)
+  return {
+    amount: requirePlannedPaymentAmount(obj.amount, `${path}.amount`),
+    direction: requirePlannedPaymentDirection(obj.direction, `${path}.direction`),
+    notes:
+      optionalBoundedText(
+        obj.notes,
+        WORK_ORDER_PLANNED_PAYMENT_NOTES_MAX,
+        `${path}.notes`,
+        failPlannedPayment,
+      ) ?? "",
+    entityId: optionalPlannedPaymentEntityId(obj.entityId, `${path}.entityId`),
+  }
+}
+
+export function validateWorkOrderPlannedPaymentsDiffInput(
+  body: Record<string, unknown>,
+): WorkOrderPlannedPaymentsDiff {
+  const added = requireArray(body.added, "added", failPlannedPayment).map((entry, idx) => {
+    const obj = requireObject(entry, `added[${idx}]`, failPlannedPayment)
+    return {
+      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failPlannedPayment),
+      form: validatePlannedPaymentForm(obj.form, `added[${idx}].form`),
+    }
+  })
+
+  const modified = requireArray(body.modified, "modified", failPlannedPayment).map((entry, idx) => {
+    const obj = requireObject(entry, `modified[${idx}]`, failPlannedPayment)
+    return {
+      id: requireString(obj.id, `modified[${idx}].id`, failPlannedPayment),
+      form: validatePlannedPaymentForm(obj.form, `modified[${idx}].form`),
+    }
+  })
+
+  const deleted = requireArray(body.deleted, "deleted", failPlannedPayment).map((entry, idx) => {
+    const obj = requireObject(entry, `deleted[${idx}]`, failPlannedPayment)
+    return { id: requireString(obj.id, `deleted[${idx}].id`, failPlannedPayment) }
   })
 
   return { added, modified, deleted }

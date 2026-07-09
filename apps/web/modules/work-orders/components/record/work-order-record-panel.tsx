@@ -11,12 +11,15 @@ import type {
   EnrichedInventoryAdjustmentRow,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
+  WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
 import { useWorkOrderMaterialItemsSection } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
+import { useWorkOrderPlannedPaymentsSection } from "@/modules/work-orders/controllers/record/planned-payments/use-work-order-planned-payments-section"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
+import { WorkOrderPlannedPaymentsSection } from "./planned-payments/work-order-planned-payments-section"
 import { WorkOrderRecordFooter } from "./footer"
 
 export function WorkOrderRecordPanel({
@@ -24,14 +27,17 @@ export function WorkOrderRecordPanel({
   entry,
   initialMaterialItems,
   initialAdjustmentsForWorkOrder,
+  initialPlannedPayments,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
+  initialPlannedPayments: WorkOrderPlannedPaymentRow[]
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
+  const [plannedPayments, setPlannedPayments] = useState(initialPlannedPayments)
   // Read-only adjustments display snapshot, read straight from server props (NOT
   // frozen in state). Adjustments are created in-place via the modal, then
   // `router.refresh()` re-runs the loader — so the fresh enriched set flows back
@@ -45,6 +51,15 @@ export function WorkOrderRecordPanel({
     workOrder: controller.record,
     materialItems,
     publishMaterialItems: setMaterialItems,
+    publishWorkOrder: controller.publishRecord,
+  })
+
+  // Lifted to the panel (like materialItemsSection) so its dirty state registers
+  // with the multi-section close-guard. Standalone 3rd section — no toggle yet.
+  const plannedPaymentsSection = useWorkOrderPlannedPaymentsSection({
+    workOrder: controller.record,
+    plannedPayments,
+    publishPlannedPayments: setPlannedPayments,
     publishWorkOrder: controller.publishRecord,
   })
 
@@ -151,6 +166,21 @@ export function WorkOrderRecordPanel({
                 adjustmentsForWorkOrder={adjustmentsForWorkOrder}
                 materialItems={materialItems}
                 section={materialItemsSection}
+              />
+            ),
+          },
+          {
+            key: "planned-payments",
+            type: "item",
+            order: 20,
+            dirtyLabel: "planned payments",
+            controller: plannedPaymentsSection,
+            render: () => (
+              // key on the WO id so stepping ◀/▶ to a neighbor remounts + resets
+              // the section, matching the material-items slot above.
+              <WorkOrderPlannedPaymentsSection
+                key={controller.record.id}
+                section={plannedPaymentsSection}
               />
             ),
           },
