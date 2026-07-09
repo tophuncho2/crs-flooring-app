@@ -4,8 +4,10 @@ import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import {
+  ChoiceDialog,
   RecordDeleteDialog,
   RecordItemSection,
+  useRecordCreateChoice,
   useRecordDeleteConfirmation,
 } from "@/engines/record-view"
 import type { Payment, WorkOrderDetail } from "@builders/domain"
@@ -38,10 +40,21 @@ export function WorkOrderPaymentsSection({
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const choice = useRecordCreateChoice()
   const [modalOpen, setModalOpen] = useState(false)
   const [pendingPayment, setPendingPayment] = useState<Payment | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const count = payments.length
+
+  // The payment record-view href carrying returnTo=this WO, so Back lands here.
+  // Shared by the row-open (↗) and the post-create "Go to payment" choice.
+  const paymentHref = useCallback(
+    (paymentId: string) => {
+      const returnTo = buildWorkOrderRecordHref(workOrder.id)
+      return `${PAYMENTS_RECORD_PATH}?paymentId=${paymentId}&returnTo=${encodeURIComponent(returnTo)}`
+    },
+    [workOrder.id],
+  )
 
   // Strong reconcile after create/delete: invalidate the payments + work-orders
   // query caches by prefix, then re-run the RSC loader so this server-prop-fed
@@ -54,12 +67,9 @@ export function WorkOrderPaymentsSection({
 
   const openPayment = useCallback(
     (row: Payment) => {
-      const returnTo = buildWorkOrderRecordHref(workOrder.id)
-      router.push(
-        `${PAYMENTS_RECORD_PATH}?paymentId=${row.id}&returnTo=${encodeURIComponent(returnTo)}`,
-      )
+      router.push(paymentHref(row.id))
     },
-    [router, workOrder.id],
+    [router, paymentHref],
   )
 
   // Styled destructive confirm (engine hook + preset) rather than window.confirm.
@@ -129,12 +139,22 @@ export function WorkOrderPaymentsSection({
         <WorkOrderPaymentCreateModal
           workOrder={workOrder}
           onClose={() => setModalOpen(false)}
-          onCreated={() => {
+          onCreated={(payment) => {
             setModalOpen(false)
-            reconcile()
+            // Ask whether to open the new payment or stay on the work order.
+            // "Go" navigates away (Back returns here via returnTo, and the WO's
+            // fresh SSR load shows the new row — no reconcile needed); "Stay"
+            // reconciles the grid in place.
+            choice.present({
+              title: "Payment created",
+              message: "Go to the new payment, or stay on this work order?",
+              destinations: [{ label: "Go to payment", href: paymentHref(payment.id) }],
+              stay: { label: "Stay here", onStay: reconcile },
+            })
           }}
         />
       ) : null}
+      {choice.choiceDialogProps ? <ChoiceDialog {...choice.choiceDialogProps} /> : null}
       <RecordDeleteDialog
         open={del.isOpen}
         isDeleting={del.isDeleting}

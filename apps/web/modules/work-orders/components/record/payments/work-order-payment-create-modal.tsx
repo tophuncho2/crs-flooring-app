@@ -6,6 +6,7 @@ import {
   describePaymentFormIssues,
   EMPTY_PAYMENT_FORM,
   validatePaymentForm,
+  type Payment,
   type PaymentForm,
   type WorkOrderDetail,
 } from "@builders/domain"
@@ -29,8 +30,11 @@ export function WorkOrderPaymentCreateModal({
 }: {
   workOrder: WorkOrderDetail
   onClose: () => void
-  /** Fired after a successful create — the host closes the modal and reconciles. */
-  onCreated: () => void
+  /**
+   * Fired after a successful create with the new payment — the host closes the
+   * modal, then presents the "go to payment / stay" choice.
+   */
+  onCreated: (payment: Payment) => void
 }) {
   // One stable idempotency key per mount — a retried submit replays instead of
   // inserting a second payment (the double-submit fix).
@@ -57,8 +61,11 @@ export function WorkOrderPaymentCreateModal({
     try {
       // Re-pin the WO id at submit — the picker is hidden so it can't drift, but
       // this guarantees the link regardless of any field edits.
-      await createPaymentRequest({ ...draft, workOrderId: workOrder.id }, createKeyRef.current!)
-      onCreated()
+      const { payment } = await createPaymentRequest(
+        { ...draft, workOrderId: workOrder.id },
+        createKeyRef.current!,
+      )
+      onCreated(payment)
     } catch (caught) {
       setError(getClientErrorMessage(caught, "Could not create the payment. Please try again."))
     } finally {
