@@ -38,6 +38,7 @@ function template(overrides: Record<string, unknown> = {}) {
     description: null,
     installerInstructions: null,
     plannedProducts: [],
+    plannedPayments: [],
     ...overrides,
   }
 }
@@ -134,6 +135,62 @@ describe("syncTemplateToWorkOrderUseCase", () => {
       { productId: "prod-1", quantity: "5", unitId: "unit-1", notes: "rush" },
     ])
     expect(record.items[0]).not.toHaveProperty("cost")
+  })
+
+  it("carries the template's planned payments 1:1 into the synced work order", async () => {
+    getTemplateByIdMock.mockResolvedValue(
+      template({
+        plannedPayments: [
+          {
+            id: "tpp-1",
+            amount: "250.00",
+            direction: "EXPENSE",
+            notes: "deposit",
+            entityId: "ent-1",
+            // Read-only hydration fields must never reach the WO payment row.
+            entityName: "Acme",
+            entityTypes: [],
+            createdAt: "2026-07-09T00:00:00.000Z",
+            updatedAt: "2026-07-09T00:00:00.000Z",
+            createdBy: null,
+            updatedBy: null,
+          },
+        ],
+      }),
+    )
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    const [record] = createWorkOrderFromTemplateRecordMock.mock.calls[0]
+    expect(record.plannedPayments).toEqual([
+      { amount: "250.00", direction: "EXPENSE", notes: "deposit", entityId: "ent-1" },
+    ])
+    expect(record.plannedPayments[0]).not.toHaveProperty("entityName")
+  })
+
+  it("coalesces a blank planned-payment note to null on sync", async () => {
+    getTemplateByIdMock.mockResolvedValue(
+      template({
+        plannedPayments: [
+          {
+            id: "tpp-2",
+            amount: "10.00",
+            direction: "REVENUE",
+            notes: "",
+            entityId: null,
+            entityName: null,
+            entityTypes: [],
+            createdAt: "2026-07-09T00:00:00.000Z",
+            updatedAt: "2026-07-09T00:00:00.000Z",
+            createdBy: null,
+            updatedBy: null,
+          },
+        ],
+      }),
+    )
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    const [record] = createWorkOrderFromTemplateRecordMock.mock.calls[0]
+    expect(record.plannedPayments).toEqual([
+      { amount: "10.00", direction: "REVENUE", notes: null, entityId: null },
+    ])
   })
 
   it("leaves the address columns null when the template has no property address", async () => {

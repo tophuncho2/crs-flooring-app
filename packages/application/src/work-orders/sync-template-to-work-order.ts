@@ -8,6 +8,7 @@ import {
   TEMPLATE_SYNC_TEMPLATE_NOT_FOUND_MESSAGE,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
+  type WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
 import { WorkOrderExecutionError } from "./errors.js"
 
@@ -18,6 +19,7 @@ export type SyncTemplateToWorkOrderInput = {
 export type SyncTemplateToWorkOrderResult = {
   workOrder: WorkOrderDetail
   items: WorkOrderMaterialItemRow[]
+  plannedPayments: WorkOrderPlannedPaymentRow[]
 }
 
 function notesOrNull(value: string): string | null {
@@ -96,6 +98,15 @@ export async function syncTemplateToWorkOrderUseCase(
           // (UoM epic 2C) — replaces the frozen sendUnit* copy.
           unitId: item.unitId,
           notes: notesOrNull(item.notes),
+        })),
+        // Deliberately enumerated (never spread): carry amount / direction /
+        // notes / entityId. Unlike planned products (which drop `cost`),
+        // planned payments copy 1:1.
+        plannedPayments: template.plannedPayments.map((payment) => ({
+          amount: payment.amount,
+          direction: payment.direction,
+          notes: notesOrNull(payment.notes),
+          entityId: payment.entityId,
         })),
       },
       c,

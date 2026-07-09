@@ -1,13 +1,17 @@
 import { db } from "../client.js"
 import type { Prisma } from "../generated/prisma/client.js"
 import {
+  normalizeMoneyAmount,
   normalizeWorkOrder,
+  type FlooringPaymentDirection,
   type PaletteColor,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
+  type WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
 import { workOrderDetailSelect, type WorkOrdersDbClient } from "./shared.js"
 import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
+import { listWorkOrderPlannedPayments } from "./planned-payments/read-repository.js"
 
 export type CreateWorkOrderRecordInput = {
   // Non-null column (DB default SLATE) — optional on input, never cleared to null.
@@ -91,11 +95,22 @@ export type CreateWorkOrderFromTemplateRecordInput = {
     unitId: string | null
     notes: string | null
   }>
+  // Planned payments copied 1:1 from the template. Unlike planned products
+  // (which drop `cost`), payments carry amount / direction / notes / entityId
+  // verbatim. `amount` is required (money boundary); `entityId` is a nullable
+  // FK whose target is known to exist, so the straight copy is FK-safe.
+  plannedPayments: Array<{
+    amount: string
+    direction: FlooringPaymentDirection
+    notes: string | null
+    entityId: string | null
+  }>
 }
 
 export type CreateWorkOrderFromTemplateRecordResult = {
   workOrder: WorkOrderDetail
   items: WorkOrderMaterialItemRow[]
+  plannedPayments: WorkOrderPlannedPaymentRow[]
 }
 
 // Sync carries the template item's quantity through verbatim. Quantity is
@@ -103,6 +118,12 @@ export type CreateWorkOrderFromTemplateRecordResult = {
 // NULL on the new work-order item rather than coerced to 0.
 function toItemDecimal(value: string): Prisma.Decimal | string | null {
   return value.trim() ? value : null
+}
+
+// Money write boundary (money standard): planned-payment amount is required —
+// the canonical fixed-scale-2 string handed straight to Prisma (coerced to Decimal).
+function toMoney(value: string): string {
+  return normalizeMoneyAmount(value)
 }
 
 export async function createWorkOrderFromTemplateRecord(
@@ -128,6 +149,21 @@ export async function createWorkOrderFromTemplateRecord(
     })
   }
 
+  if (input.plannedPayments.length > 0) {
+    await client.flooringWorkOrderPlannedPayment.createMany({
+      data: input.plannedPayments.map((payment) => ({
+        workOrderId: created.id,
+        amount: toMoney(payment.amount),
+        direction: payment.direction,
+        notes: payment.notes ? payment.notes : null,
+        entityId: payment.entityId,
+        createdBy: input.actorEmail,
+        updatedBy: input.actorEmail,
+      })),
+    })
+  }
+
   const items = await listWorkOrderMaterialItems(created.id, client)
-  return { workOrder: normalizeWorkOrder(created), items }
+  const plannedPayments = await listWorkOrderPlannedPayments(created.id, client)
+  return { workOrder: normalizeWorkOrder(created), items, plannedPayments }
 }
