@@ -9,7 +9,6 @@ const templatePlannedPaymentSelect = {
   id: true,
   amount: true,
   direction: true,
-  paymentDate: true,
   notes: true,
   entityId: true,
   // Linked entity name + type chips — read-only hydration flattened by the

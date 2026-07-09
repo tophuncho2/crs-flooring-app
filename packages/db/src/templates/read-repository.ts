@@ -114,7 +114,6 @@ const templateDetailSelect = {
       id: true,
       amount: true,
       direction: true,
-      paymentDate: true,
       notes: true,
       entityId: true,
       entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },

@@ -240,7 +240,7 @@ export function validateTemplatePlannedProductsDiffInput(
 // --- Planned-payments section diff validator ---
 // The §3 payment plan. Mirrors the product diff validators but throws the
 // planned-payment error class so the client keys off its distinct code. Fields:
-// amount (required money), direction (REVENUE|EXPENSE), paymentDate (optional).
+// amount (required money), direction (REVENUE|EXPENSE).
 
 function failPlannedPaymentsDiff(message: string, field?: string): never {
   throw new TemplatePlannedPaymentExecutionError({
@@ -278,12 +278,6 @@ function requireDirection(value: unknown, path: string): FlooringPaymentDirectio
   failPlannedPaymentsDiff(`${path} must be REVENUE or EXPENSE`, path)
 }
 
-// Optional date — carried as a passthrough string ("" = unset); the write
-// boundary coerces to a Date or NULL (mirrors optionalQuantity's leniency).
-function optionalDateString(value: unknown): string {
-  return typeof value === "string" ? value : ""
-}
-
 // Nullable entity link id: null/undefined/"" = unlinked, a non-empty string =
 // the linked entity. Folds missing → null (the grid always sends the field, but
 // stays defensive). Referential validity is enforced by the FK (P2003), not here.
@@ -299,7 +293,6 @@ function validatePlannedPaymentForm(value: unknown, path: string): TemplatePlann
   return {
     amount: requireAmount(obj.amount, `${path}.amount`),
     direction: requireDirection(obj.direction, `${path}.direction`),
-    paymentDate: optionalDateString(obj.paymentDate),
     notes:
       optionalBoundedText(
         obj.notes,
@@ -341,8 +334,8 @@ export function validateTemplatePlannedPaymentsDiffInput(
 // --- Invoice-items section diff validator ---
 // The §3 invoice item plan — a structural mirror of the planned-payments
 // validator but a smaller shape: amount (required money) · direction
-// (REVENUE|EXPENSE) · notes only. No paymentDate, no entity link. Throws the
-// invoice-item error class so the client keys off its distinct code.
+// (REVENUE|EXPENSE) · notes only. No entity link. Throws the invoice-item
+// error class so the client keys off its distinct code.
 
 function failInvoiceItemsDiff(message: string, field?: string): never {
   throw new TemplateInvoiceItemExecutionError({

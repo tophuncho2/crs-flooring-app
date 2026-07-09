@@ -4,8 +4,8 @@ import type { FlooringPaymentDirection } from "../../payments/types.js"
  * An invoice item on a template. A structural mirror of
  * TemplatePlannedPaymentRow but a DELIBERATELY SMALLER shape: `amount` is the
  * unsigned money-of-record string (the money standard), `direction` carries the
- * sign, and `notes` is short free-text. NO paymentDate and NO entity link — the
- * invoice side diverges from the planned side by design.
+ * sign, and `notes` is short free-text. NO entity link — the invoice side
+ * diverges from the planned side by design.
  */
 export type TemplateInvoiceItemRow = {
   id: string

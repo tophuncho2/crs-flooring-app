@@ -26,8 +26,6 @@ export type TemplatePlannedPaymentLocal = {
   amount: string
   // REVENUE | EXPENSE — carries the amount's sign and the cell chip's tone.
   direction: FlooringPaymentDirection
-  // "" = unset (persisted NULL). DateCell edits it as YYYY-MM-DD.
-  paymentDate: string
   // Short free-text note; "" = unset (persisted NULL).
   notes: string
   // Optional entity link (null = unlinked) — the only writable/diffed link field.
@@ -48,7 +46,6 @@ function toLocalItem(row: TemplatePlannedPaymentRow): TemplatePlannedPaymentLoca
     id: row.id,
     amount: row.amount,
     direction: row.direction,
-    paymentDate: row.paymentDate,
     notes: row.notes,
     entityId: row.entityId,
     entityName: row.entityName,
@@ -64,7 +61,7 @@ function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
     record.plannedPayments.map(
       (row) =>
-        `${row.id}:${row.amount}:${row.direction}:${row.paymentDate}:${row.notes}:${row.entityId}`,
+        `${row.id}:${row.amount}:${row.direction}:${row.notes}:${row.entityId}`,
     ),
   )
 }
@@ -73,7 +70,6 @@ function itemsDiffer(local: TemplatePlannedPaymentLocal, server: TemplatePlanned
   return (
     local.amount !== server.amount ||
     local.direction !== server.direction ||
-    local.paymentDate !== server.paymentDate ||
     local.notes !== server.notes ||
     local.entityId !== server.entityId
   )
@@ -83,7 +79,6 @@ function toDiffForm(local: TemplatePlannedPaymentLocal): TemplatePlannedPaymentF
   return {
     amount: local.amount,
     direction: local.direction,
-    paymentDate: local.paymentDate,
     notes: local.notes,
     // Only the writable link — entityName/entityTypes are display hydration and
     // must never enter the diff form.
@@ -162,7 +157,6 @@ export function useTemplatePlannedPaymentsSection({
           id: createLocalRecordRowId("template-planned-payment"),
           amount: "",
           direction: "EXPENSE",
-          paymentDate: "",
           notes: "",
           entityId: null,
           entityName: null,

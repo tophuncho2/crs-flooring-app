@@ -1,6 +1,6 @@
 "use client"
 
-import { ChoiceChipCell, type ChoiceChipOption, DateCell, MoneyCell, TextCell } from "@/engines/record-view"
+import { ChoiceChipCell, type ChoiceChipOption, MoneyCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { CellChip, RecordDeleteButton } from "@/engines/common"
 import { TEMPLATE_PLANNED_PAYMENT_NOTES_MAX, type EntityOption } from "@builders/domain"
@@ -22,7 +22,6 @@ const TEMPLATE_PLANNED_PAYMENTS_COLUMNS: DataTableColumn<TemplatePlannedPaymentL
   { key: "amount", label: "Amount", width: 160, align: "end" },
   // Direction sits to the RIGHT of amount and carries the tone chip/badge.
   { key: "direction", label: "Direction", width: 160 },
-  { key: "paymentDate", label: "Date", width: 170 },
   { key: "notes", label: "Notes", width: 320 },
 ]
 
@@ -105,15 +104,6 @@ export function TemplatePlannedPaymentsGrid({
                 options={DIRECTION_OPTIONS}
                 onChange={(next) => onChangeField(item.id, "direction", next)}
                 ariaLabel="Planned payment direction"
-              />
-            )
-          case "paymentDate":
-            return (
-              <DateCell
-                editable={editable}
-                value={item.paymentDate}
-                onChange={(next) => onChangeField(item.id, "paymentDate", next)}
-                ariaLabel="Planned payment date"
               />
             )
           case "notes":

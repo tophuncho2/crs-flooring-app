@@ -7,7 +7,6 @@ type TemplatePlannedPaymentInput = {
   id: string
   amount: { toString(): string }
   direction: FlooringPaymentDirection
-  paymentDate: Date | string | null
   notes: string | null
   entityId: string | null
   // Nested entity relation (from `entityTypesSelect` in the data layer); flattened
@@ -38,7 +37,6 @@ export function normalizeTemplatePlannedPayment(
     // flag every saved row as still-dirty.
     amount: normalizeMoneyAmount(item.amount.toString()),
     direction: item.direction,
-    paymentDate: toIso(item.paymentDate),
     notes: item.notes ?? "",
     entityId: item.entityId ?? null,
     // Flatten the nested entity join into the flat read-only display fields

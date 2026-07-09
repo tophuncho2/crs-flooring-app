@@ -68,7 +68,6 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
               form: {
                 amount: "10.00",
                 direction: "REVENUE",
-                paymentDate: "",
                 notes: "deposit",
                 entityId: "ent-1",
               },
@@ -97,7 +96,7 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
         {
           templateId: "tpl-1",
           diff: {
-            added: [{ tempId: "t1", form: { amount: "0", direction: "REVENUE", paymentDate: "" } }],
+            added: [{ tempId: "t1", form: { amount: "0", direction: "REVENUE" } }],
             modified: [],
             deleted: [],
           },
@@ -123,7 +122,6 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
                 form: {
                   amount: "10.00",
                   direction: "REVENUE",
-                  paymentDate: "",
                   notes: "",
                   entityId: "missing-entity",
                 },

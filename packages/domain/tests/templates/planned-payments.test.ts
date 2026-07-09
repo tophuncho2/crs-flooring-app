@@ -9,7 +9,6 @@ describe("normalizeTemplatePlannedPayment", () => {
     // canonicalize to "10.50" (the round-trip dirty-diff trap guard).
     amount: { toString: () => "10.5" } as { toString(): string },
     direction: "REVENUE" as const,
-    paymentDate: "2026-07-04T00:00:00.000Z",
     notes: "deposit",
     entityId: "ent-1",
     entity: {
@@ -22,11 +21,10 @@ describe("normalizeTemplatePlannedPayment", () => {
     updatedBy: "editor@example.com",
   }
 
-  it("canonicalizes the amount and carries direction + date", () => {
+  it("canonicalizes the amount and carries direction", () => {
     const row = normalizeTemplatePlannedPayment(base)
     expect(row.amount).toBe("10.50")
     expect(row.direction).toBe("REVENUE")
-    expect(row.paymentDate).toBe("2026-07-04T00:00:00.000Z")
     expect(row.notes).toBe("deposit")
   })
 
@@ -44,31 +42,21 @@ describe("normalizeTemplatePlannedPayment", () => {
     expect(row.entityTypes).toEqual([])
   })
 
-  it("coalesces a missing date + actors + notes", () => {
+  it("coalesces missing actors + notes", () => {
     const row = normalizeTemplatePlannedPayment({
       ...base,
-      paymentDate: null,
       notes: null,
       createdBy: null,
       updatedBy: null,
     })
-    expect(row.paymentDate).toBe("")
     expect(row.notes).toBe("")
     expect(row.createdBy).toBeNull()
     expect(row.updatedBy).toBeNull()
   })
-
-  it("converts a Date paymentDate to an ISO string", () => {
-    const row = normalizeTemplatePlannedPayment({
-      ...base,
-      paymentDate: new Date("2026-07-04T00:00:00.000Z"),
-    })
-    expect(row.paymentDate).toBe("2026-07-04T00:00:00.000Z")
-  })
 })
 
 describe("validateTemplatePlannedPaymentForm", () => {
-  const form = { amount: "10.00", direction: "REVENUE" as const, paymentDate: "" }
+  const form = { amount: "10.00", direction: "REVENUE" as const }
 
   it("requires an amount", () => {
     expect(validateTemplatePlannedPaymentForm({ ...form, amount: "" })).toMatch(/required/)

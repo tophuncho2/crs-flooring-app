@@ -10,22 +10,13 @@ import { listTemplatePlannedPayments } from "./read-repository.js"
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
 // Wire-input shape for planned-payment writes. The user-supplied form carries the
-// amount (required), direction, and optional date.
+// amount (required) and direction.
 export type WriteTemplatePlannedPaymentInput = TemplatePlannedPaymentForm
 
 // Money write boundary (money standard): amount is required — the canonical
 // fixed-scale-2 string handed straight to Prisma (which coerces to Decimal).
 function toMoney(value: string): string {
   return normalizeMoneyAmount(value)
-}
-
-// "" / whitespace = unset (stored NULL); otherwise coerced to a Date. Mirrors the
-// payments `optionalDate` write boundary.
-function optionalDate(value: string): Date | null {
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  const date = new Date(trimmed)
-  return Number.isNaN(date.getTime()) ? null : date
 }
 
 export type ApplyTemplatePlannedPaymentsDiffInput = {
@@ -65,7 +56,6 @@ export async function applyTemplatePlannedPaymentsDiff(
         templateId: input.templateId,
         amount: toMoney(draft.input.amount),
         direction: draft.input.direction,
-        paymentDate: optionalDate(draft.input.paymentDate),
         notes: draft.input.notes ? draft.input.notes : null,
         // Optional entity link — scalar FK on the unchecked createMany input
         // (null = unlinked). The form always carries entityId, so no tri-state.
@@ -82,7 +72,6 @@ export async function applyTemplatePlannedPaymentsDiff(
     const data: Prisma.TemplatePlannedPaymentUncheckedUpdateInput = {
       amount: toMoney(update.input.amount),
       direction: update.input.direction,
-      paymentDate: optionalDate(update.input.paymentDate),
       notes: update.input.notes ? update.input.notes : null,
       entityId: update.input.entityId,
       updatedBy: input.actorEmail,
