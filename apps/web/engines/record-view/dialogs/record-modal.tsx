@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 
 import { hasOpenPopoverLayer } from "@/engines/common"
 
@@ -57,9 +58,16 @@ export function RecordModal({
     return () => document.removeEventListener("keydown", handleKey)
   }, [open, onClose])
 
-  if (!open) return null
+  if (!open || typeof document === "undefined") return null
 
-  return (
+  // Portal to <body> so the overlay is caged to the engine, not the mount site.
+  // As a plain inline element, `fixed inset-0` is trapped by any ancestor that
+  // establishes a containing block (a transform / filter / stacking context) —
+  // e.g. a record section — so the overlay would only cover that box and the app
+  // shell would paint through. Portaling makes mount location irrelevant: every
+  // create modal (and any future one) covers the full viewport regardless of
+  // where it is rendered in the tree.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -113,6 +121,7 @@ export function RecordModal({
           <div className="border-t border-[var(--panel-border)] px-5 py-3.5">{footer}</div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
