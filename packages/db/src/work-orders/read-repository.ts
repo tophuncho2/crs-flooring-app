@@ -90,7 +90,7 @@ export type WorkOrdersListArgs = {
   pagination?: { skip: number; take: number }
 }
 
-function buildWorkOrdersWhere(
+export function buildWorkOrdersWhere(
   filters: WorkOrdersListFilterMap | undefined,
 ): Prisma.FlooringWorkOrderWhereInput | undefined {
   const andClauses: Prisma.FlooringWorkOrderWhereInput[] = []

@@ -16,12 +16,23 @@ import {
   useListSelection,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
-import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import {
+  FilterPickerChip,
+  MultiFilterPickerChip,
+  usePickedOptionLabel,
+  useMultiPickedOptionLabels,
+} from "@/engines/picker"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
-import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
-import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
+import {
+  WAREHOUSE_OPTIONS_QUERY_KEY,
+  searchWarehouseOptionsRequest,
+} from "@/modules/warehouse/data/warehouse-options-request"
+import {
+  JOB_TYPE_OPTIONS_QUERY_KEY,
+  searchJobTypeOptionsRequest,
+} from "@/modules/job-types/data/job-type-options-request"
 import type { WorkOrdersListFilters } from "@builders/application"
 import { WORK_ORDER_EXPORT_COLUMNS } from "@builders/domain"
 import type {
@@ -49,6 +60,17 @@ import {
 import { FilterGroupLabel } from "./toolbar-controls/filter-group-label"
 import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-body"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
+
+// Stable option mappers (module-level so the chip's memoized option list
+// doesn't recompute every render).
+const toWarehouseFilterOption = (option: WarehouseOption) => ({
+  id: option.id,
+  title: option.name,
+})
+const toJobTypeFilterOption = (option: JobTypeOption) => ({
+  id: option.id,
+  title: option.name,
+})
 
 export default function WorkOrdersClient({
   initialSearchQuery,
@@ -151,8 +173,8 @@ export default function WorkOrdersClient({
   const selectedEntityId = filters.entityId?.[0] ?? null
   const selectedPropertyId = filters.propertyId?.[0] ?? null
   const selectedTemplateId = filters.templateId?.[0] ?? null
-  const selectedWarehouseId = filters.warehouseId?.[0] ?? null
-  const selectedJobTypeId = filters.jobTypeId?.[0] ?? null
+  const selectedWarehouseIds = useMemo(() => filters.warehouseId ?? [], [filters.warehouseId])
+  const selectedJobTypeIds = useMemo(() => filters.jobTypeId ?? [], [filters.jobTypeId])
   const selectedVacancy = filters.vacancy?.[0] ?? null
   const selectedScheduledStart = filters.scheduledForStart?.[0] ?? null
   const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
@@ -192,17 +214,31 @@ export default function WorkOrdersClient({
     return match ? match.unitType || null : null
   }, [selectedTemplateId, initialSelectedTemplate, initialTemplateOptions])
 
-  const warehouseLabel = useMemo(() => {
-    if (!selectedWarehouseId) return null
-    if (initialSelectedWarehouse?.id === selectedWarehouseId) return initialSelectedWarehouse.name
-    return initialWarehouseOptions.find((o) => o.id === selectedWarehouseId)?.name ?? null
-  }, [selectedWarehouseId, initialSelectedWarehouse, initialWarehouseOptions])
+  // Seed labels for every selected id (multi-select) — the picked-label hook
+  // overlays async-search picks on top of these SSR-frozen seeds.
+  const warehouseSeedLabels = useMemo(
+    () =>
+      selectedWarehouseIds.flatMap((id) => {
+        const name =
+          initialSelectedWarehouse?.id === id
+            ? initialSelectedWarehouse.name
+            : initialWarehouseOptions.find((o) => o.id === id)?.name ?? null
+        return name ? [{ id, label: name }] : []
+      }),
+    [selectedWarehouseIds, initialSelectedWarehouse, initialWarehouseOptions],
+  )
 
-  const jobTypeLabel = useMemo(() => {
-    if (!selectedJobTypeId) return null
-    if (initialSelectedJobType?.id === selectedJobTypeId) return initialSelectedJobType.name
-    return initialJobTypeOptions.find((o) => o.id === selectedJobTypeId)?.name ?? null
-  }, [selectedJobTypeId, initialSelectedJobType, initialJobTypeOptions])
+  const jobTypeSeedLabels = useMemo(
+    () =>
+      selectedJobTypeIds.flatMap((id) => {
+        const name =
+          initialSelectedJobType?.id === id
+            ? initialSelectedJobType.name
+            : initialJobTypeOptions.find((o) => o.id === id)?.name ?? null
+        return name ? [{ id, label: name }] : []
+      }),
+    [selectedJobTypeIds, initialSelectedJobType, initialJobTypeOptions],
+  )
 
   // Trigger-label glue: the useMemos above seed the label from the SSR options;
   // the hook overlays the actually-picked option so async-search picks (outside
@@ -222,14 +258,14 @@ export default function WorkOrdersClient({
     templateLabel,
     (option) => option.unitType,
   )
-  const warehouseFilter = usePickedOptionLabel<WarehouseOption>(
-    selectedWarehouseId,
-    warehouseLabel,
+  const warehouseFilter = useMultiPickedOptionLabels<WarehouseOption>(
+    selectedWarehouseIds,
+    warehouseSeedLabels,
     (option) => option.name,
   )
-  const jobTypeFilter = usePickedOptionLabel<JobTypeOption>(
-    selectedJobTypeId,
-    jobTypeLabel,
+  const jobTypeFilter = useMultiPickedOptionLabels<JobTypeOption>(
+    selectedJobTypeIds,
+    jobTypeSeedLabels,
     (option) => option.name,
   )
 
@@ -288,15 +324,15 @@ export default function WorkOrdersClient({
   )
 
   const handleWarehouseChange = useCallback(
-    (id: string | null) => {
-      onFilterChange("warehouseId", id ? [id] : [])
+    (ids: string[]) => {
+      onFilterChange("warehouseId", ids)
     },
     [onFilterChange],
   )
 
   const handleJobTypeChange = useCallback(
-    (id: string | null) => {
-      onFilterChange("jobTypeId", id ? [id] : [])
+    (ids: string[]) => {
+      onFilterChange("jobTypeId", ids)
     },
     [onFilterChange],
   )
@@ -328,8 +364,8 @@ export default function WorkOrdersClient({
       Boolean(selectedEntityId) ||
       Boolean(selectedPropertyId) ||
       Boolean(selectedTemplateId) ||
-      Boolean(selectedWarehouseId) ||
-      Boolean(selectedJobTypeId) ||
+      selectedWarehouseIds.length > 0 ||
+      selectedJobTypeIds.length > 0 ||
       Boolean(selectedVacancy) ||
       Boolean(selectedScheduledStart) ||
       Boolean(selectedScheduledEnd),
@@ -337,8 +373,8 @@ export default function WorkOrdersClient({
       selectedEntityId,
       selectedPropertyId,
       selectedTemplateId,
-      selectedWarehouseId,
-      selectedJobTypeId,
+      selectedWarehouseIds,
+      selectedJobTypeIds,
       selectedVacancy,
       selectedScheduledStart,
       selectedScheduledEnd,
@@ -477,32 +513,32 @@ export default function WorkOrdersClient({
             {/* Attributes — independent narrowing filters. */}
             <div className="flex flex-col gap-2">
               <FilterGroupLabel>Attributes</FilterGroupLabel>
-              <FilterPickerChip<WarehouseOption>
-                value={selectedWarehouseId}
+              <MultiFilterPickerChip<WarehouseOption>
+                values={selectedWarehouseIds}
                 onChange={handleWarehouseChange}
-                selectedLabel={warehouseFilter.selectedLabel}
+                labels={warehouseFilter.labels}
                 onOptionSelected={warehouseFilter.onOptionSelected}
                 nounSingular="Warehouse"
                 nounPlural="warehouses"
                 subject="work orders"
-              >
-                {(chrome) => (
-                  <WarehousePicker {...chrome} initialOptions={initialWarehouseOptions} />
-                )}
-              </FilterPickerChip>
-              <FilterPickerChip<JobTypeOption>
-                value={selectedJobTypeId}
+                bucketKey={WAREHOUSE_OPTIONS_QUERY_KEY}
+                pagedSearchFn={searchWarehouseOptionsRequest}
+                toOption={toWarehouseFilterOption}
+                initialOptions={initialWarehouseOptions}
+              />
+              <MultiFilterPickerChip<JobTypeOption>
+                values={selectedJobTypeIds}
                 onChange={handleJobTypeChange}
-                selectedLabel={jobTypeFilter.selectedLabel}
+                labels={jobTypeFilter.labels}
                 onOptionSelected={jobTypeFilter.onOptionSelected}
                 nounSingular="Job type"
                 nounPlural="job types"
                 subject="work orders"
-              >
-                {(chrome) => (
-                  <JobTypePicker {...chrome} initialOptions={initialJobTypeOptions} />
-                )}
-              </FilterPickerChip>
+                bucketKey={JOB_TYPE_OPTIONS_QUERY_KEY}
+                searchFn={searchJobTypeOptionsRequest}
+                toOption={toJobTypeFilterOption}
+                initialOptions={initialJobTypeOptions}
+              />
               <VacancyFilterChip value={selectedVacancy} onChange={handleVacancyChange} />
             </div>
           </div>
