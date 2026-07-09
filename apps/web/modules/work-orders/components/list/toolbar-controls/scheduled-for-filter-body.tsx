@@ -31,7 +31,6 @@ const PRESET_CLASS_NAME =
  * surrounding uppercase styling for the inputs.
  */
 export function ScheduledForFilterBody({ start, end, onChange }: ScheduledForFilterBodyProps) {
-  const isActive = Boolean(start || end)
   const applyPreset = (range: ScheduledForRange) => onChange(range.start, range.end)
 
   return (
@@ -70,17 +69,6 @@ export function ScheduledForFilterBody({ start, end, onChange }: ScheduledForFil
           className={`${DATE_INPUT_CLASS_NAME} flex-1`}
         />
       </label>
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => onChange(null, null)}
-          disabled={!isActive}
-          className="rounded-md px-2.5 py-1 text-xs text-[var(--foreground)]/70 transition hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Clear
-        </button>
-      </div>
     </div>
   )
 }
