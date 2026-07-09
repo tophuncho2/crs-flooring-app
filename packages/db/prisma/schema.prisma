@@ -206,6 +206,7 @@ model Certificate {
   updatedAt      DateTime  @updatedAt
   createdBy      String?
   updatedBy      String?
+  files          CertificateFile[]
 
   @@index([entityId]) // entity filter
   @@index([expirationDate]) // default date sort
@@ -213,6 +214,25 @@ model Certificate {
   @@index([createdAt, id]) // list sort tiebreak
   @@index([updatedAt, id]) // list sort tiebreak
   @@map("certificate")
+}
+
+// A file attached to a certificate (the COI PDF, endorsements, scans, photos).
+// Stored in the private S3 bucket under `objectKey`; the row is the durable
+// record and `objectKey` its pointer. Cascade-deletes with its parent — the FK
+// removes the ROW, and `deleteCertificateUseCase` removes the S3 OBJECT.
+model CertificateFile {
+  id            String      @id @default(uuid())
+  certificateId String
+  certificate   Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  objectKey     String      @unique
+  fileName      String      @db.VarChar(255)
+  contentType   String      @db.VarChar(100)
+  sizeBytes     Int
+  createdAt     DateTime    @default(now())
+  createdBy     String?
+
+  @@index([certificateId]) // parent file list
+  @@map("certificate_file")
 }
 
 model Property {
