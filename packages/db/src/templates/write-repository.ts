@@ -92,22 +92,6 @@ const templateDetailSelect = {
     },
     orderBy: { createdAt: "asc" as const },
   },
-  // Invoice items — a smaller mirror of plannedPayments (amount · direction ·
-  // notes only). Carried on the create/update detail return too (empty on a
-  // freshly-created template).
-  invoiceItems: {
-    select: {
-      id: true,
-      amount: true,
-      direction: true,
-      notes: true,
-      createdAt: true,
-      updatedAt: true,
-      createdBy: true,
-      updatedBy: true,
-    },
-    orderBy: { createdAt: "asc" as const },
-  },
 } as const
 
 export async function createTemplateRecord(

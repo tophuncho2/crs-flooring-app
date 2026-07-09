@@ -1,7 +1,6 @@
 import { z } from "zod"
 import {
   TemplateExecutionError,
-  TemplateInvoiceItemExecutionError,
   TemplatePlannedPaymentExecutionError,
   TemplatePlannedProductExecutionError,
 } from "@builders/application"
@@ -23,14 +22,11 @@ import {
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
-  TEMPLATE_INVOICE_ITEM_NOTES_MAX,
   TEMPLATE_PLANNED_PAYMENT_NOTES_MAX,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type FlooringPaymentDirection,
   type PaletteColor,
-  type TemplateInvoiceItemForm,
-  type TemplateInvoiceItemsDiff,
   type TemplatePlannedPaymentForm,
   type TemplatePlannedPaymentsDiff,
   type TemplatePlannedProductForm,
@@ -326,90 +322,6 @@ export function validateTemplatePlannedPaymentsDiffInput(
   const deleted = requirePaymentsArray(body.deleted, "deleted").map((entry, idx) => {
     const obj = requirePaymentsObject(entry, `deleted[${idx}]`)
     return { id: requireString(obj.id, `deleted[${idx}].id`, failPlannedPaymentsDiff) }
-  })
-
-  return { added, modified, deleted }
-}
-
-// --- Invoice-items section diff validator ---
-// The §3 invoice item plan — a structural mirror of the planned-payments
-// validator but a smaller shape: amount (required money) · direction
-// (REVENUE|EXPENSE) · notes only. No entity link. Throws the invoice-item
-// error class so the client keys off its distinct code.
-
-function failInvoiceItemsDiff(message: string, field?: string): never {
-  throw new TemplateInvoiceItemExecutionError({
-    code: "TEMPLATE_INVOICE_ITEM_VALIDATION_FAILED",
-    message,
-    status: 400,
-    field,
-  })
-}
-
-function requireInvoiceItemsArray(value: unknown, path: string): unknown[] {
-  if (!Array.isArray(value)) failInvoiceItemsDiff(`${path} must be an array`, path)
-  return value
-}
-
-function requireInvoiceItemsObject(value: unknown, path: string): Record<string, unknown> {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    failInvoiceItemsDiff(`${path} must be an object`, path)
-  }
-  return value as Record<string, unknown>
-}
-
-// Required money field (money standard): present → valid → canonicalized. The
-// domain rule additionally enforces > 0 on the use-case side.
-function requireInvoiceAmount(value: unknown, path: string): string {
-  if (typeof value !== "string" || value.trim() === "") {
-    failInvoiceItemsDiff(`${path} is required`, path)
-  }
-  if (!isValidMoneyAmount(value)) failInvoiceItemsDiff(`${path} must be a valid amount`, path)
-  return normalizeMoneyAmount(value)
-}
-
-function requireInvoiceDirection(value: unknown, path: string): FlooringPaymentDirection {
-  if (value === "REVENUE" || value === "EXPENSE") return value
-  failInvoiceItemsDiff(`${path} must be REVENUE or EXPENSE`, path)
-}
-
-function validateInvoiceItemForm(value: unknown, path: string): TemplateInvoiceItemForm {
-  const obj = requireInvoiceItemsObject(value, path)
-  return {
-    amount: requireInvoiceAmount(obj.amount, `${path}.amount`),
-    direction: requireInvoiceDirection(obj.direction, `${path}.direction`),
-    notes:
-      optionalBoundedText(
-        obj.notes,
-        TEMPLATE_INVOICE_ITEM_NOTES_MAX,
-        `${path}.notes`,
-        failInvoiceItemsDiff,
-      ) ?? "",
-  }
-}
-
-export function validateTemplateInvoiceItemsDiffInput(
-  body: Record<string, unknown>,
-): TemplateInvoiceItemsDiff {
-  const added = requireInvoiceItemsArray(body.added, "added").map((entry, idx) => {
-    const obj = requireInvoiceItemsObject(entry, `added[${idx}]`)
-    return {
-      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failInvoiceItemsDiff),
-      form: validateInvoiceItemForm(obj.form, `added[${idx}].form`),
-    }
-  })
-
-  const modified = requireInvoiceItemsArray(body.modified, "modified").map((entry, idx) => {
-    const obj = requireInvoiceItemsObject(entry, `modified[${idx}]`)
-    return {
-      id: requireString(obj.id, `modified[${idx}].id`, failInvoiceItemsDiff),
-      form: validateInvoiceItemForm(obj.form, `modified[${idx}].form`),
-    }
-  })
-
-  const deleted = requireInvoiceItemsArray(body.deleted, "deleted").map((entry, idx) => {
-    const obj = requireInvoiceItemsObject(entry, `deleted[${idx}]`)
-    return { id: requireString(obj.id, `deleted[${idx}].id`, failInvoiceItemsDiff) }
   })
 
   return { added, modified, deleted }
