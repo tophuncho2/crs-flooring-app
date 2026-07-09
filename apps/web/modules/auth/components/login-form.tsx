@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Layers } from "lucide-react"
 import { authClient } from "@/modules/auth/auth-client"
+import { DEFAULT_DASHBOARD_ROUTE } from "@/hooks/navigation"
 
 export default function LoginForm({
   error,
@@ -17,7 +18,7 @@ export default function LoginForm({
     setIsSubmitting(true)
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard/inventory",
+      callbackURL: DEFAULT_DASHBOARD_ROUTE,
       errorCallbackURL: "/login?error=denied",
     })
   }

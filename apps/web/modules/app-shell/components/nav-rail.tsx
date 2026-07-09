@@ -3,28 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import {
-  Circle,
-  Contact,
-  DollarSign,
-  FileText,
-  History,
-  LayoutGrid,
-  MapPin,
-  Package,
-  PanelLeftOpen,
-  PencilRuler,
-  Ruler,
-  ShelvingUnit,
-  Tags,
-  TrafficCone,
-  Upload,
-  UserPen,
-  UserPlus,
-  Warehouse,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react"
+import { Circle, PanelLeftOpen } from "lucide-react"
 import { canManageUsers, type UserRank } from "@builders/domain"
 import { SidePanel } from "./side-panel"
 import UserMenu from "./user-menu"
@@ -33,34 +12,14 @@ import {
   FLOORING_LIST_TINT_PANEL_CLASS_NAME,
 } from "@/engines/common"
 import {
+  FLOORING_HOME_NAV_ITEM,
   FLOORING_NAV_GROUPS,
   FLOORING_NAV_ITEMS,
   NAV_RAIL_WIDTH_CLASS,
   isActiveFlooringItem,
   isFlooringRoute,
 } from "@/modules/app-shell/navigation/definitions"
-
-// Placeholder icon set drawn from lucide-react (already a dependency — no new
-// packages, deploy-safe). Swap to custom artwork later by editing this map.
-const NAV_ICONS: Record<string, LucideIcon> = {
-  "flooring-work-orders": TrafficCone,
-  "templates": FileText,
-  "flooring-properties": MapPin,
-  "flooring-entities": Contact,
-  "flooring-payments": DollarSign,
-  "flooring-adjustments": PencilRuler,
-  "flooring-inventory": ShelvingUnit,
-  "flooring-imports": Upload,
-  products: Package,
-  "flooring-job-types": Wrench,
-  "flooring-entity-types": Tags,
-  "flooring-warehouse": Warehouse,
-  "flooring-unit-of-measures": Ruler,
-  "flooring-categories": LayoutGrid,
-  "flooring-users": UserPen,
-  "flooring-invites": UserPlus,
-  "flooring-user-activity": History,
-}
+import { NAV_ICONS } from "@/modules/app-shell/navigation/nav-icons"
 
 type NavRailProps = {
   email: string
@@ -100,6 +59,11 @@ export default function NavRail({ email, rank }: NavRailProps) {
     router.push(href)
   }
 
+  // Standalone Home — pinned above the grouped nav in both surfaces, universal
+  // (no rank gate). Reuses the same active-state + icon conventions as the groups.
+  const isHomeActive = isActiveFlooringItem(pathname, FLOORING_HOME_NAV_ITEM.href)
+  const HomeIcon = NAV_ICONS[FLOORING_HOME_NAV_ITEM.slug] ?? Circle
+
   return (
     <>
       {/* Persistent icon rail — always visible, every item navigates. */}
@@ -119,6 +83,24 @@ export default function NavRail({ email, rank }: NavRailProps) {
         <div aria-hidden="true" className="mx-3 my-2 border-t border-[var(--panel-border)]/70" />
 
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-3">
+          <Link
+            href={FLOORING_HOME_NAV_ITEM.href}
+            title={FLOORING_HOME_NAV_ITEM.name}
+            aria-label={FLOORING_HOME_NAV_ITEM.name}
+            aria-current={isHomeActive ? "page" : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              handleNavigate(FLOORING_HOME_NAV_ITEM.href)
+            }}
+            className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl transition ${
+              isHomeActive
+                ? "bg-blue-500 text-black shadow-[0_0_12px_rgba(59,130,246,0.18)]"
+                : "text-[var(--foreground)]/70 hover:bg-[var(--panel-hover)]"
+            }`}
+          >
+            <HomeIcon size={20} />
+          </Link>
+          <div aria-hidden="true" className="mx-3 my-1 border-t border-[var(--panel-border)]/70" />
           {FLOORING_NAV_GROUPS.map((group, groupIndex) => {
             const groupItems = FLOORING_NAV_ITEMS.filter(
               (item) => item.group === group.id && (canManageUserPages || group.id !== "users"),
@@ -178,6 +160,23 @@ export default function NavRail({ email, rank }: NavRailProps) {
         panelClassName={FLOORING_LIST_TINT_PANEL_CLASS_NAME}
       >
         <nav className="flex flex-col py-2">
+          <Link
+            href={FLOORING_HOME_NAV_ITEM.href}
+            aria-current={isHomeActive ? "page" : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              handleNavigate(FLOORING_HOME_NAV_ITEM.href)
+            }}
+            className={
+              isHomeActive
+                ? `mx-2 my-1 inline-flex w-fit items-center gap-2 ${FLOORING_ACTIVE_NAV_TAB_CLASS_NAME}`
+                : "mx-2 my-1 flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
+            }
+          >
+            <HomeIcon size={16} />
+            {FLOORING_HOME_NAV_ITEM.name}
+          </Link>
+          <div aria-hidden="true" className="mx-4 my-2 border-t border-[var(--panel-border)]/70" />
           {FLOORING_NAV_GROUPS.map((group, groupIndex) => {
             const groupItems = FLOORING_NAV_ITEMS.filter(
               (item) => item.group === group.id && (canManageUserPages || group.id !== "users"),

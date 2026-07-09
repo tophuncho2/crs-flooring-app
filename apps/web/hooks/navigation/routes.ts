@@ -1,3 +1,10 @@
+/**
+ * The single post-login / default dashboard landing route. Referenced by the
+ * Google sign-in callbackURL, the bare `/dashboard` redirect, and the
+ * blocked-rank bounce so the landing target lives in exactly one place.
+ */
+export const DEFAULT_DASHBOARD_ROUTE = "/dashboard/home"
+
 export type RecordEntryAction =
   | {
       kind: "route"

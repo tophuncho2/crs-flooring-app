@@ -3,6 +3,7 @@ import { canManageUsers } from "@builders/domain"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth } from "@/server/auth/better-auth"
+import { DEFAULT_DASHBOARD_ROUTE } from "@/hooks/navigation"
 
 export type SessionUser = {
   id: string
@@ -46,7 +47,7 @@ export async function requireManageUsersAccess(): Promise<SessionUser> {
   const user = await requireSessionUser()
 
   if (!canManageUsers(user.rank)) {
-    redirect("/dashboard/inventory")
+    redirect(DEFAULT_DASHBOARD_ROUTE)
   }
 
   return user

@@ -20,6 +20,17 @@ export type FlooringNavItem = {
   group: FlooringNavGroupId
 }
 
+// Standalone Home entry — pinned above the grouped rail and used as the
+// post-login landing. Kept OUT of FLOORING_NAV_ITEMS (those are all grouped);
+// the rail renders it explicitly at the top with no group label. `group` is
+// unused for that render but keeps the FlooringNavItem type intact.
+export const FLOORING_HOME_NAV_ITEM: FlooringNavItem = {
+  slug: "flooring-home",
+  name: "Home",
+  href: "/dashboard/home",
+  group: "management",
+}
+
 export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-work-orders", name: "Work Orders", href: "/dashboard/work-orders", group: "management" },
   { slug: "templates", name: "Templates", href: "/dashboard/templates", group: "management" },
