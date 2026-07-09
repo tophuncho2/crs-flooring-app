@@ -41,50 +41,50 @@ export function PaginateControls({
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        {leading}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">{leading}</div>
+      <div className="flex items-center gap-4">
         <div className="tabular-nums">
           Page {page} of {Math.max(totalPages, 1)} · {totalItems} items
           {pageSize ? ` · ${pageSize}/page` : ""}
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {previousPageHref ? (
-          <a
-            href={hasPreviousPage ? previousPageHref : undefined}
-            aria-disabled={!hasPreviousPage || undefined}
-            className={BUTTON_CLASS_NAME}
-          >
-            ← Previous
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onPreviousPage}
-            disabled={!hasPreviousPage || !onPreviousPage}
-            className={BUTTON_CLASS_NAME}
-          >
-            ← Previous
-          </button>
-        )}
-        {nextPageHref ? (
-          <a
-            href={hasNextPage ? nextPageHref : undefined}
-            aria-disabled={!hasNextPage || undefined}
-            className={BUTTON_CLASS_NAME}
-          >
-            Next →
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onNextPage}
-            disabled={!hasNextPage || !onNextPage}
-            className={BUTTON_CLASS_NAME}
-          >
-            Next →
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {previousPageHref ? (
+            <a
+              href={hasPreviousPage ? previousPageHref : undefined}
+              aria-disabled={!hasPreviousPage || undefined}
+              className={BUTTON_CLASS_NAME}
+            >
+              ← Previous
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={onPreviousPage}
+              disabled={!hasPreviousPage || !onPreviousPage}
+              className={BUTTON_CLASS_NAME}
+            >
+              ← Previous
+            </button>
+          )}
+          {nextPageHref ? (
+            <a
+              href={hasNextPage ? nextPageHref : undefined}
+              aria-disabled={!hasNextPage || undefined}
+              className={BUTTON_CLASS_NAME}
+            >
+              Next →
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={onNextPage}
+              disabled={!hasNextPage || !onNextPage}
+              className={BUTTON_CLASS_NAME}
+            >
+              Next →
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
