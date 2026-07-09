@@ -1,7 +1,8 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import { listEntityTypesUseCase } from "@builders/application"
+import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireSessionUser } from "@/server/auth/session"
+import { requireRankAtLeast } from "@/server/auth/session"
 import EntityTypesClient from "@/modules/entity-types/components/list/entity-types-client"
 import {
   ENTITY_TYPES_LIST_QUERY_KEY,
@@ -13,7 +14,7 @@ export default async function FlooringEntityTypesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireRankAtLeast(ELEVATED_MODULE_MIN_RANK)
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseEntityTypesListInputFromSearchParams(resolvedSearchParams)

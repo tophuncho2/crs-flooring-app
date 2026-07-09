@@ -55,7 +55,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     href: "/dashboard/entities",
     group: "management",
   },
-  { slug: "flooring-entity-types", name: "Entity Types", href: "/dashboard/entity-types", group: "management" },
+  { slug: "flooring-entity-types", name: "Entity Types", href: "/dashboard/entity-types", group: "management", minRank: "TIER_1" },
   {
     slug: "flooring-certificate-tracking",
     name: "Certificate Tracking",

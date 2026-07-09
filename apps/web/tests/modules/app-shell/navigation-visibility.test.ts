@@ -28,11 +28,12 @@ describe("isNavItemVisible", () => {
     expect(isNavItemVisible(navItem, "TIER_3")).toBe(false)
   })
 
-  it("gates Warehouse + Certificate Tracking + Job Types at TIER_1 (hidden from TIER_2 + TIER_3)", () => {
+  it("gates Warehouse + Certificate Tracking + Job Types + Entity Types at TIER_1 (hidden from TIER_2 + TIER_3)", () => {
     for (const slug of [
       "flooring-warehouse",
       "flooring-certificate-tracking",
       "flooring-job-types",
+      "flooring-entity-types",
     ]) {
       const navItem = item(slug)
       expect(navItem.minRank).toBe("TIER_1")
