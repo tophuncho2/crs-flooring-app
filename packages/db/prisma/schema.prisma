@@ -577,6 +577,7 @@ model Template {
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   unitType             String                     @db.VarChar(40)
   customerName         String?                    @db.VarChar(100)
+  accountManager       String?                    @db.VarChar(100)
   description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
   installerInstructions String?                   @db.VarChar(500)

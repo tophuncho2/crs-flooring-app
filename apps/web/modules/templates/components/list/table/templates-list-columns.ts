@@ -15,6 +15,7 @@ export const TEMPLATES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<TemplateListR
   { key: "unitType", label: "Unit Type" },
   { key: "property", label: "Property" },
   { key: "customerName", label: "Customer Name" },
+  { key: "accountManager", label: "Account Manager" },
   { key: "entity", label: "Entity" },
   { key: "jobType", label: "Job Type" },
   { key: "warehouse", label: "Warehouse" },

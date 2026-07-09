@@ -28,6 +28,7 @@ type TemplateListInput = {
   color: PaletteColor
   unitType: string
   customerName: string | null
+  accountManager: string | null
   description: string | null
   propertyId: string | null
   property: { name: string; entity: { id: string; entity: string } | null } | null
@@ -66,6 +67,7 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     color: template.color,
     unitType: template.unitType,
     customerName: template.customerName ?? "",
+    accountManager: template.accountManager ?? "",
     description: template.description ?? "",
     propertyId: template.propertyId,
     propertyName: template.property?.name ?? "",

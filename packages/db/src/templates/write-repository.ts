@@ -11,6 +11,7 @@ export type CreateTemplateRecordInput = {
   warehouseId: string | null
   unitType: string
   customerName?: string | null
+  accountManager?: string | null
   description?: string | null
   internalNotes?: string | null
   installerInstructions?: string | null
@@ -31,6 +32,7 @@ const templateDetailSelect = {
   color: true,
   unitType: true,
   customerName: true,
+  accountManager: true,
   description: true,
   internalNotes: true,
   installerInstructions: true,
