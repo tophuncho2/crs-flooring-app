@@ -11,7 +11,6 @@ export type TemplateListRow = {
   color: PaletteColor
   unitType: string
   customerName: string
-  accountManager: string
   description: string
   propertyId: string | null
   propertyName: string
@@ -80,7 +79,6 @@ export type TemplateForm = {
   warehouseId: string
   unitType: string
   customerName: string
-  accountManager: string
   description: string
   internalNotes: string
   installerInstructions: string
@@ -96,7 +94,6 @@ export const EMPTY_TEMPLATE_FORM: TemplateForm = {
   warehouseId: "",
   unitType: "",
   customerName: "",
-  accountManager: "",
   description: "",
   internalNotes: "",
   installerInstructions: "",

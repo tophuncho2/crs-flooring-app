@@ -54,7 +54,6 @@ const templateListSelect = {
   color: true,
   unitType: true,
   customerName: true,
-  accountManager: true,
   description: true,
   propertyId: true,
   property: {

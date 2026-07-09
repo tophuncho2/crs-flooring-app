@@ -19,7 +19,6 @@ import {
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
   PALETTE_COLOR_INVALID_MESSAGE,
-  TEMPLATE_ACCOUNT_MANAGER_MAX,
   TEMPLATE_CUSTOMER_NAME_MAX,
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
@@ -130,7 +129,6 @@ export function validateCreateTemplateInput(
     warehouseId: optionalString(body.warehouseId),
     unitType: requireBoundedString(body.unitType, TEMPLATE_UNIT_TYPE_MAX, "unitType", failTemplate),
     customerName: optionalBoundedText(body.customerName, TEMPLATE_CUSTOMER_NAME_MAX, "customerName", failTemplate),
-    accountManager: optionalBoundedText(body.accountManager, TEMPLATE_ACCOUNT_MANAGER_MAX, "accountManager", failTemplate),
     description: optionalBoundedText(body.description, TEMPLATE_DESCRIPTION_MAX, "description", failTemplate),
     internalNotes: optionalBoundedText(
       body.internalNotes,
@@ -161,9 +159,6 @@ export function validateUpdateTemplateInput(
   }
   if ("customerName" in body) {
     input.customerName = optionalBoundedText(body.customerName, TEMPLATE_CUSTOMER_NAME_MAX, "customerName", failTemplate)
-  }
-  if ("accountManager" in body) {
-    input.accountManager = optionalBoundedText(body.accountManager, TEMPLATE_ACCOUNT_MANAGER_MAX, "accountManager", failTemplate)
   }
   if ("description" in body) {
     input.description = optionalBoundedText(body.description, TEMPLATE_DESCRIPTION_MAX, "description", failTemplate)

@@ -19,8 +19,6 @@ export function renderTemplateRowCell(
       return row.propertyName || "-"
     case "customerName":
       return row.customerName || "-"
-    case "accountManager":
-      return row.accountManager || "-"
     case "entity":
       return row.entityName || "-"
     case "jobType":

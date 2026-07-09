@@ -21,7 +21,6 @@ import {
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import {
   buildAddressBlock,
-  TEMPLATE_ACCOUNT_MANAGER_MAX,
   TEMPLATE_CUSTOMER_NAME_MAX,
   type PropertyOption,
   type TemplateForm,
@@ -194,29 +193,14 @@ export function TemplatePropertyUnitGroup({
           />
         </FormField>
       </CellAt>
-      {/* Account Manager — user-typed, sits directly below Customer Name. */}
-      <CellAt col={1} row={5} colSpan={8}>
-        <FormField
-          label="Account Manager"
-          currentLength={editable ? draft.accountManager.length : undefined}
-          maxLength={editable ? TEMPLATE_ACCOUNT_MANAGER_MAX : undefined}
-        >
-          <TextCell
-            editable={editable}
-            value={draft.accountManager}
-            onChange={(value) => onFieldChange("accountManager", value)}
-            maxLength={TEMPLATE_ACCOUNT_MANAGER_MAX}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} row={6} colSpan={4}>
+      <CellAt col={1} row={5} colSpan={4}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={5} row={6} colSpan={4}>
+      <CellAt col={5} row={5} colSpan={4}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>

@@ -10,7 +10,6 @@ describe("normalizeTemplateListRow entity", () => {
     templateNumber: "TP-1",
     unitType: "2BR",
     customerName: null,
-    accountManager: null,
     description: null,
     propertyId: "prop-1",
     property: { name: "Maple Court", entity: { id: "entity-1", entity: "Acme" } },
@@ -42,11 +41,6 @@ describe("normalizeTemplateListRow entity", () => {
     expect(normalizeTemplateListRow({ ...base, customerName: "Acme Corp" }).customerName).toBe("Acme Corp")
   })
 
-  it("passes the account manager through, defaulting null to empty string", () => {
-    expect(normalizeTemplateListRow(base).accountManager).toBe("")
-    expect(normalizeTemplateListRow({ ...base, accountManager: "Jane Doe" }).accountManager).toBe("Jane Doe")
-  })
-
   it("passes the actor emails through, coalescing missing ones to null", () => {
     const row = normalizeTemplateListRow(base)
     expect(row.createdBy).toBe("creator@example.com")
@@ -64,7 +58,6 @@ describe("normalizeTemplate neighbors", () => {
     templateNumber: "TP-2",
     unitType: "2BR",
     customerName: null,
-    accountManager: null,
     description: null,
     propertyId: "prop-1",
     property: {
