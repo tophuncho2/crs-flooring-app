@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { DEFAULT_DASHBOARD_ROUTE } from "@/hooks/navigation"
 
 export default function DashboardErrorState({
   title,
@@ -25,7 +26,7 @@ export default function DashboardErrorState({
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="/dashboard/inventory"
+            href={DEFAULT_DASHBOARD_ROUTE}
             className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
           >
             Retry Dashboard
