@@ -166,6 +166,7 @@ model Entity {
   products        FlooringProduct[]
   imports         FlooringImportEntry[]
   templatePlannedPayments TemplatePlannedPayment[]
+  certificates    Certificate[]
 
   // Sort-column btree backing the work-orders list sort by entity name (2-hop
   // `property.entity.entity`). Plain btree — the sort's `id` tiebreak lives on
@@ -186,6 +187,31 @@ model Entity {
   @@index([updatedAt, id])
   @@index([state, id])
   @@map("entity")
+}
+
+// A tracked compliance certificate (insurance, license, compliance doc) that
+// belongs to an Entity. The expiration "status" (Expired / Expiring Soon / Valid /
+// No Expiration) is derived at READ time by the domain `computeCertificateStatus`
+// helper — never stored, since a `CURRENT_DATE - expirationDate` diff is not
+// immutable and any stored value would be stale the day after write.
+model Certificate {
+  id             String    @id @default(uuid())
+  entityId       String?
+  entity         Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  name           String    @db.VarChar(120)
+  expirationDate DateTime? @db.Date
+  internalNotes  String?   @db.VarChar(500)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdBy      String?
+  updatedBy      String?
+
+  @@index([entityId]) // entity filter
+  @@index([expirationDate]) // default date sort
+  @@index([name]) // name search
+  @@index([createdAt, id]) // list sort tiebreak
+  @@index([updatedAt, id]) // list sort tiebreak
+  @@map("certificate")
 }
 
 model Property {
