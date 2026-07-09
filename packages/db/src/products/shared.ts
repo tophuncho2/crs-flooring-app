@@ -92,6 +92,8 @@ export const productOptionSelect = {
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
   category: { select: { name: true } },
+  // Live cost — seeds a row picker's pricing math for freshly-added rows.
+  cost: true,
   style: true,
   color: true,
 } as const

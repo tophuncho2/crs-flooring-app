@@ -92,14 +92,15 @@ const templateDetailSelect = {
     select: {
       id: true,
       productId: true,
-      product: { select: { name: true, category: { select: { name: true } } } },
+      // `cost` is a LIVE read-join off the product (no longer stored per row).
+      product: { select: { name: true, cost: true, category: { select: { name: true } } } },
       quantity: true,
       // Item's own unit FK + resolved unit (UoM epic 2C); snapshot columns fully
       // de-referenced (2D drops them).
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
       notes: true,
-      cost: true,
+      estimatedGrossProfitMargin: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,

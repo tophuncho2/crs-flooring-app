@@ -1,7 +1,7 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
-  normalizeMoneyAmount,
+  normalizeMarginPercent,
   type TemplatePlannedProductForm,
   type TemplatePlannedProductRow,
 } from "@builders/domain"
@@ -23,10 +23,10 @@ function toDecimal(value: string): Prisma.Decimal | string | null {
   return value.trim() ? value : null
 }
 
-// Money write boundary (money standard): blank → NULL, otherwise the canonical
-// fixed-scale-2 string handed straight to Prisma (which coerces to Decimal).
-function toMoney(value: string): string | null {
-  return value.trim() ? normalizeMoneyAmount(value) : null
+// Margin write boundary: blank → NULL, otherwise the canonical fixed-scale-2
+// percent string handed straight to Prisma (which coerces to Decimal(5,2)).
+function toPercent(value: string): string | null {
+  return value.trim() ? normalizeMarginPercent(value) : null
 }
 
 // "" / whitespace disconnects the unit (stored NULL); otherwise the FK id.
@@ -74,7 +74,7 @@ export async function applyTemplatePlannedProductsDiff(
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
         notes: draft.input.notes ? draft.input.notes : null,
-        cost: toMoney(draft.input.cost),
+        estimatedGrossProfitMargin: toPercent(draft.input.estimatedGrossProfitMargin),
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -89,7 +89,7 @@ export async function applyTemplatePlannedProductsDiff(
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),
         notes: update.input.notes ? update.input.notes : null,
-        cost: toMoney(update.input.cost),
+        estimatedGrossProfitMargin: toPercent(update.input.estimatedGrossProfitMargin),
         updatedBy: input.actorEmail,
       },
     })

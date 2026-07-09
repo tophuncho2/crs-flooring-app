@@ -59,7 +59,10 @@ const templateDetailSelect = {
     select: {
       id: true,
       productId: true,
-      product: { select: { name: true } },
+      // `cost` is a LIVE read-join off the product; create/update return through
+      // this select, so it must join the product's cost + category for the row's
+      // productCost + subtotal to come back populated.
+      product: { select: { name: true, cost: true, category: { select: { name: true } } } },
       quantity: true,
       // Item's own unit FK + resolved unit (UoM epic 2C) — create/update return
       // through this select, so it must join `unit` or the returned item's unit
@@ -67,7 +70,7 @@ const templateDetailSelect = {
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
       notes: true,
-      cost: true,
+      estimatedGrossProfitMargin: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,

@@ -13,7 +13,9 @@ import type {
 } from "@builders/application"
 import {
   isPaletteColor,
+  isValidMarginPercent,
   isValidMoneyAmount,
+  normalizeMarginPercent,
   normalizeMoneyAmount,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
@@ -83,6 +85,20 @@ function optionalMoney(
   if (typeof value !== "string" || value.trim() === "") return ""
   if (!isValidMoneyAmount(value)) fail(`${path} must be a valid amount`, path)
   return normalizeMoneyAmount(value)
+}
+
+// Optional gross-profit-margin percent: missing/blank → "" (unset), otherwise
+// validate (finite, < 100; negatives = loss) + canonicalize to a fixed-scale-2
+// string. Mirrors `optionalMoney`; the same domain rule the data layer normalizes
+// against, so a bad value fails 400 here instead of round-tripping oddly.
+function optionalPercent(
+  value: unknown,
+  path: string,
+  fail: (m: string, f?: string) => never,
+): string {
+  if (typeof value !== "string" || value.trim() === "") return ""
+  if (!isValidMarginPercent(value)) fail(`${path} must be a percent below 100`, path)
+  return normalizeMarginPercent(value)
 }
 
 function requireBoundedString(
@@ -202,7 +218,11 @@ function validatePlannedProductForm(value: unknown, path: string): TemplatePlann
     unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
     notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
-    cost: optionalMoney(obj.cost, `${path}.cost`, failDiff),
+    estimatedGrossProfitMargin: optionalPercent(
+      obj.estimatedGrossProfitMargin,
+      `${path}.estimatedGrossProfitMargin`,
+      failDiff,
+    ),
   }
 }
 

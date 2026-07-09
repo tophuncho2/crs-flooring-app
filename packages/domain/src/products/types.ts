@@ -125,6 +125,10 @@ export type ProductOption = {
   categoryName: string
   unitName: string
   unitAbbrev: string
+  // The product's live cost (canonical money string; "" when unset). Carried so a
+  // row picker can seed a freshly-added (unsaved) row's live cost for pricing math
+  // before the server re-resolves it off the product join on save.
+  cost: string
 }
 
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {

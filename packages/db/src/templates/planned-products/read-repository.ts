@@ -7,14 +7,16 @@ type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 const templatePlannedProductSelect = {
   id: true,
   productId: true,
-  product: { select: { name: true, category: { select: { name: true } } } },
+  // `cost` is a LIVE read-join off the product — the planned product no longer
+  // stores its own cost; the row's subtotal derives from it.
+  product: { select: { name: true, cost: true, category: { select: { name: true } } } },
   quantity: true,
   // The item's OWN unit FK + resolved unit (UoM epic 2C); `unit` resolves the
   // display name/abbrev (snapshot columns fully de-referenced, 2D drops them).
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
   notes: true,
-  cost: true,
+  estimatedGrossProfitMargin: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,

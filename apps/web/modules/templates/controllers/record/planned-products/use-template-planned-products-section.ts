@@ -16,7 +16,11 @@ import type {
   TemplatePlannedProductsDiff,
   UnitOfMeasureOption,
 } from "@builders/domain"
-import { validateTemplatePlannedProductForm } from "@builders/domain"
+import {
+  computePlannedProductSubtotal,
+  solvePlannedProductMargin,
+  validateTemplatePlannedProductForm,
+} from "@builders/domain"
 import { saveTemplatePlannedProductsSectionRequest } from "@/modules/templates/data/mutations"
 
 export type TemplatePlannedProductLocal = {
@@ -35,8 +39,17 @@ export type TemplatePlannedProductLocal = {
   unitAbbrev: string
   quantity: string
   notes: string
-  // Per-row money column (canonical "X.XX" string; "" = unset). Sent in the diff.
-  cost: string
+  // LIVE cost read-joined off the product (seeded from the picked ProductOption
+  // for unsaved rows; re-resolved server-side on save). Display + subtotal input
+  // only — NEVER sent in the diff (like productName).
+  productCost: string
+  // Estimated gross-profit margin percent (canonical "30.00"; "" = unset). The
+  // only new persisted field — sent in the diff.
+  estimatedGrossProfitMargin: string
+  // Derived from quantity × productCost ÷ (1 − margin/100). NOT persisted, NOT in
+  // the diff — recomputed locally on every pricing edit; editing it back-solves
+  // the margin.
+  subtotal: string
   // Client-only ergonomic for narrowing the row's product picker. NOT
   // persisted to the server — excluded from the diff sent on save.
   categoryFilterId: string | null
@@ -59,9 +72,25 @@ function toLocalItem(row: TemplatePlannedProductRow): TemplatePlannedProductLoca
     unitAbbrev: row.unitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
-    cost: row.cost,
+    productCost: row.productCost,
+    estimatedGrossProfitMargin: row.estimatedGrossProfitMargin,
+    subtotal: row.subtotal,
     categoryFilterId: null,
     categoryFilterName: row.categoryName || null,
+  }
+}
+
+// Recompute the derived subtotal from the row's current quantity + live cost +
+// margin — the single source of truth in the domain math helper. Called after
+// any pricing-input edit so the subtotal cell stays consistent.
+function withRecomputedSubtotal(row: TemplatePlannedProductLocal): TemplatePlannedProductLocal {
+  return {
+    ...row,
+    subtotal: computePlannedProductSubtotal({
+      quantity: row.quantity,
+      cost: row.productCost,
+      margin: row.estimatedGrossProfitMargin,
+    }),
   }
 }
 
@@ -71,7 +100,13 @@ function createLocalState(record: TemplateDetail): TemplatePlannedProductsLocalS
 
 function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
-    record.plannedProducts.map((row) => `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.cost}`),
+    // productCost is a live join — include it so an external product-cost change
+    // re-seeds local state (it drives the derived subtotal). margin is the only
+    // persisted pricing field.
+    record.plannedProducts.map(
+      (row) =>
+        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.estimatedGrossProfitMargin}:${row.productCost}`,
+    ),
   )
 }
 
@@ -81,7 +116,8 @@ function itemsDiffer(local: TemplatePlannedProductLocal, server: TemplatePlanned
     local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
     local.notes !== server.notes ||
-    local.cost !== server.cost
+    // Only the margin persists (productCost + subtotal are derived/display).
+    local.estimatedGrossProfitMargin !== server.estimatedGrossProfitMargin
   )
 }
 
@@ -91,7 +127,7 @@ function toDiffForm(local: TemplatePlannedProductLocal): TemplatePlannedProductF
     unitId: local.unitId,
     quantity: local.quantity,
     notes: local.notes,
-    cost: local.cost,
+    estimatedGrossProfitMargin: local.estimatedGrossProfitMargin,
   }
 }
 
@@ -171,7 +207,9 @@ export function useTemplatePlannedProductsSection({
           unitAbbrev: "",
           quantity: "",
           notes: "",
-          cost: "",
+          productCost: "",
+          estimatedGrossProfitMargin: "",
+          subtotal: "",
           categoryFilterId: null,
           categoryFilterName: null,
         },
@@ -195,6 +233,50 @@ export function useTemplatePlannedProductsSection({
     section.setLocalValue((previous) => ({
       items: previous.items.map((row) =>
         row.id === itemId ? { ...row, [field]: value } : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  // Quantity feeds the subtotal, so recompute it alongside the edit.
+  function changeQuantity(itemId: string, value: string) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId ? withRecomputedSubtotal({ ...row, quantity: value }) : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  // Edit margin → recompute subtotal (margin is the persisted source of truth).
+  function changeMargin(itemId: string, value: string) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId
+          ? withRecomputedSubtotal({ ...row, estimatedGrossProfitMargin: value })
+          : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  // Edit subtotal → back-solve + store the margin (subtotal itself is derived and
+  // never persisted). Keeps the typed subtotal for display this session; a
+  // save + reload re-derives it from the stored margin (accepted rounding drift).
+  function changeSubtotal(itemId: string, value: string) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId
+          ? {
+              ...row,
+              subtotal: value,
+              estimatedGrossProfitMargin: solvePlannedProductMargin({
+                quantity: row.quantity,
+                cost: row.productCost,
+                subtotal: value,
+              }),
+            }
+          : row,
       ),
     }))
     if (section.error) section.setError(null)
@@ -227,7 +309,13 @@ export function useTemplatePlannedProductsSection({
           },
           { nameKey: "unitName", abbrevKey: "unitAbbrev" },
         )
-        return { ...seeded, productName: option?.name ?? "" }
+        // Seed the live cost from the picked product (for unsaved rows the server
+        // hasn't joined yet) and recompute the subtotal off it.
+        return withRecomputedSubtotal({
+          ...seeded,
+          productName: option?.name ?? "",
+          productCost: option?.cost ?? "",
+        })
       }),
     }))
   }
@@ -259,6 +347,9 @@ export function useTemplatePlannedProductsSection({
     addItem,
     removeItem,
     changeField,
+    changeQuantity,
+    changeMargin,
+    changeSubtotal,
     changeCategoryFilter,
     setProductSnapshot,
     setUnit,

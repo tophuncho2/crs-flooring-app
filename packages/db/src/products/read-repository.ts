@@ -91,6 +91,9 @@ export type ProductOptionRecord = {
   categoryName: string
   unitName: string
   unitAbbrev: string
+  // Live product cost (canonical money string; "" when unset). Seeds a row
+  // picker's pricing math for freshly-added rows.
+  cost: string
 }
 
 export type ProductFormOptions = {
@@ -222,6 +225,7 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     // pickers seed a row's unit from these.
     unitName: product.unit?.name ?? "",
     unitAbbrev: product.unit?.abbreviation ?? "",
+    cost: product.cost ? normalizeMoneyAmount(product.cost.toString()) : "",
   }
 }
 
