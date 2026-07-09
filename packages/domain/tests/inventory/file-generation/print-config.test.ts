@@ -12,11 +12,16 @@ describe("buildInventoryPrintConfig", () => {
     expect(INVENTORY_DOCUMENT_LABEL).toBe("Inventory Item")
   })
 
-  it("seeds column visibility maps (record + adjustment)", () => {
+  it("seeds every available column visible by default", () => {
     const config = buildInventoryPrintConfig()
-    expect(config.inventoryColumns.productName).toBe(true)
-    expect(config.inventoryColumns.cost).toBe(false)
-    expect(config.adjustmentColumns.quantity).toBe(true)
+    expect(Object.values(config.inventoryColumns).every(Boolean)).toBe(true)
+    expect(Object.values(config.adjustmentColumns).every(Boolean)).toBe(true)
+  })
+
+  it("excludes cost and freight from the inventory columns entirely", () => {
+    const config = buildInventoryPrintConfig()
+    expect(config.inventoryColumns.cost).toBeUndefined()
+    expect(config.inventoryColumns.freight).toBeUndefined()
   })
 })
 

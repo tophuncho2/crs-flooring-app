@@ -29,8 +29,14 @@ describe("buildInventoryCsv — record block", () => {
     expect(record).toContain("Product,Mohawk Berber - Oatmeal")
     expect(record).toContain("Roll #,ROLL#88")
     expect(record).toContain("Stock,412")
-    // Cost is off by default → absent.
+  })
+
+  it("never emits Cost or Freight rows (columns removed from the document)", () => {
+    const { record } = blocks(
+      buildInventoryCsv(makeInventoryDetail(), buildInventoryPrintConfig()),
+    )
     expect(record).not.toContain("Cost,")
+    expect(record).not.toContain("Freight,")
   })
 
   it("never emits an Inv # record row (header-only field)", () => {

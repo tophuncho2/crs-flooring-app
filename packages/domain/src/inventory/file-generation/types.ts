@@ -16,13 +16,20 @@ import type { EnrichedInventoryAdjustmentRow } from "../adjustments/types.js"
  */
 
 /**
- * Inventory fields offered on the print primary block — the full inventory CSV
- * manifest MINUS `inventoryNumber` (Inv # is the header's top-right id, always
- * shown, so it is not a togglable field). Single source for the primary-block
+ * Fields excluded from the inventory print/CSV surfaces:
+ *   - `inventoryNumber` — Inv # is the header's top-right id, always shown.
+ *   - `cost` / `freight` — intentionally kept off this document (mirrors the
+ *     adjustments manifest, which already omits them).
+ */
+const EXCLUDED_INVENTORY_FIELD_KEYS = new Set<string>(["inventoryNumber", "cost", "freight"])
+
+/**
+ * Inventory fields offered on the print primary block — the inventory CSV manifest
+ * minus {@link EXCLUDED_INVENTORY_FIELD_KEYS}. Single source for the primary-block
  * renderer, the CSV builder, and the configurator's checkbox list.
  */
 export const INVENTORY_PRINT_FIELD_COLUMNS: ReadonlyArray<ExportColumn<InventoryRow>> =
-  INVENTORY_EXPORT_COLUMNS.filter((column) => column.key !== "inventoryNumber")
+  INVENTORY_EXPORT_COLUMNS.filter((column) => !EXCLUDED_INVENTORY_FIELD_KEYS.has(column.key))
 
 /**
  * Adjustment columns offered on the print adjustments table — the full ledger CSV
