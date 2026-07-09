@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 
 const CONFIRM_TONE_CLASS_NAME = {
   default:
@@ -70,9 +71,13 @@ export function ConfirmDialog({
     return () => document.removeEventListener("keydown", handleKey)
   }, [open, onCancel])
 
-  if (!open) return null
+  if (!open || typeof document === "undefined") return null
 
-  return (
+  // Portal to <body> so the overlay is caged to the engine, not the mount site —
+  // a plain inline `fixed inset-0` is trapped by any ancestor that establishes a
+  // containing block (transform / filter / stacking context), e.g. a record
+  // section. Portaling makes mount location irrelevant (mirrors record-modal.tsx).
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -114,6 +119,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

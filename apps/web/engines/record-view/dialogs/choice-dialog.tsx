@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 
 export type ChoiceDialogProps = {
   /** Controls visibility. When `false`, the dialog (and its backdrop) is not rendered. */
@@ -60,9 +61,13 @@ export function ChoiceDialog({
     return () => document.removeEventListener("keydown", handleKey)
   }, [open, onCancel])
 
-  if (!open) return null
+  if (!open || typeof document === "undefined") return null
 
-  return (
+  // Portal to <body> so the overlay is caged to the engine, not the mount site —
+  // a plain inline `fixed inset-0` is trapped by any ancestor that establishes a
+  // containing block (transform / filter / stacking context). Portaling makes
+  // mount location irrelevant (mirrors record-modal.tsx).
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -102,6 +107,7 @@ export function ChoiceDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
