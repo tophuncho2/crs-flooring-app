@@ -189,13 +189,16 @@ export default function PropertiesClient({
   const hasActiveSortTool = hasNonDefaultSort
 
   const hasActiveFilterTool = useMemo(
-    () => Boolean(selectedEntityId) || Boolean(selectedState),
-    [selectedEntityId, selectedState],
+    () => Boolean(selectedEntityId),
+    [selectedEntityId],
   )
 
   const hasActiveSearchTool = useMemo(
-    () => searchQuery.trim().length > 0 || propNumberValue.trim().length > 0,
-    [searchQuery, propNumberValue],
+    () =>
+      searchQuery.trim().length > 0 ||
+      propNumberValue.trim().length > 0 ||
+      Boolean(selectedState),
+    [searchQuery, propNumberValue, selectedState],
   )
 
   const hasActiveFilters = useMemo(
@@ -243,8 +246,8 @@ export default function PropertiesClient({
           />
         </ToolbarMenuButton>
 
-        {/* Filter — the Entity picker + the state text filter, composed directly
-            (NOT a self-triggering FilterControl). */}
+        {/* Filter — the Entity picker, composed directly (NOT a self-triggering
+            FilterControl). */}
         <ToolbarMenuButton
           label="Filter"
           icon={SlidersHorizontal}
@@ -263,14 +266,10 @@ export default function PropertiesClient({
               <EntityTypePicker {...chrome} initialOptions={initialEntityOptions} />
             )}
           </FilterPickerChip>
-          <StateSearchControl
-            value={selectedState}
-            onChange={handleStateChange}
-            ariaLabel="Filter properties by state"
-          />
         </ToolbarMenuButton>
 
-        {/* Search — full-text + PROP # exact number, mirrors products. */}
+        {/* Search — full-text + PROP # exact number + the state text search,
+            mirrors products. */}
         <ToolbarMenuButton
           label="Search"
           icon={Search}
@@ -286,6 +285,11 @@ export default function PropertiesClient({
             onCommit={handlePropNumberChange}
             placeholder="PROP #"
             ariaLabel="Search properties by property number"
+          />
+          <StateSearchControl
+            value={selectedState}
+            onChange={handleStateChange}
+            ariaLabel="Search properties by state"
           />
         </ToolbarMenuButton>
       </ListActionBar>
