@@ -407,9 +407,6 @@ export default function InventoryClient({
 
       <ListActionBar
         label="Inventory"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="inventory"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

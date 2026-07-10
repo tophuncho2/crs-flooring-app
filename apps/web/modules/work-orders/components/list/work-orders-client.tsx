@@ -422,9 +422,6 @@ export default function WorkOrdersClient({
 
       <ListActionBar
         label="Work Orders"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="work orders"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

@@ -121,9 +121,6 @@ export default function WarehouseClient({
 
       <ListActionBar
         label="Warehouse"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="warehouses"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

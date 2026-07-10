@@ -51,9 +51,6 @@ export default function InvitesClient({ initialPage }: InvitesClientProps) {
       <ListCreateButtonPortal label="Invite" onClick={() => openCreate()} />
       <ListHeaderPortal
         label="Invites"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="pending invites"
       />
       <InvitesTable
         rows={rows}

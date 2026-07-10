@@ -202,9 +202,6 @@ export default function ImportsClient({
 
       <ListActionBar
         label="Imports"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="imports"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

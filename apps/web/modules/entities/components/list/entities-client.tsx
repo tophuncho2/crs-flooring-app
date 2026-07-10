@@ -180,9 +180,6 @@ export default function EntitiesClient({
 
       <ListActionBar
         label="Entities"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="entities"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

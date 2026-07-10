@@ -49,9 +49,6 @@ export default function UserActivityClient({ initialPage }: UserActivityClientPr
     <ListPageShell fill>
       <ListHeaderPortal
         label="Login Activity"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="logins"
       />
       <UserActivityTable
         rows={rows}

@@ -52,9 +52,6 @@ export default function UnitOfMeasuresClient({ initialPage }: UnitOfMeasuresClie
     <ListPageShell fill>
       <ListHeaderPortal
         label="Unit Of Measures"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="units of measure"
       />
       <UnitOfMeasuresTable
         rows={rows}

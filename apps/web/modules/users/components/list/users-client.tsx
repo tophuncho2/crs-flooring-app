@@ -49,9 +49,6 @@ export default function UsersClient({ initialPage }: UsersClientProps) {
     <ListPageShell fill>
       <ListHeaderPortal
         label="Users"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="users"
       />
       <UsersTable
         rows={rows}

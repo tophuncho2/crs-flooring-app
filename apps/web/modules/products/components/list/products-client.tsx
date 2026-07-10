@@ -271,9 +271,6 @@ export default function ProductsClient({
 
       <ListActionBar
         label="Products"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="products"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

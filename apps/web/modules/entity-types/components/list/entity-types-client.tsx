@@ -124,9 +124,6 @@ export default function EntityTypesClient({
 
       <ListActionBar
         label="Entity Types"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="entity types"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

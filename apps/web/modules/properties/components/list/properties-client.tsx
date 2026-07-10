@@ -224,9 +224,6 @@ export default function PropertiesClient({
 
       <ListActionBar
         label="Properties"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="properties"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

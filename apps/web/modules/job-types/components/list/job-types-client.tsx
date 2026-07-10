@@ -124,9 +124,6 @@ export default function JobTypesClient({
 
       <ListActionBar
         label="Job Types"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="job types"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

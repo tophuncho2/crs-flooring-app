@@ -185,9 +185,6 @@ export default function TemplatesClient({
 
       <ListActionBar
         label="Templates"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="templates"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

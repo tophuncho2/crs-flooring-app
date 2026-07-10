@@ -201,9 +201,6 @@ export default function InventoryIndicatorsClient({
     <ListPageShell fill>
       <ListActionBar
         label="Inventory Indicators"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="indicators"
         hasActiveFilters={hasActiveFilters}
         onClearAll={onClearAllFilters}
       >

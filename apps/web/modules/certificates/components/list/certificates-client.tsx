@@ -128,9 +128,6 @@ export default function CertificatesClient({
 
       <ListActionBar
         label="Certificate Tracking"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="certificates"
         hasActiveFilters={hasActiveFilters}
         onClearAll={onClearAllFilters}
       >

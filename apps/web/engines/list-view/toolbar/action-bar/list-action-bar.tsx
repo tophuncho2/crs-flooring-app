@@ -14,12 +14,6 @@ const TOOLS_SLOT_ID = "list-tools-slot"
 export type ListActionBarProps = {
   /** Module label shown in the top-left blue tag (e.g. "Job Types"). */
   label: string
-  /** Rows currently shown. */
-  rowCount: number
-  /** Total matching rows. */
-  total: number
-  /** Plural noun for the count (e.g. "job types"). */
-  rowCountLabel: string
   /** Whether any search/filter is active (drives the Clear-all button). */
   hasActiveFilters: boolean
   /** Clears all search + filters. */
@@ -32,7 +26,7 @@ export type ListActionBarProps = {
  * List header chrome, portaled into the app-shell header strip — the caged
  * replacement for the old in-page toolbar card. Renders nothing in place:
  *
- * - The meta cluster (module label + row count + Clear-all) lands in
+ * - The meta cluster (module label + Clear-all) lands in
  *   `#list-meta-slot` via {@link ListHeaderPortal}, in the header's left group
  *   after the record back-button/stepper slots. When a back button ever renders
  *   on a list page, the left group's flex order flows the meta cluster to its
@@ -50,9 +44,6 @@ export type ListActionBarProps = {
  */
 export function ListActionBar({
   label,
-  rowCount,
-  total,
-  rowCountLabel,
   hasActiveFilters,
   onClearAll,
   children,
@@ -63,9 +54,6 @@ export function ListActionBar({
     <>
       <ListHeaderPortal
         label={label}
-        rowCount={rowCount}
-        total={total}
-        rowCountLabel={rowCountLabel}
         trailing={<ClearAllFiltersButton hasActive={hasActiveFilters} onClick={onClearAll} />}
       />
 

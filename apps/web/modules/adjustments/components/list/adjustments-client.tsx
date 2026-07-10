@@ -313,9 +313,6 @@ export default function AdjustmentsClient({
     <ListPageShell fill>
       <ListActionBar
         label="Adjustments"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="adjustments"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >

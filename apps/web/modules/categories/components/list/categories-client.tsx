@@ -52,9 +52,6 @@ export default function CategoriesClient({ initialPage }: CategoriesClientProps)
     <ListPageShell fill>
       <ListHeaderPortal
         label="Categories"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="categories"
       />
       <CategoriesTable
         rows={rows}

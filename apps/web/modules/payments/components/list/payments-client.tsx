@@ -119,9 +119,6 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
 
       <ListActionBar
         label="Payments"
-        rowCount={rows.length}
-        total={total}
-        rowCountLabel="payments"
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
