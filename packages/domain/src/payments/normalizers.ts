@@ -14,6 +14,7 @@ type PaymentInput = {
   paymentMethod?: string | null
   storePhone?: string | null
   receiptNumber?: string | null
+  storeAddress?: string | null
   paymentDate: Date | string | null
   entityId?: string | null
   workOrderId?: string | null
@@ -44,6 +45,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     paymentMethod: payment.paymentMethod ?? "",
     storePhone: normalizePhoneNumber(payment.storePhone ?? ""),
     receiptNumber: payment.receiptNumber ?? "",
+    storeAddress: payment.storeAddress ?? "",
     paymentDate: toIso(payment.paymentDate),
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,

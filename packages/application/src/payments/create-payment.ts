@@ -28,6 +28,8 @@ export async function createPaymentUseCase(
       storePhone: input.storePhone ?? "",
       // Free-text identifier with no validation rule; pass through to satisfy the form shape.
       receiptNumber: input.receiptNumber ?? "",
+      // Free-text address with no validation rule; pass through to satisfy the form shape.
+      storeAddress: input.storeAddress ?? "",
       paymentDate: "",
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,

@@ -9,3 +9,6 @@ export const STORE_PHONE_MAX = 20
 
 /** Max length of the free-text `receiptNumber` identifier (matches VARCHAR(100)). */
 export const RECEIPT_NUMBER_MAX = 100
+
+/** Max length of the free-text `storeAddress` (matches VARCHAR(150)). */
+export const STORE_ADDRESS_MAX = 150

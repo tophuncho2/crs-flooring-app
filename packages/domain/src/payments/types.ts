@@ -31,6 +31,9 @@ export type Payment = {
   // Free-text receipt identifier. Nullable DB column surfaced as "" so the UI
   // never juggles null.
   receiptNumber: string
+  // Free-text store address. Nullable DB column surfaced as "" so the UI never
+  // juggles null.
+  storeAddress: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -79,6 +82,7 @@ export type PaymentForm = {
   paymentMethod: string
   storePhone: string
   receiptNumber: string
+  storeAddress: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -91,6 +95,7 @@ export const EMPTY_PAYMENT_FORM: PaymentForm = {
   paymentMethod: "",
   storePhone: "",
   receiptNumber: "",
+  storeAddress: "",
   paymentDate: "",
   entityId: null,
   workOrderId: null,
@@ -104,6 +109,7 @@ export function toPaymentForm(payment: Payment): PaymentForm {
     paymentMethod: payment.paymentMethod,
     storePhone: payment.storePhone,
     receiptNumber: payment.receiptNumber,
+    storeAddress: payment.storeAddress,
     paymentDate: payment.paymentDate,
     entityId: payment.entityId,
     workOrderId: payment.workOrderId,

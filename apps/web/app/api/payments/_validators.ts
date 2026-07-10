@@ -16,6 +16,7 @@ import {
   PALETTE_COLOR_INVALID_MESSAGE,
   PAYMENT_METHOD_MAX,
   RECEIPT_NUMBER_MAX,
+  STORE_ADDRESS_MAX,
   type FlooringPaymentDirection,
   type PaletteColor,
 } from "@builders/domain"
@@ -118,6 +119,7 @@ export function validateCreatePaymentInput(
     paymentMethod: optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod"),
     storePhone: optionalPhone(body.storePhone, "storePhone"),
     receiptNumber: optionalBoundedString(body.receiptNumber, RECEIPT_NUMBER_MAX, "receiptNumber"),
+    storeAddress: optionalBoundedString(body.storeAddress, STORE_ADDRESS_MAX, "storeAddress"),
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
     entityId: optionalLinkId(body.entityId, "entityId"),
     workOrderId: optionalLinkId(body.workOrderId, "workOrderId"),
@@ -136,6 +138,8 @@ export function validateUpdatePaymentInput(
   if ("storePhone" in body) input.storePhone = optionalPhone(body.storePhone, "storePhone")
   if ("receiptNumber" in body)
     input.receiptNumber = optionalBoundedString(body.receiptNumber, RECEIPT_NUMBER_MAX, "receiptNumber")
+  if ("storeAddress" in body)
+    input.storeAddress = optionalBoundedString(body.storeAddress, STORE_ADDRESS_MAX, "storeAddress")
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
   if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
   if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")

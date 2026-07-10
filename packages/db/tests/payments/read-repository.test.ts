@@ -14,6 +14,7 @@ function paymentRow(overrides: Record<string, unknown> = {}) {
     paymentMethod: null,
     storePhone: null,
     receiptNumber: null,
+    storeAddress: null,
     paymentDate: null,
     entityId: null,
     workOrderId: "wo-1",

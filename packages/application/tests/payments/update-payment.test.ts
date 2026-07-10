@@ -105,6 +105,15 @@ describe("updatePaymentUseCase", () => {
     )
   })
 
+  it("passes the store address straight through to the repo input", async () => {
+    await updatePaymentUseCase(ID, { storeAddress: "123 Main St" }, ACTOR)
+    expect(updatePaymentRecordMock).toHaveBeenCalledWith(
+      ID,
+      { storeAddress: "123 Main St", updatedBy: ACTOR },
+      expect.anything(),
+    )
+  })
+
   it("maps a P2025 to a 404 not-found", async () => {
     updatePaymentRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
     await expect(updatePaymentUseCase(ID, { amount: "10.00" }, ACTOR)).rejects.toMatchObject({

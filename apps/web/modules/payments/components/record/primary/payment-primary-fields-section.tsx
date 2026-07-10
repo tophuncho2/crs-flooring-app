@@ -18,6 +18,7 @@ import {
   formatEasternDateTime,
   PAYMENT_METHOD_MAX,
   RECEIPT_NUMBER_MAX,
+  STORE_ADDRESS_MAX,
   type EntityOption,
   type EntityTypeRef,
   type FlooringPaymentDirection,
@@ -269,6 +270,18 @@ export function PaymentPrimaryFieldsSection({
                   value={draft.storePhone}
                   onChange={(next) => onFieldChange("storePhone", next)}
                   ariaLabel="Store phone"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Store Address">
+                <TextCell
+                  editable={editable}
+                  value={draft.storeAddress}
+                  onChange={(next) => onFieldChange("storeAddress", next)}
+                  maxLength={STORE_ADDRESS_MAX}
+                  placeholder="Store address"
+                  ariaLabel="Store address"
                 />
               </FormField>
             </CellAt>
