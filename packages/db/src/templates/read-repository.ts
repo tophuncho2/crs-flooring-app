@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { sliceHasMore } from "../shared/paginate.js"
+import { combineAnd } from "../shared/where.js"
 import { buildTemplatesOrderBy } from "./order-by.js"
 import { entityTypesSelect } from "../entities/read-repository.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
@@ -162,9 +163,7 @@ function buildTemplatesWhere(
     clauses.push({ propertyId: { in: [...propertyIds] } })
   }
 
-  if (clauses.length === 0) return undefined
-  if (clauses.length === 1) return clauses[0]
-  return { AND: clauses }
+  return combineAnd(clauses)
 }
 
 export async function listTemplates(
@@ -231,8 +230,7 @@ export async function searchTemplateOptions(
       ],
     })
   }
-  const where: Prisma.TemplateWhereInput =
-    clauses.length === 1 ? clauses[0] : { AND: clauses }
+  const where = combineAnd(clauses)
 
   // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.template.findMany({

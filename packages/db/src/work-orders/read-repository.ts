@@ -3,6 +3,7 @@ import type { FlooringVacancyStatus, Prisma } from "../generated/prisma/client.j
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
+import { combineAnd } from "../shared/where.js"
 import {
   buildFlooringProductDisplayName,
   normalizeWorkOrder,
@@ -183,9 +184,7 @@ export function buildWorkOrdersWhere(
     if (range.gte || range.lte) andClauses.push({ scheduledFor: range })
   }
 
-  if (andClauses.length === 0) return undefined
-  if (andClauses.length === 1) return andClauses[0]
-  return { AND: andClauses }
+  return combineAnd(andClauses)
 }
 
 export async function listWorkOrders(

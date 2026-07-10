@@ -17,6 +17,7 @@ import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
+import { combineAnd } from "../shared/where.js"
 import { normalizeEnrichedInventoryAdjustmentRow } from "./adjustments/read-repository.js"
 import {
   inventoryDetailSelect,
@@ -470,9 +471,7 @@ function buildListViewWhere(
     })
   }
 
-  if (clauses.length === 0) return undefined
-  if (clauses.length === 1) return clauses[0]
-  return { AND: clauses }
+  return combineAnd(clauses)
 }
 
 

@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
+import { combineAnd } from "../shared/where.js"
 import {
   normalizePaymentPurpose,
   normalizePaymentPurposeOption,
@@ -56,7 +57,7 @@ export async function listPaymentPurposesForListView(
   if (paymentPurposeNumber) {
     clauses.push({ paymentPurposeNumberInt: exactNumberIntEquals(paymentPurposeNumber) })
   }
-  const where = clauses.length > 0 ? { AND: clauses } : undefined
+  const where = combineAnd(clauses)
 
   const [total, rows] = await Promise.all([
     client.flooringPaymentPurpose.count({ where }),

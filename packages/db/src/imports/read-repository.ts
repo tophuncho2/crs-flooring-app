@@ -4,6 +4,7 @@ import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
+import { combineAnd } from "../shared/where.js"
 import {
   importDetailSelect,
   importRowSelect,
@@ -188,9 +189,7 @@ function buildListViewWhere(
     clauses.push({ warehouseId: { in: [...warehouseIds] } })
   }
 
-  if (clauses.length === 0) return undefined
-  if (clauses.length === 1) return clauses[0]
-  return { AND: clauses }
+  return combineAnd(clauses)
 }
 
 export async function listImportsForListView(
@@ -295,8 +294,7 @@ export async function searchImportOptions(
     clauses.push({ OR: orClauses })
   }
 
-  const where: Prisma.FlooringImportEntryWhereInput =
-    clauses.length === 1 ? clauses[0]! : { AND: clauses }
+  const where = combineAnd(clauses)
 
   // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.flooringImportEntry.findMany({

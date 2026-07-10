@@ -1,4 +1,5 @@
 import { db } from "../client.js"
+import { combineAnd } from "../shared/where.js"
 import { Prisma } from "../generated/prisma/client.js"
 import type { PrismaClient } from "../generated/prisma/client.js"
 import {
@@ -137,9 +138,7 @@ function buildListViewWhere(
     clauses.push({ entityId: { in: [...entityIds] } })
   }
 
-  if (clauses.length === 0) return undefined
-  if (clauses.length === 1) return clauses[0]
-  return { AND: clauses }
+  return combineAnd(clauses)
 }
 
 export async function listCertificatesForListView(

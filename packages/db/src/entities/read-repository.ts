@@ -14,6 +14,7 @@ import {
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
+import { combineAnd } from "../shared/where.js"
 import { buildEntitiesOrderBy } from "./order-by.js"
 
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
@@ -227,9 +228,7 @@ function buildListViewWhere(
     clauses.push({ entityTypes: { some: { entityTypeId: { in: [...entityTypeIds] } } } })
   }
 
-  if (clauses.length === 0) return undefined
-  if (clauses.length === 1) return clauses[0]
-  return { AND: clauses }
+  return combineAnd(clauses)
 }
 
 export async function listEntitiesForListView(
@@ -285,12 +284,7 @@ export async function searchEntityOptions(
       entityTypes: { some: { entityTypeId: { in: [...args.typeIds] } } },
     })
   }
-  const where =
-    optionClauses.length === 0
-      ? undefined
-      : optionClauses.length === 1
-        ? optionClauses[0]
-        : { AND: optionClauses }
+  const where = combineAnd(optionClauses)
 
   // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.entity.findMany({

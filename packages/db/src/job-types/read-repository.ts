@@ -2,6 +2,7 @@ import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { combineAnd } from "../shared/where.js"
 import {
   normalizeJobType,
   normalizeJobTypeOption,
@@ -56,7 +57,7 @@ export async function listJobTypesForListView(
   if (jobTypeNumber) {
     clauses.push({ jobTypeNumberInt: exactNumberIntEquals(jobTypeNumber) })
   }
-  const where = clauses.length > 0 ? { AND: clauses } : undefined
+  const where = combineAnd(clauses)
 
   const [total, rows] = await Promise.all([
     client.flooringJobType.count({ where }),
