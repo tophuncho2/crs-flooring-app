@@ -990,3 +990,27 @@ model EntityEntityType {
   @@map("entity_entity_type")
 }
 
+// Standalone user-managed lookup row. Mirrors FlooringEntityType's canonical
+// numbered-record shape (sequence-backed `ROW-N` string + generated int for
+// exact search + stepper), plus a non-semantic palette color and actor columns.
+// Self-contained — NO foreign keys this slice; linking payment purposes to
+// payments (max 1 per payment) and to planned payments are later steps. `name`
+// is @unique — one purpose per label.
+model FlooringPaymentPurpose {
+  id                      String       @id @default(uuid())
+  paymentPurposeNumber    String       @unique @default(dbgenerated("('ROW-'::text || (nextval('flooring_payment_purpose_number_seq'::regclass))::text)")) @map("payment_purpose_number")
+  paymentPurposeNumberInt Int?         @default(dbgenerated("(SUBSTRING(payment_purpose_number FROM 5))::integer"))
+  name                    String       @unique @db.VarChar(30)
+  color                   PaletteColor @default(SLATE)
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  createdBy               String?
+  updatedBy               String?
+
+  @@index([name])
+  @@index([paymentPurposeNumber])
+  @@index([paymentPurposeNumberInt])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_payment_purpose_name_trgm_idx")
+  @@map("flooring_payment_purpose")
+}
+
