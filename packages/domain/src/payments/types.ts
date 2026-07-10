@@ -34,6 +34,9 @@ export type Payment = {
   // Free-text store address. Nullable DB column surfaced as "" so the UI never
   // juggles null.
   storeAddress: string
+  // Free-text store number. Nullable DB column surfaced as "" so the UI never
+  // juggles null.
+  storeNumber: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -83,6 +86,7 @@ export type PaymentForm = {
   storePhone: string
   receiptNumber: string
   storeAddress: string
+  storeNumber: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -96,6 +100,7 @@ export const EMPTY_PAYMENT_FORM: PaymentForm = {
   storePhone: "",
   receiptNumber: "",
   storeAddress: "",
+  storeNumber: "",
   paymentDate: "",
   entityId: null,
   workOrderId: null,
@@ -110,6 +115,7 @@ export function toPaymentForm(payment: Payment): PaymentForm {
     storePhone: payment.storePhone,
     receiptNumber: payment.receiptNumber,
     storeAddress: payment.storeAddress,
+    storeNumber: payment.storeNumber,
     paymentDate: payment.paymentDate,
     entityId: payment.entityId,
     workOrderId: payment.workOrderId,

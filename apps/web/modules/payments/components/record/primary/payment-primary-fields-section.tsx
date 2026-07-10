@@ -19,6 +19,7 @@ import {
   PAYMENT_METHOD_MAX,
   RECEIPT_NUMBER_MAX,
   STORE_ADDRESS_MAX,
+  STORE_NUMBER_MAX,
   type EntityOption,
   type EntityTypeRef,
   type FlooringPaymentDirection,
@@ -282,6 +283,18 @@ export function PaymentPrimaryFieldsSection({
                   maxLength={STORE_ADDRESS_MAX}
                   placeholder="Store address"
                   ariaLabel="Store address"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Store #">
+                <TextCell
+                  editable={editable}
+                  value={draft.storeNumber}
+                  onChange={(next) => onFieldChange("storeNumber", next)}
+                  maxLength={STORE_NUMBER_MAX}
+                  placeholder="Store #"
+                  ariaLabel="Store number"
                 />
               </FormField>
             </CellAt>

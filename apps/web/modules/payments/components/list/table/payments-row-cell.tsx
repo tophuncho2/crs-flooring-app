@@ -58,6 +58,8 @@ export function renderPaymentRowCell(
       return <span className="tabular-nums">{formatPhoneNumber(row.storePhone ?? "") || "—"}</span>
     case "storeAddress":
       return <span>{row.storeAddress || "—"}</span>
+    case "storeNumber":
+      return <span>{row.storeNumber || "—"}</span>
     case "updatedAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     case "createdAt":
