@@ -2,6 +2,7 @@ import type { ImportDetail, ImportNeighbor, ImportOption, ImportRow } from "@bui
 import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import {
   importDetailSelect,
   importRowSelect,
@@ -178,9 +179,7 @@ function buildListViewWhere(
   // digits → -1 sentinel so a junk term returns no rows (never all rows).
   const impNumber = options.filters?.impNumber?.trim() ?? ""
   if (impNumber.length > 0) {
-    const digits = impNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ importNumber: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ importNumber: exactNumberIntEquals(impNumber) })
   }
 
   const warehouseIds = options.filters?.warehouseId

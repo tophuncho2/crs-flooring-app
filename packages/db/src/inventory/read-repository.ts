@@ -15,6 +15,7 @@ import type {
 import { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { normalizeEnrichedInventoryAdjustmentRow } from "./adjustments/read-repository.js"
 import {
   inventoryDetailSelect,
@@ -409,9 +410,7 @@ function buildListViewWhere(
   // positive). `rollNumber`/`dyeLot`/`note` stay substring ILIKE.
   const invNumber = options.filters?.invNumber?.trim() ?? ""
   if (invNumber.length > 0) {
-    const digits = invNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ inventoryNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ inventoryNumberInt: exactNumberIntEquals(invNumber) })
   }
   const rollNumber = options.filters?.rollNumber?.trim() ?? ""
   if (rollNumber.length > 0) {

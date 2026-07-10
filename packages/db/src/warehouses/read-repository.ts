@@ -8,6 +8,7 @@ import {
 import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import {
   type WarehouseDetailPayload,
   type WarehouseListRowPayload,
@@ -249,9 +250,7 @@ export async function listWarehousesForListView(
   // so it matches nothing.
   const storeNumber = options.storeNumber?.trim()
   if (storeNumber) {
-    const digits = storeNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ warehouseNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ warehouseNumberInt: exactNumberIntEquals(storeNumber) })
   }
   const where = clauses.length > 0 ? { AND: clauses } : undefined
 

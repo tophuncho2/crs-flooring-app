@@ -12,6 +12,7 @@ import {
   type EntityOption,
 } from "@builders/domain"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { buildEntitiesOrderBy } from "./order-by.js"
 
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
@@ -209,9 +210,7 @@ function buildListViewWhere(
   // No digits → -1 sentinel so a junk term returns no rows (never all rows).
   const entityNumber = options.filters?.entityNumber?.trim() ?? ""
   if (entityNumber.length > 0) {
-    const digits = entityNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ entityNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ entityNumberInt: exactNumberIntEquals(entityNumber) })
   }
 
   const stateCodes = options.filters?.state

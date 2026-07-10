@@ -8,6 +8,7 @@ import {
   type InventoryIndicatorRow,
 } from "@builders/domain"
 import { db } from "../../client.js"
+import { exactNumberIntEquals } from "../../shared/exact-number-search.js"
 import { buildIndicatorsListViewOrderBy } from "./order-by.js"
 import {
   indicatorRowSelect,
@@ -192,9 +193,7 @@ function buildIndicatorsListViewWhere(
 
   const indicatorNumber = filters.indicatorNumber?.trim()
   if (indicatorNumber) {
-    const digits = indicatorNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    where.indicatorNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+    where.indicatorNumberInt = exactNumberIntEquals(indicatorNumber)
   }
 
   return where

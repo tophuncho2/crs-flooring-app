@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import {
   normalizeJobType,
   normalizeJobTypeOption,
@@ -53,9 +54,7 @@ export async function listJobTypesForListView(
   // so it matches nothing.
   const jobTypeNumber = options.jobTypeNumber?.trim()
   if (jobTypeNumber) {
-    const digits = jobTypeNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ jobTypeNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ jobTypeNumberInt: exactNumberIntEquals(jobTypeNumber) })
   }
   const where = clauses.length > 0 ? { AND: clauses } : undefined
 

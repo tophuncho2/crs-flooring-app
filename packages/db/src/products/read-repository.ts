@@ -15,6 +15,7 @@ import {
   type ProductsDbClient,
 } from "./shared.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { buildProductListViewOrderBy } from "./order-by.js"
 
 // --- Record types ---
@@ -393,9 +394,7 @@ function buildListViewWhere(
   // No digits → -1 sentinel so a junk term returns no rows (never all rows).
   const prodNumber = options.filters?.prodNumber?.trim() ?? ""
   if (prodNumber.length > 0) {
-    const digits = prodNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ productNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ productNumberInt: exactNumberIntEquals(prodNumber) })
   }
 
   // Substring identity searches on the free-text attribute columns (trgm GIN).

@@ -1,5 +1,6 @@
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { paymentLinksInclude, projectPaymentLinks } from "./payment-links.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
@@ -46,9 +47,7 @@ function buildPaymentListWhere(
   const where: Prisma.FlooringPaymentWhereInput = {}
   const paymentNumber = options.paymentNumber?.trim() ?? ""
   if (paymentNumber.length > 0) {
-    const digits = paymentNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    where.paymentNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+    where.paymentNumberInt = exactNumberIntEquals(paymentNumber)
   }
   const amount = options.amount?.trim() ?? ""
   if (amount.length > 0) {

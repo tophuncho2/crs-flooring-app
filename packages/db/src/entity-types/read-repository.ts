@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import {
   normalizeEntityType,
   normalizeEntityTypeOption,
@@ -52,9 +53,7 @@ export async function listEntityTypesForListView(
   // always positive) so it matches nothing.
   const entityTypeNumber = options.entityTypeNumber?.trim()
   if (entityTypeNumber) {
-    const digits = entityTypeNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ entityTypeNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ entityTypeNumberInt: exactNumberIntEquals(entityTypeNumber) })
   }
   const where = clauses.length > 0 ? { AND: clauses } : undefined
 

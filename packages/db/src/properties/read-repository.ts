@@ -12,6 +12,7 @@ import {
   type PropertyOption,
 } from "@builders/domain"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { buildPropertiesOrderBy } from "./order-by.js"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
@@ -191,9 +192,7 @@ function buildListViewWhere(
   // No digits → -1 sentinel so a junk term returns no rows (never all rows).
   const propNumber = options.filters?.propNumber?.trim() ?? ""
   if (propNumber.length > 0) {
-    const digits = propNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({ propertyNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    clauses.push({ propertyNumberInt: exactNumberIntEquals(propNumber) })
   }
 
   const entityIds = options.filters?.entityId

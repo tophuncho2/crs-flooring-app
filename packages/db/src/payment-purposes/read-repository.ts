@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import {
   normalizePaymentPurpose,
   normalizePaymentPurposeOption,
@@ -52,11 +53,7 @@ export async function listPaymentPurposesForListView(
   // sequence is always positive) so it matches nothing.
   const paymentPurposeNumber = options.paymentPurposeNumber?.trim()
   if (paymentPurposeNumber) {
-    const digits = paymentPurposeNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    clauses.push({
-      paymentPurposeNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 },
-    })
+    clauses.push({ paymentPurposeNumberInt: exactNumberIntEquals(paymentPurposeNumber) })
   }
   const where = clauses.length > 0 ? { AND: clauses } : undefined
 

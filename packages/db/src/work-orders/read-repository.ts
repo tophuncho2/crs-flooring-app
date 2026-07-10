@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import type { FlooringVacancyStatus, Prisma } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import {
   buildFlooringProductDisplayName,
   normalizeWorkOrder,
@@ -118,9 +119,7 @@ export function buildWorkOrdersWhere(
   // work-order-number sequence is always positive).
   const workOrderNumberRaw = filters?.workOrderNumber?.[0]
   if (workOrderNumberRaw) {
-    const digits = workOrderNumberRaw.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    andClauses.push({ workOrderNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+    andClauses.push({ workOrderNumberInt: exactNumberIntEquals(workOrderNumberRaw) })
   }
   const description = filters?.description?.[0]
   if (description) {

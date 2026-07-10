@@ -10,6 +10,7 @@ import {
   type InventoryAdjustmentRow,
 } from "@builders/domain"
 import { db } from "../../client.js"
+import { exactNumberIntEquals } from "../../shared/exact-number-search.js"
 import { buildAdjustmentsListViewOrderBy } from "./order-by.js"
 import {
   adjustmentRowSelect,
@@ -414,15 +415,11 @@ function buildAdjustmentsListViewWhere(
 
   const adjNumber = filters.adjNumber?.trim()
   if (adjNumber) {
-    const digits = adjNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    where.adjustmentNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+    where.adjustmentNumberInt = exactNumberIntEquals(adjNumber)
   }
   const invNumber = filters.invNumber?.trim()
   if (invNumber) {
-    const digits = invNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    where.inventoryNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+    where.inventoryNumberInt = exactNumberIntEquals(invNumber)
   }
   const rollNumber = filters.rollNumber?.trim()
   if (rollNumber) {
