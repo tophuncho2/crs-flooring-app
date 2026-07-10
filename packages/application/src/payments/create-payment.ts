@@ -26,6 +26,8 @@ export async function createPaymentUseCase(
       paymentMethod: input.paymentMethod ?? "",
       // Phone with no validation rule (lenient policy); pass through to satisfy the form shape.
       storePhone: input.storePhone ?? "",
+      // Free-text identifier with no validation rule; pass through to satisfy the form shape.
+      receiptNumber: input.receiptNumber ?? "",
       paymentDate: "",
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,

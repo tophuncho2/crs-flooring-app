@@ -17,6 +17,7 @@ export type CreatePaymentRecordInput = {
   direction: FlooringPaymentDirection
   paymentMethod?: string | null
   storePhone?: string | null
+  receiptNumber?: string | null
   paymentDate?: string
   // Optional, single links. `null`/omitted = unlinked.
   entityId?: string | null
@@ -32,6 +33,7 @@ export type UpdatePaymentRecordInput = {
   color?: PaletteColor
   paymentMethod?: string | null
   storePhone?: string | null
+  receiptNumber?: string | null
   paymentDate?: string
   // Tri-state: `undefined` = leave as-is, `null` = clear the link, string = set.
   entityId?: string | null
@@ -57,6 +59,7 @@ export async function createPaymentRecord(
       direction: input.direction,
       paymentMethod: input.paymentMethod?.trim() || null,
       storePhone: normalizePhoneNumber(input.storePhone ?? "") || null,
+      receiptNumber: input.receiptNumber?.trim() || null,
       paymentDate: optionalDate(input.paymentDate) ?? null,
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,
@@ -80,6 +83,7 @@ export async function updatePaymentRecord(
   if (input.color !== undefined) data.color = input.color
   if (input.paymentMethod !== undefined) data.paymentMethod = input.paymentMethod?.trim() || null
   if (input.storePhone !== undefined) data.storePhone = normalizePhoneNumber(input.storePhone ?? "") || null
+  if (input.receiptNumber !== undefined) data.receiptNumber = input.receiptNumber?.trim() || null
   if (input.paymentDate !== undefined) data.paymentDate = optionalDate(input.paymentDate)
   if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.workOrderId !== undefined) data.workOrderId = input.workOrderId

@@ -28,6 +28,9 @@ export type Payment = {
   // Store phone snapshot. Canonical digits-only (phone standard); nullable DB
   // column surfaced as "" so the UI never juggles null.
   storePhone: string
+  // Free-text receipt identifier. Nullable DB column surfaced as "" so the UI
+  // never juggles null.
+  receiptNumber: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -75,6 +78,7 @@ export type PaymentForm = {
   color: PaletteColor
   paymentMethod: string
   storePhone: string
+  receiptNumber: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -86,6 +90,7 @@ export const EMPTY_PAYMENT_FORM: PaymentForm = {
   color: DEFAULT_PALETTE_COLOR,
   paymentMethod: "",
   storePhone: "",
+  receiptNumber: "",
   paymentDate: "",
   entityId: null,
   workOrderId: null,
@@ -98,6 +103,7 @@ export function toPaymentForm(payment: Payment): PaymentForm {
     color: payment.color,
     paymentMethod: payment.paymentMethod,
     storePhone: payment.storePhone,
+    receiptNumber: payment.receiptNumber,
     paymentDate: payment.paymentDate,
     entityId: payment.entityId,
     workOrderId: payment.workOrderId,

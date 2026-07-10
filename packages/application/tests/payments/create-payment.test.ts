@@ -91,6 +91,17 @@ describe("createPaymentUseCase", () => {
     )
   })
 
+  it("passes the receipt number straight through to the repo input", async () => {
+    await createPaymentUseCase(
+      { amount: "10.00", direction: "REVENUE", receiptNumber: "RCPT-001" } as never,
+      ACTOR,
+    )
+    expect(createPaymentRecordMock).toHaveBeenCalledWith(
+      { amount: "10.00", direction: "REVENUE", receiptNumber: "RCPT-001", createdBy: ACTOR, updatedBy: ACTOR },
+      expect.anything(),
+    )
+  })
+
   it("maps a P2003 (bad entity/work-order link) to a 400 link error", async () => {
     createPaymentRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
     await expect(

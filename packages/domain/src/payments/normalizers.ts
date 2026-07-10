@@ -13,6 +13,7 @@ type PaymentInput = {
   color: PaletteColor
   paymentMethod?: string | null
   storePhone?: string | null
+  receiptNumber?: string | null
   paymentDate: Date | string | null
   entityId?: string | null
   workOrderId?: string | null
@@ -42,6 +43,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     color: payment.color,
     paymentMethod: payment.paymentMethod ?? "",
     storePhone: normalizePhoneNumber(payment.storePhone ?? ""),
+    receiptNumber: payment.receiptNumber ?? "",
     paymentDate: toIso(payment.paymentDate),
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,

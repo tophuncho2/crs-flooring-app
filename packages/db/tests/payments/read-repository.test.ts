@@ -13,6 +13,7 @@ function paymentRow(overrides: Record<string, unknown> = {}) {
     color: "SLATE",
     paymentMethod: null,
     storePhone: null,
+    receiptNumber: null,
     paymentDate: null,
     entityId: null,
     workOrderId: "wo-1",

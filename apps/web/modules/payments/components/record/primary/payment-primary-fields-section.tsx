@@ -17,6 +17,7 @@ import {
 import {
   formatEasternDateTime,
   PAYMENT_METHOD_MAX,
+  RECEIPT_NUMBER_MAX,
   type EntityOption,
   type EntityTypeRef,
   type FlooringPaymentDirection,
@@ -246,6 +247,18 @@ export function PaymentPrimaryFieldsSection({
                   maxLength={PAYMENT_METHOD_MAX}
                   placeholder="Cash, Check #…, ACH"
                   ariaLabel="Payment method"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Receipt #">
+                <TextCell
+                  editable={editable}
+                  value={draft.receiptNumber}
+                  onChange={(next) => onFieldChange("receiptNumber", next)}
+                  maxLength={RECEIPT_NUMBER_MAX}
+                  placeholder="Receipt #"
+                  ariaLabel="Receipt number"
                 />
               </FormField>
             </CellAt>

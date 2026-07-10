@@ -15,6 +15,7 @@ import {
   LIST_PAYMENTS_PAGE_SIZE,
   PALETTE_COLOR_INVALID_MESSAGE,
   PAYMENT_METHOD_MAX,
+  RECEIPT_NUMBER_MAX,
   type FlooringPaymentDirection,
   type PaletteColor,
 } from "@builders/domain"
@@ -116,6 +117,7 @@ export function validateCreatePaymentInput(
     direction: requireDirection(body.direction, "direction"),
     paymentMethod: optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod"),
     storePhone: optionalPhone(body.storePhone, "storePhone"),
+    receiptNumber: optionalBoundedString(body.receiptNumber, RECEIPT_NUMBER_MAX, "receiptNumber"),
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
     entityId: optionalLinkId(body.entityId, "entityId"),
     workOrderId: optionalLinkId(body.workOrderId, "workOrderId"),
@@ -132,6 +134,8 @@ export function validateUpdatePaymentInput(
   if ("paymentMethod" in body)
     input.paymentMethod = optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod")
   if ("storePhone" in body) input.storePhone = optionalPhone(body.storePhone, "storePhone")
+  if ("receiptNumber" in body)
+    input.receiptNumber = optionalBoundedString(body.receiptNumber, RECEIPT_NUMBER_MAX, "receiptNumber")
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
   if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
   if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")

@@ -52,6 +52,8 @@ export function renderPaymentRowCell(
       )
     case "paymentMethod":
       return <span>{row.paymentMethod || "—"}</span>
+    case "receiptNumber":
+      return <span>{row.receiptNumber || "—"}</span>
     case "storePhone":
       return <span className="tabular-nums">{formatPhoneNumber(row.storePhone ?? "") || "—"}</span>
     case "updatedAt":

@@ -641,6 +641,7 @@ model FlooringPayment {
   color            PaletteColor             @default(SLATE) // non-semantic user palette tag (edit-only)
   paymentMethod    String?                  @db.VarChar(50) // free-text label: Cash / Check #… / ACH
   storePhone       String?                  @db.VarChar(20) // store phone snapshot; canonical digits-only
+  receiptNumber    String?                  @db.VarChar(100) // free-text receipt identifier
   paymentDate      DateTime?
   entityId         String?
   entity           Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
