@@ -13,6 +13,11 @@ export const TOOLBAR_TRIGGER_BASE =
 /** Vibrant "in use" state — filled blue, white text (mirrors the Create button). */
 export const TOOLBAR_TRIGGER_ACTIVE = "border-sky-600 bg-sky-600 text-white hover:bg-sky-500"
 
-/** Resting state — bordered panel pill. */
+/**
+ * Resting state — bordered panel pill. The border is a crisp sky/60 (not the
+ * faint 30%-alpha `--panel-border`) so the pill's 34px box reads at the same
+ * visual size as the solid-blue active pill; a faint edge on a near-white header
+ * makes the resting button appear smaller than its filled-blue counterpart.
+ */
 export const TOOLBAR_TRIGGER_INACTIVE =
-  "border-[var(--panel-border)] bg-[var(--panel-background)] text-[var(--foreground)]/80 hover:text-[var(--foreground)]"
+  "border-sky-500/60 bg-[var(--panel-background)] text-[var(--foreground)]/80 hover:border-sky-500 hover:text-[var(--foreground)]"
