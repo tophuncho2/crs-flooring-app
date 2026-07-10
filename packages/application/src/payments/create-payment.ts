@@ -24,6 +24,8 @@ export async function createPaymentUseCase(
       color: DEFAULT_PALETTE_COLOR,
       // Free-text label with no validation rule; pass through to satisfy the form shape.
       paymentMethod: input.paymentMethod ?? "",
+      // Phone with no validation rule (lenient policy); pass through to satisfy the form shape.
+      storePhone: input.storePhone ?? "",
       paymentDate: "",
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,

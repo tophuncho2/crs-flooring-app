@@ -3,6 +3,7 @@ import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import {
   formatEasternDateTime,
+  formatPhoneNumber,
   formatSignedPaymentAmount,
   formatStableDate,
   type PaymentListRow,
@@ -51,6 +52,8 @@ export function renderPaymentRowCell(
       )
     case "paymentMethod":
       return <span>{row.paymentMethod || "—"}</span>
+    case "storePhone":
+      return <span className="tabular-nums">{formatPhoneNumber(row.storePhone ?? "") || "—"}</span>
     case "updatedAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     case "createdAt":

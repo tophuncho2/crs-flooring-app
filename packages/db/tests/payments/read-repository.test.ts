@@ -12,6 +12,7 @@ function paymentRow(overrides: Record<string, unknown> = {}) {
     direction: "REVENUE",
     color: "SLATE",
     paymentMethod: null,
+    storePhone: null,
     paymentDate: null,
     entityId: null,
     workOrderId: "wo-1",

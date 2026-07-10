@@ -10,6 +10,7 @@ import {
   isPaletteColor,
   isValidMoneyAmount,
   normalizeMoneyAmount,
+  normalizePhoneNumber,
   LIST_PAYMENTS_MAX_PAGE_SIZE,
   LIST_PAYMENTS_PAGE_SIZE,
   PALETTE_COLOR_INVALID_MESSAGE,
@@ -51,6 +52,16 @@ function optionalLinkId(value: unknown, field: string): string | null | undefine
   if (typeof value !== "string") fail(`${field} must be a string`, field)
   const trimmed = (value as string).trim()
   return trimmed.length > 0 ? trimmed : null
+}
+
+// Phone standard: lenient — never 400s. Normalizes to canonical digits-only
+// (`@builders/domain`); empty/invalid collapses to null. `undefined` = omitted
+// (leave as-is on update), `null` = explicit clear.
+function optionalPhone(value: unknown, field: string): string | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (typeof value !== "string") fail(`${field} must be a string`, field)
+  return normalizePhoneNumber(value as string) || null
 }
 
 function requireDirection(value: unknown, field: string): FlooringPaymentDirection {
@@ -104,6 +115,7 @@ export function validateCreatePaymentInput(
     amount: requireAmount(body.amount, "amount"),
     direction: requireDirection(body.direction, "direction"),
     paymentMethod: optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod"),
+    storePhone: optionalPhone(body.storePhone, "storePhone"),
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
     entityId: optionalLinkId(body.entityId, "entityId"),
     workOrderId: optionalLinkId(body.workOrderId, "workOrderId"),
@@ -119,6 +131,7 @@ export function validateUpdatePaymentInput(
   if ("color" in body) input.color = requireColor(body.color, "color")
   if ("paymentMethod" in body)
     input.paymentMethod = optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod")
+  if ("storePhone" in body) input.storePhone = optionalPhone(body.storePhone, "storePhone")
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
   if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
   if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")

@@ -7,6 +7,7 @@ import {
   FieldSection,
   FormField,
   MoneyCell,
+  PhoneCell,
   RecordColumnBreak,
   RecordSectionDivider,
   SegmentedChoiceCell,
@@ -245,6 +246,16 @@ export function PaymentPrimaryFieldsSection({
                   maxLength={PAYMENT_METHOD_MAX}
                   placeholder="Cash, Check #…, ACH"
                   ariaLabel="Payment method"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Store Phone">
+                <PhoneCell
+                  editable={editable}
+                  value={draft.storePhone}
+                  onChange={(next) => onFieldChange("storePhone", next)}
+                  ariaLabel="Store phone"
                 />
               </FormField>
             </CellAt>

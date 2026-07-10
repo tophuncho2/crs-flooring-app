@@ -25,6 +25,9 @@ export type Payment = {
   // Free-text method label ("Cash", "Check #…", "ACH"). Nullable DB column
   // surfaced as "" so the UI never juggles null.
   paymentMethod: string
+  // Store phone snapshot. Canonical digits-only (phone standard); nullable DB
+  // column surfaced as "" so the UI never juggles null.
+  storePhone: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -71,6 +74,7 @@ export type PaymentForm = {
   direction: FlooringPaymentDirection
   color: PaletteColor
   paymentMethod: string
+  storePhone: string
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -81,6 +85,7 @@ export const EMPTY_PAYMENT_FORM: PaymentForm = {
   direction: "REVENUE",
   color: DEFAULT_PALETTE_COLOR,
   paymentMethod: "",
+  storePhone: "",
   paymentDate: "",
   entityId: null,
   workOrderId: null,
@@ -92,6 +97,7 @@ export function toPaymentForm(payment: Payment): PaymentForm {
     direction: payment.direction,
     color: payment.color,
     paymentMethod: payment.paymentMethod,
+    storePhone: payment.storePhone,
     paymentDate: payment.paymentDate,
     entityId: payment.entityId,
     workOrderId: payment.workOrderId,
