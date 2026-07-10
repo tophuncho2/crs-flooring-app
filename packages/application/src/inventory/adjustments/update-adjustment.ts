@@ -1,40 +1,40 @@
 import {
   Prisma,
   getAdjustmentById,
-  getPendingAdjustmentWithInventoryForMutation,
+  getAdjustmentWithInventoryForMutation,
   lockInventoryForAdjustment,
   recomputeAndPersistNetDeducted,
-  updatePendingAdjustmentRow,
+  updateAdjustmentRow,
   withDatabaseTransaction,
-  type UpdatePendingAdjustmentRowPatch,
+  type UpdateAdjustmentRowPatch,
 } from "@builders/db"
 import {
   assertAdjustmentExpectedUpdatedAtMatches,
   assertNetDeductedWithinStartingStock,
-  describeAdjustmentPendingFormIssues,
+  describeAdjustmentFormIssues,
   InventoryAdjustmentDomainError,
-  validateAdjustmentPendingForm,
+  validateAdjustmentForm,
 } from "@builders/domain"
 import { InventoryAdjustmentExecutionError } from "./errors.js"
 import { assertAdjustmentScope } from "./scope.js"
 import type {
   AdjustmentMutationResult,
-  UpdatePendingAdjustmentInput,
+  UpdateAdjustmentInput,
 } from "./types.js"
 
-export async function updatePendingAdjustmentUseCase(
-  input: UpdatePendingAdjustmentInput,
+export async function updateAdjustmentUseCase(
+  input: UpdateAdjustmentInput,
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<AdjustmentMutationResult> {
   if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updatePendingAdjustmentUseCase requires a non-empty actorEmail")
+    throw new Error("updateAdjustmentUseCase requires a non-empty actorEmail")
   }
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const found = await getPendingAdjustmentWithInventoryForMutation(c, input.adjustmentId)
+    const found = await getAdjustmentWithInventoryForMutation(c, input.adjustmentId)
     if (!found) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
@@ -50,9 +50,9 @@ export async function updatePendingAdjustmentUseCase(
     })
 
     // Every field — quantity, the metadata trio, and the WO link — is freely
-    // editable for the whole lifecycle of the row; there is no finalize/freeze
-    // and `QUEUED` never occurs. The WO link is a plain `workOrderId` (any
-    // product, any direction), so no linkage/product invariant applies.
+    // editable for the whole lifecycle of the row; there is no finalize/freeze.
+    // The WO link is a plain `workOrderId` (any product, any direction), so no
+    // linkage/product invariant applies.
     const mergedAdjustmentType =
       input.patch.adjustmentType !== undefined
         ? input.patch.adjustmentType
@@ -86,7 +86,7 @@ export async function updatePendingAdjustmentUseCase(
       input.patch.isWaste !== undefined ? input.patch.isWaste : existing.isWaste
     const mergedInternalNotes =
       input.patch.internalNotes !== undefined ? input.patch.internalNotes : existing.internalNotes
-    const formIssues = validateAdjustmentPendingForm({
+    const formIssues = validateAdjustmentForm({
       adjustmentType: mergedAdjustmentType,
       quantity: mergedQuantity,
       isWaste: mergedIsWaste,
@@ -95,7 +95,7 @@ export async function updatePendingAdjustmentUseCase(
     if (formIssues.length > 0) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
-        message: describeAdjustmentPendingFormIssues(formIssues),
+        message: describeAdjustmentFormIssues(formIssues),
         status: 400,
         payload: { issues: formIssues },
       })
@@ -106,7 +106,7 @@ export async function updatePendingAdjustmentUseCase(
     // Stamp the editor unconditionally — the write primitive sets updatedBy
     // before the recompute branch, so even a metadata-only edit (the
     // `!chainTouched` short-circuit below) correctly records its author.
-    const patch: UpdatePendingAdjustmentRowPatch = { updatedBy: actorEmail }
+    const patch: UpdateAdjustmentRowPatch = { updatedBy: actorEmail }
     if (input.patch.quantity !== undefined) {
       patch.quantity = input.patch.quantity
     }
@@ -126,7 +126,7 @@ export async function updatePendingAdjustmentUseCase(
       patch.workOrderId = input.patch.link.workOrderId
     }
 
-    const written = await updatePendingAdjustmentRow(c, { id: existing.id, patch })
+    const written = await updateAdjustmentRow(c, { id: existing.id, patch })
 
     // Only quantity + direction move the running balance. A metadata-only edit
     // (internalNotes / isWaste / location / link) leaves the whole before/after chain

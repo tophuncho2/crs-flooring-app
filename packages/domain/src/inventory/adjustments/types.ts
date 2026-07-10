@@ -38,15 +38,11 @@ export type InventoryAdjustmentRow = {
   updatedBy: string | null
 }
 
-export type InventoryAdjustmentPendingForm = {
+export type InventoryAdjustmentForm = {
   adjustmentType: FlooringInventoryAdjustmentType
   quantity: string
   isWaste: boolean
   internalNotes: string
-}
-
-export type InventoryAdjustmentLinkUpdate = {
-  workOrderId: string | null
 }
 
 export type EnrichedInventoryAdjustmentRow = InventoryAdjustmentRow & {

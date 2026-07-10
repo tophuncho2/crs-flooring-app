@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query"
 import type { InventoryAdjustmentRow } from "@builders/domain"
-import { deletePendingAdjustmentRequest } from "@/modules/adjustments/data/mutations"
+import { deleteAdjustmentRequest } from "@/modules/adjustments/data/mutations"
 
 type Deps = {
   /** Fired after a successful delete with the removed row's id. */
@@ -12,7 +12,7 @@ type Deps = {
 }
 
 /**
- * The one delete-pending mutation, shared by every surface that removes a PENDING
+ * The one delete mutation, shared by every surface that removes an
  * adjustment: the record-view edit panel, the inventory record adjustments list,
  * and the work-order record adjustments grid. Every delete targets the row's own
  * **inventory** route — the sole adjustment-mutation surface (mirrors create,
@@ -23,7 +23,7 @@ type Deps = {
 export function useDeleteAdjustmentMutation({ onDeleted, onError }: Deps = {}) {
   return useMutation({
     mutationFn: (input: { adjustment: InventoryAdjustmentRow }) =>
-      deletePendingAdjustmentRequest({
+      deleteAdjustmentRequest({
         scope: { kind: "inventory", inventoryId: input.adjustment.inventoryId },
         adjustmentId: input.adjustment.id,
         expectedUpdatedAt: input.adjustment.updatedAt,

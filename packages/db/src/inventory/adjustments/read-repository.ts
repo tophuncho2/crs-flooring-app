@@ -363,7 +363,7 @@ export async function getAdjustmentNeighbors(
  *     `inventoryNote`), backed by the per-column trigram indexes. All search
  *     filters AND together.
  *   - Sort: `createdAt DESC, id DESC` — a stable newest-first ledger order
- *     so freshly created (pending) rows surface at the top rather than
+ *     so freshly created rows surface at the top rather than
  *     being grouped deep under an inventory item.
  *
  * Reuses `enrichedInventoryAdjustmentRowSelect` + the matching normalizer
@@ -560,7 +560,7 @@ export async function listAdjustmentsForInventoryIds(
   }))
 }
 
-export type PendingAdjustmentWithInventoryForMutation = {
+export type AdjustmentWithInventoryForMutation = {
   adjustment: InventoryAdjustmentRecord
   inventory: InventoryAdjustmentParentContext
 }
@@ -569,16 +569,16 @@ export type PendingAdjustmentWithInventoryForMutation = {
  * Single-query read powering the per-row update + delete sync use cases.
  * Returns the adjustment (full normalized record) plus the parent
  * inventory's `InventoryAdjustmentParentContext` shape — the use case
- * asserts linkage / pending-status / OCC against the adjustment, then locks
+ * asserts linkage / OCC against the adjustment, then locks
  * the inventory row FOR UPDATE and applies the patch.
  *
  * Transaction client is required (no `db` default) so the read participates
  * in the same TX that takes the lock.
  */
-export async function getPendingAdjustmentWithInventoryForMutation(
+export async function getAdjustmentWithInventoryForMutation(
   tx: Prisma.TransactionClient,
   adjustmentId: string,
-): Promise<PendingAdjustmentWithInventoryForMutation | null> {
+): Promise<AdjustmentWithInventoryForMutation | null> {
   const row = await tx.flooringInventoryAdjustment.findUnique({
     where: { id: adjustmentId },
     select: {

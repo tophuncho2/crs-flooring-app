@@ -26,13 +26,13 @@ function basePath(scope: AdjustmentScopeUrl): string {
     : `/api/inventory/${scope.inventoryId}/adjustments`
 }
 
-export type PendingAdjustmentMutationResponse = {
+export type AdjustmentMutationResponse = {
   adjustment: InventoryAdjustmentRow
   inventoryId: string
   netDeducted: string
 }
 
-export type DeletePendingAdjustmentResponse = {
+export type DeleteAdjustmentResponse = {
   deletedId: string
   inventoryId: string
   netDeducted: string
@@ -70,7 +70,7 @@ export async function createAdjustmentRequest(args: {
   if (args.warehouseId) payload.warehouseId = args.warehouseId
   if (args.workOrderId) payload.workOrderId = args.workOrderId
   const body = withMutationMeta(payload)
-  return requestJson<PendingAdjustmentMutationResponse>(
+  return requestJson<AdjustmentMutationResponse>(
     `/api/inventory/${args.inventoryId}/adjustments`,
     {
       method: "POST",
@@ -80,7 +80,7 @@ export async function createAdjustmentRequest(args: {
   )
 }
 
-export async function updatePendingAdjustmentRequest(args: {
+export async function updateAdjustmentRequest(args: {
   scope: AdjustmentScopeUrl
   adjustmentId: string
   expectedUpdatedAt: string
@@ -99,7 +99,7 @@ export async function updatePendingAdjustmentRequest(args: {
     { patch: args.patch } as Record<string, unknown>,
     args.expectedUpdatedAt,
   )
-  return requestJson<PendingAdjustmentMutationResponse>(
+  return requestJson<AdjustmentMutationResponse>(
     `${basePath(args.scope)}/${args.adjustmentId}`,
     {
       method: "PATCH",
@@ -109,13 +109,13 @@ export async function updatePendingAdjustmentRequest(args: {
   )
 }
 
-export async function deletePendingAdjustmentRequest(args: {
+export async function deleteAdjustmentRequest(args: {
   scope: AdjustmentScopeUrl
   adjustmentId: string
   expectedUpdatedAt: string
 }) {
   const body = withMutationMeta({} as Record<string, unknown>, args.expectedUpdatedAt)
-  return requestJson<DeletePendingAdjustmentResponse>(
+  return requestJson<DeleteAdjustmentResponse>(
     `${basePath(args.scope)}/${args.adjustmentId}`,
     {
       method: "DELETE",

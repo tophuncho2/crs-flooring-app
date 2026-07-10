@@ -39,7 +39,7 @@ type Deps = {
 export type CreateAdjustmentInput = { form: AdjustmentEditForm }
 
 /**
- * Create-pending mutation. The form is the single source of input; the request
+ * Create mutation. The form is the single source of input; the request
  * always targets the inventory route (the form knows the chosen inventory id).
  *
  * Default success behavior: flip the panel create → edit on the new row.

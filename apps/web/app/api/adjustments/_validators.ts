@@ -18,10 +18,10 @@ import {
 } from "@builders/domain"
 import { parseExportEnvelope } from "@/server/http/export-request"
 
-// Adjustment mutations are one scope-aware use-case set called from two route
-// trees — `api/inventory/[id]/adjustments/...` and
-// `api/work-orders/[id]/adjustments/...`. Their body validators are identical, so
-// they live here once. This folder has no `route.ts`; it is a validator module
+// Adjustment mutation body validators. The use cases are scope-aware, but every
+// adjustment mutation currently enters through the inventory route tree
+// (`api/inventory/[id]/adjustments/...`). They live here once, shared across
+// those route files. This folder has no `route.ts`; it is a validator module
 // only. Each route stamps its own scope/path identifiers before the use case.
 
 function failAdjustment(message: string, field?: string): never {
@@ -125,11 +125,11 @@ function parseOptionalWorkOrderId(rawWorkOrderId: unknown): string | null {
   return requireAdjustmentString(rawWorkOrderId, "workOrderId")
 }
 
-export type ValidatedUpdatePendingAdjustmentLink = {
+export type ValidatedUpdateAdjustmentLink = {
   workOrderId: string | null
 }
 
-export type ValidatedUpdatePendingAdjustmentPatch = {
+export type ValidatedUpdateAdjustmentPatch = {
   quantity?: string
   adjustmentType?: "INCREASE" | "DEDUCTION"
   isWaste?: boolean
@@ -137,14 +137,14 @@ export type ValidatedUpdatePendingAdjustmentPatch = {
   color?: PaletteColor
   location?: string | null
   area?: string | null
-  link?: ValidatedUpdatePendingAdjustmentLink
+  link?: ValidatedUpdateAdjustmentLink
 }
 
-export type ValidatedUpdatePendingAdjustmentInput = {
-  patch: ValidatedUpdatePendingAdjustmentPatch
+export type ValidatedUpdateAdjustmentInput = {
+  patch: ValidatedUpdateAdjustmentPatch
 }
 
-function validateUpdatePendingAdjustmentLink(value: unknown): ValidatedUpdatePendingAdjustmentLink {
+function validateUpdateAdjustmentLink(value: unknown): ValidatedUpdateAdjustmentLink {
   const obj = requireAdjustmentObject(value, "patch.link")
   const rawWO = obj.workOrderId
   if (rawWO !== null && typeof rawWO !== "string") {
@@ -158,11 +158,11 @@ function validateUpdatePendingAdjustmentLink(value: unknown): ValidatedUpdatePen
   return { workOrderId }
 }
 
-export function validateUpdatePendingAdjustmentInput(
+export function validateUpdateAdjustmentInput(
   body: Record<string, unknown>,
-): ValidatedUpdatePendingAdjustmentInput {
+): ValidatedUpdateAdjustmentInput {
   const patchBody = requireAdjustmentObject(body.patch, "patch")
-  const patch: ValidatedUpdatePendingAdjustmentPatch = {}
+  const patch: ValidatedUpdateAdjustmentPatch = {}
   if ("quantity" in patchBody) {
     patch.quantity = requireAdjustmentString(patchBody.quantity, "patch.quantity")
   }
@@ -201,7 +201,7 @@ export function validateUpdatePendingAdjustmentInput(
     patch.area = next && next.trim() !== "" ? next : null
   }
   if ("link" in patchBody) {
-    patch.link = validateUpdatePendingAdjustmentLink(patchBody.link)
+    patch.link = validateUpdateAdjustmentLink(patchBody.link)
   }
   if (Object.keys(patch).length === 0) {
     failAdjustment(
@@ -212,11 +212,11 @@ export function validateUpdatePendingAdjustmentInput(
   return { patch }
 }
 
-export type ValidatedDeletePendingAdjustmentInput = Record<string, never>
+export type ValidatedDeleteAdjustmentInput = Record<string, never>
 
-export function validateDeletePendingAdjustmentInput(
+export function validateDeleteAdjustmentInput(
   _body: Record<string, unknown>,
-): ValidatedDeletePendingAdjustmentInput {
+): ValidatedDeleteAdjustmentInput {
   return {}
 }
 

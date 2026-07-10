@@ -3,10 +3,10 @@ import {
   assertAdjustmentWarehouseMatchesInventory,
   assertBeforeAfterInvariant,
 } from "../../../src/inventory/adjustments/rules/adjustment-rules.js"
-import { assertAdjustmentExpectedUpdatedAtMatches } from "../../../src/inventory/adjustments/rules/pending-mutation-rules.js"
+import { assertAdjustmentExpectedUpdatedAtMatches } from "../../../src/inventory/adjustments/rules/mutation-rules.js"
 import {
-  describeAdjustmentPendingFormIssues,
-  validateAdjustmentPendingForm,
+  describeAdjustmentFormIssues,
+  validateAdjustmentForm,
 } from "../../../src/inventory/adjustments/rules/form-rules.js"
 
 describe("assertBeforeAfterInvariant", () => {
@@ -66,10 +66,10 @@ describe("assertAdjustmentExpectedUpdatedAtMatches", () => {
   })
 })
 
-describe("validateAdjustmentPendingForm", () => {
+describe("validateAdjustmentForm", () => {
   it("passes a positive quantity", () => {
     expect(
-      validateAdjustmentPendingForm({
+      validateAdjustmentForm({
         adjustmentType: "DEDUCTION",
         quantity: "5",
         isWaste: false,
@@ -80,7 +80,7 @@ describe("validateAdjustmentPendingForm", () => {
 
   it("flags a missing, non-numeric, or non-positive quantity", () => {
     expect(
-      validateAdjustmentPendingForm({
+      validateAdjustmentForm({
         adjustmentType: "DEDUCTION",
         quantity: "  ",
         isWaste: false,
@@ -88,7 +88,7 @@ describe("validateAdjustmentPendingForm", () => {
       }),
     ).toEqual([{ code: "ADJUSTMENT_QUANTITY_REQUIRED" }])
     expect(
-      validateAdjustmentPendingForm({
+      validateAdjustmentForm({
         adjustmentType: "DEDUCTION",
         quantity: "abc",
         isWaste: false,
@@ -96,7 +96,7 @@ describe("validateAdjustmentPendingForm", () => {
       }),
     ).toEqual([{ code: "ADJUSTMENT_QUANTITY_INVALID", value: "abc" }])
     expect(
-      validateAdjustmentPendingForm({
+      validateAdjustmentForm({
         adjustmentType: "DEDUCTION",
         quantity: "0",
         isWaste: false,
@@ -106,10 +106,10 @@ describe("validateAdjustmentPendingForm", () => {
   })
 })
 
-describe("describeAdjustmentPendingFormIssues", () => {
+describe("describeAdjustmentFormIssues", () => {
   it("joins issue messages", () => {
     expect(
-      describeAdjustmentPendingFormIssues([{ code: "ADJUSTMENT_QUANTITY_REQUIRED" }]),
+      describeAdjustmentFormIssues([{ code: "ADJUSTMENT_QUANTITY_REQUIRED" }]),
     ).toBe("Quantity is required.")
   })
 })

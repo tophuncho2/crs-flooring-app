@@ -2,7 +2,7 @@ import {
   Prisma,
   getAdjustmentById,
   getInventoryParentContextForAdjustments,
-  insertPendingAdjustmentRow,
+  insertAdjustmentRow,
   lockInventoryForAdjustment,
   recomputeAndPersistNetDeducted,
   withDatabaseTransaction,
@@ -10,32 +10,32 @@ import {
 import {
   assertAdjustmentWarehouseMatchesInventory,
   assertNetDeductedWithinStartingStock,
-  buildPendingAdjustmentInventorySnapshot,
+  buildAdjustmentInventorySnapshot,
   computeAdjustmentMoneyShare,
-  describeAdjustmentPendingFormIssues,
+  describeAdjustmentFormIssues,
   InventoryAdjustmentDomainError,
-  validateAdjustmentPendingForm,
+  validateAdjustmentForm,
   type FlooringInventoryAdjustmentType,
 } from "@builders/domain"
 import { InventoryAdjustmentExecutionError } from "./errors.js"
 import type {
   AdjustmentMutationResult,
-  CreatePendingAdjustmentInput,
+  CreateAdjustmentInput,
 } from "./types.js"
 
 /**
- * Create a pending inventory adjustment. INCREASE or DEDUCTION; may optionally
+ * Create an inventory adjustment. INCREASE or DEDUCTION; may optionally
  * carry a `workOrderId` link (any product, any direction — adjustments never
  * link to a material item). Locks the parent inventory row, recomputes
  * `netDeducted`, and asserts the ceiling invariant after the insert.
  */
-export async function createPendingAdjustmentUseCase(
-  input: CreatePendingAdjustmentInput,
+export async function createAdjustmentUseCase(
+  input: CreateAdjustmentInput,
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<AdjustmentMutationResult> {
   if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createPendingAdjustmentUseCase requires a non-empty actorEmail")
+    throw new Error("createAdjustmentUseCase requires a non-empty actorEmail")
   }
 
   return withDatabaseTransaction(async (tx) => {
@@ -50,7 +50,7 @@ export async function createPendingAdjustmentUseCase(
     const workOrderId = input.workOrderId ?? null
     const isWaste = input.isWaste
 
-    const formIssues = validateAdjustmentPendingForm({
+    const formIssues = validateAdjustmentForm({
       adjustmentType,
       quantity,
       isWaste,
@@ -59,7 +59,7 @@ export async function createPendingAdjustmentUseCase(
     if (formIssues.length > 0) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
-        message: describeAdjustmentPendingFormIssues(formIssues),
+        message: describeAdjustmentFormIssues(formIssues),
         status: 400,
         payload: { issues: formIssues },
       })
@@ -109,7 +109,7 @@ export async function createPendingAdjustmentUseCase(
     const cost = computeAdjustmentMoneyShare(inventory.cost, inventory.startingStock, quantity)
     const freight = computeAdjustmentMoneyShare(inventory.freight, inventory.startingStock, quantity)
 
-    const inserted = await insertPendingAdjustmentRow(c, {
+    const inserted = await insertAdjustmentRow(c, {
       adjustmentType,
       workOrderId,
       inventoryId: input.inventoryId,
@@ -123,7 +123,7 @@ export async function createPendingAdjustmentUseCase(
       unitSnapshot: {
         unitId: inventory.unitId,
       },
-      inventorySnapshot: buildPendingAdjustmentInventorySnapshot({
+      inventorySnapshot: buildAdjustmentInventorySnapshot({
         inventoryNumber: inventory.inventoryNumber,
         rollPrefix: inventory.rollPrefix,
         rollNumber: inventory.rollNumber,

@@ -1,5 +1,5 @@
 import {
-  createPendingAdjustmentUseCase,
+  createAdjustmentUseCase,
   listInventoryAdjustmentsUseCase,
 } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
@@ -58,11 +58,11 @@ export async function GET(request: Request, { params }: RouteContext) {
 /**
  * POST /api/inventory/[id]/adjustments
  *
- * Synchronous create for a single pending adjustment (INCREASE or DEDUCTION) on
+ * Synchronous create for a single adjustment (INCREASE or DEDUCTION) on
  * this inventory record. The sole adjustment create endpoint — both the
  * inventory hub and the work-orders record view post here. May optionally carry
  * a WO link (an INCREASE is allowed to link a work order). Calls
- * `createPendingAdjustmentUseCase`, which opens its own TX, takes the parent
+ * `createAdjustmentUseCase`, which opens its own TX, takes the parent
  * inventory FOR UPDATE lock, inserts the row, recomputes `netDeducted`, and
  * asserts the `<= startingStock` invariant. Returns 200 with the inserted row.
  */
@@ -103,7 +103,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         entityId: inventoryId,
       },
       () =>
-        createPendingAdjustmentUseCase({
+        createAdjustmentUseCase({
           adjustmentType: input.adjustmentType,
           inventoryId,
           warehouseId: input.warehouseId,

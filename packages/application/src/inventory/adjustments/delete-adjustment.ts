@@ -1,7 +1,7 @@
 import {
   Prisma,
-  deletePendingAdjustmentRow,
-  getPendingAdjustmentWithInventoryForMutation,
+  deleteAdjustmentRow,
+  getAdjustmentWithInventoryForMutation,
   lockInventoryForAdjustment,
   recomputeAndPersistNetDeducted,
   withDatabaseTransaction,
@@ -15,7 +15,7 @@ import { InventoryAdjustmentExecutionError } from "./errors.js"
 import { assertAdjustmentScope } from "./scope.js"
 import type {
   DeleteAdjustmentResult,
-  DeletePendingAdjustmentInput,
+  DeleteAdjustmentInput,
 } from "./types.js"
 
 /**
@@ -24,14 +24,14 @@ import type {
  * the route's mutation telemetry, not an actor column. The subsequent recompute
  * never stamps actor columns either (see recomputeAndPersistNetDeducted).
  */
-export async function deletePendingAdjustmentUseCase(
-  input: DeletePendingAdjustmentInput,
+export async function deleteAdjustmentUseCase(
+  input: DeleteAdjustmentInput,
   client?: Prisma.TransactionClient,
 ): Promise<DeleteAdjustmentResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const found = await getPendingAdjustmentWithInventoryForMutation(c, input.adjustmentId)
+    const found = await getAdjustmentWithInventoryForMutation(c, input.adjustmentId)
     if (!found) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
@@ -72,7 +72,7 @@ export async function deletePendingAdjustmentUseCase(
 
     await lockInventoryForAdjustment(c, existing.inventoryId)
 
-    await deletePendingAdjustmentRow(c, { id: existing.id })
+    await deleteAdjustmentRow(c, { id: existing.id })
 
     const recomputed = await recomputeAndPersistNetDeducted(c, [existing.inventoryId])
     const result = recomputed[0]

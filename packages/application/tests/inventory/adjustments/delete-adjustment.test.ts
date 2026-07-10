@@ -2,12 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   withDatabaseTransactionMock,
-  getPendingAdjustmentWithInventoryForMutationMock,
+  getAdjustmentWithInventoryForMutationMock,
   lockInventoryForAdjustmentMock,
-  deletePendingAdjustmentRowMock,
+  deleteAdjustmentRowMock,
   recomputeAndPersistNetDeductedMock,
   assertAdjustmentExpectedUpdatedAtMatchesMock,
-  assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStockMock,
   InventoryAdjustmentDomainErrorClass,
 } = vi.hoisted(() => {
@@ -23,12 +22,11 @@ const {
   }
   return {
     withDatabaseTransactionMock: vi.fn(),
-    getPendingAdjustmentWithInventoryForMutationMock: vi.fn(),
+    getAdjustmentWithInventoryForMutationMock: vi.fn(),
     lockInventoryForAdjustmentMock: vi.fn(),
-    deletePendingAdjustmentRowMock: vi.fn(),
+    deleteAdjustmentRowMock: vi.fn(),
     recomputeAndPersistNetDeductedMock: vi.fn(),
     assertAdjustmentExpectedUpdatedAtMatchesMock: vi.fn(),
-    assertAdjustmentPendingMutationAllowedMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
     InventoryAdjustmentDomainErrorClass: InventoryAdjustmentDomainError,
   }
@@ -37,20 +35,19 @@ const {
 vi.mock("@builders/db", () => ({
   Prisma: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
-  getPendingAdjustmentWithInventoryForMutation: getPendingAdjustmentWithInventoryForMutationMock,
+  getAdjustmentWithInventoryForMutation: getAdjustmentWithInventoryForMutationMock,
   lockInventoryForAdjustment: lockInventoryForAdjustmentMock,
-  deletePendingAdjustmentRow: deletePendingAdjustmentRowMock,
+  deleteAdjustmentRow: deleteAdjustmentRowMock,
   recomputeAndPersistNetDeducted: recomputeAndPersistNetDeductedMock,
 }))
 
 vi.mock("@builders/domain", () => ({
   InventoryAdjustmentDomainError: InventoryAdjustmentDomainErrorClass,
   assertAdjustmentExpectedUpdatedAtMatches: assertAdjustmentExpectedUpdatedAtMatchesMock,
-  assertAdjustmentPendingMutationAllowed: assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
 }))
 
-import { deletePendingAdjustmentUseCase } from "../../../src/inventory/adjustments/delete-pending-adjustment.js"
+import { deleteAdjustmentUseCase } from "../../../src/inventory/adjustments/delete-adjustment.js"
 import { InventoryAdjustmentExecutionError } from "../../../src/inventory/adjustments/errors.js"
 
 const WO_ID = "10000000-0000-4000-8000-000000000001"
@@ -87,48 +84,46 @@ function input(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  getPendingAdjustmentWithInventoryForMutationMock.mockReset()
+  getAdjustmentWithInventoryForMutationMock.mockReset()
   lockInventoryForAdjustmentMock.mockReset()
-  deletePendingAdjustmentRowMock.mockReset()
+  deleteAdjustmentRowMock.mockReset()
   recomputeAndPersistNetDeductedMock.mockReset()
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReset()
-  assertAdjustmentPendingMutationAllowedMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ tx: true }),
   )
-  getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(found())
+  getAdjustmentWithInventoryForMutationMock.mockResolvedValue(found())
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReturnValue(undefined)
-  assertAdjustmentPendingMutationAllowedMock.mockReturnValue(undefined)
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
-  deletePendingAdjustmentRowMock.mockResolvedValue(undefined)
+  deleteAdjustmentRowMock.mockResolvedValue(undefined)
   recomputeAndPersistNetDeductedMock.mockResolvedValue([
     { inventoryId: INVENTORY_ID, netDeducted: "0.00" },
   ])
 })
 
-describe("deletePendingAdjustmentUseCase", () => {
+describe("deleteAdjustmentUseCase", () => {
   describe("happy path", () => {
     it("deletes the row and returns deletedId + recomputed netDeducted", async () => {
-      const result = await deletePendingAdjustmentUseCase(input())
+      const result = await deleteAdjustmentUseCase(input())
 
       expect(result).toEqual({
         deletedId: ADJUSTMENT_ID,
         inventoryId: INVENTORY_ID,
         netDeducted: "0.00",
       })
-      expect(deletePendingAdjustmentRowMock).toHaveBeenCalledWith(
+      expect(deleteAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
         { id: ADJUSTMENT_ID },
       )
     })
 
     it("locks before deleting and deletes before recomputing", async () => {
-      await deletePendingAdjustmentUseCase(input())
+      await deleteAdjustmentUseCase(input())
 
       const lockOrder = lockInventoryForAdjustmentMock.mock.invocationCallOrder[0]!
-      const deleteOrder = deletePendingAdjustmentRowMock.mock.invocationCallOrder[0]!
+      const deleteOrder = deleteAdjustmentRowMock.mock.invocationCallOrder[0]!
       const recomputeOrder = recomputeAndPersistNetDeductedMock.mock.invocationCallOrder[0]!
       expect(lockOrder).toBeLessThan(deleteOrder)
       expect(deleteOrder).toBeLessThan(recomputeOrder)
@@ -137,13 +132,13 @@ describe("deletePendingAdjustmentUseCase", () => {
 
   describe("guards", () => {
     it("throws INVENTORY_ADJUSTMENT_NOT_FOUND (404) when the adjustment is missing", async () => {
-      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(null)
+      getAdjustmentWithInventoryForMutationMock.mockResolvedValue(null)
 
-      await expect(deletePendingAdjustmentUseCase(input())).rejects.toMatchObject({
+      await expect(deleteAdjustmentUseCase(input())).rejects.toMatchObject({
         code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
         status: 404,
       })
-      expect(deletePendingAdjustmentRowMock).not.toHaveBeenCalled()
+      expect(deleteAdjustmentRowMock).not.toHaveBeenCalled()
     })
 
     it("throws INVENTORY_ADJUSTMENT_STALE (409) when the OCC token does not match", async () => {
@@ -151,27 +146,27 @@ describe("deletePendingAdjustmentUseCase", () => {
         throw new InventoryAdjustmentDomainErrorClass("INVENTORY_ADJUSTMENT_STALE_UPDATED_AT")
       })
 
-      await expect(deletePendingAdjustmentUseCase(input())).rejects.toMatchObject({
+      await expect(deleteAdjustmentUseCase(input())).rejects.toMatchObject({
         code: "INVENTORY_ADJUSTMENT_STALE",
         status: 409,
       })
-      expect(deletePendingAdjustmentRowMock).not.toHaveBeenCalled()
+      expect(deleteAdjustmentRowMock).not.toHaveBeenCalled()
     })
 
     it("throws INVENTORY_ADJUSTMENT_SCOPE_MISMATCH (400) when the row belongs to another work order", async () => {
-      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
+      getAdjustmentWithInventoryForMutationMock.mockResolvedValue(
         found({ workOrderId: "wo-other" }),
       )
 
       try {
-        await deletePendingAdjustmentUseCase(input())
+        await deleteAdjustmentUseCase(input())
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryAdjustmentExecutionError)) throw error
         expect(error.code).toBe("INVENTORY_ADJUSTMENT_SCOPE_MISMATCH")
         expect(error.status).toBe(400)
       }
-      expect(deletePendingAdjustmentRowMock).not.toHaveBeenCalled()
+      expect(deleteAdjustmentRowMock).not.toHaveBeenCalled()
     })
   })
 })

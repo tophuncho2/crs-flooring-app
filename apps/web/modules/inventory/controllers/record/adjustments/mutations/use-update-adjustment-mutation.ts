@@ -8,7 +8,7 @@ import {
 import { useMutation } from "@tanstack/react-query"
 import type { InventoryAdjustmentRow } from "@builders/domain"
 import {
-  updatePendingAdjustmentRequest,
+  updateAdjustmentRequest,
   type AdjustmentScopeUrl,
 } from "@/modules/adjustments/data/mutations"
 import { buildEditForm, EDIT_PICKER_CONFIG } from "../form"
@@ -28,7 +28,7 @@ type Deps = {
 }
 
 /**
- * Update-pending mutation. Stays open on success and refreshes the form +
+ * Update mutation. Stays open on success and refreshes the form +
  * baseline to the server-fresh row. Mutation responses come back as plain
  * `InventoryAdjustmentRow` — the `workOrderNumber` + `warehouseName` labels are
  * carried forward from the prior snapshot so the panel's read-only cells stay
@@ -52,7 +52,7 @@ export function useUpdateAdjustmentMutation({
       // changed. The server re-flows netDeducted + before/after for the whole
       // chain on the write.
       const linkChanged = input.form.workOrderId !== input.adjustment.workOrderId
-      return updatePendingAdjustmentRequest({
+      return updateAdjustmentRequest({
         scope,
         adjustmentId: input.adjustment.id,
         expectedUpdatedAt: input.adjustment.updatedAt,

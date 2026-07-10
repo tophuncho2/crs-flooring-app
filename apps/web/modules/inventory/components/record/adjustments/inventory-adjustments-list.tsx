@@ -47,7 +47,7 @@ export function InventoryAdjustmentsList({
   onSelect: (row: EnrichedInventoryAdjustmentRow) => void
   /** Row ⋮ → "Add inventory from adjustment": open the split-off create form. */
   onSplitOff: (row: EnrichedInventoryAdjustmentRow) => void
-  /** Row ⋮ → "Duplicate adjustment": open the create modal seeded from the row (PENDING only). */
+  /** Row ⋮ → "Duplicate adjustment": open the create modal seeded from the row. */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
   /** Strong-reconcile callback fired after a row delete commits (balances + caches). */
   onDeleted?: () => void

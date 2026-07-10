@@ -8,9 +8,9 @@ import { Prisma } from "../../generated/prisma/client.js"
  *
  * Consumers (sync per-row use cases — all under
  * `@builders/application/inventory/adjustments`):
- *   - createPendingAdjustmentUseCase (WO-linked DEDUCTION or manual)
- *   - updatePendingAdjustmentUseCase (scope-aware)
- *   - deletePendingAdjustmentUseCase (scope-aware)
+ *   - createAdjustmentUseCase (WO-linked DEDUCTION or manual)
+ *   - updateAdjustmentUseCase (scope-aware)
+ *   - deleteAdjustmentUseCase (scope-aware)
  *
  * Adjustment mutations always touch exactly one inventory; concurrent
  * mutations against the same inventory serialize on this lock, and

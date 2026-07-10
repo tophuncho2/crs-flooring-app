@@ -10,7 +10,7 @@
  *     delete request (work-order scope + the row's expectedUpdatedAt).
  *
  * The heavy collaborators (the create modal's inventory picker, the product
- * picker) are stubbed; only the network boundary (`deletePendingAdjustmentRequest`)
+ * picker) are stubbed; only the network boundary (`deleteAdjustmentRequest`)
  * and navigation are mocked. The real section state machine + grids run.
  */
 
@@ -53,14 +53,14 @@ vi.mock("@/modules/products/components/picker/product-category-picker", () => ({
   ),
 }))
 
-const { deletePendingAdjustmentRequestMock } = vi.hoisted(() => ({
-  deletePendingAdjustmentRequestMock: vi.fn(),
+const { deleteAdjustmentRequestMock } = vi.hoisted(() => ({
+  deleteAdjustmentRequestMock: vi.fn(),
 }))
 vi.mock("@/modules/adjustments/data/mutations", async () => {
   const actual = await vi.importActual<typeof import("@/modules/adjustments/data/mutations")>(
     "@/modules/adjustments/data/mutations",
   )
-  return { ...actual, deletePendingAdjustmentRequest: deletePendingAdjustmentRequestMock }
+  return { ...actual, deleteAdjustmentRequest: deleteAdjustmentRequestMock }
 })
 
 import { WorkOrderMaterialItemsSection } from "@/modules/work-orders/components/record/material-items/work-order-material-items-section"
@@ -185,7 +185,7 @@ function renderSection({
 describe("WorkOrderMaterialItemsSection", () => {
   afterEach(() => {
     cleanup()
-    deletePendingAdjustmentRequestMock.mockReset()
+    deleteAdjustmentRequestMock.mockReset()
     searchParamsValue = ""
   })
 
@@ -225,7 +225,7 @@ describe("WorkOrderMaterialItemsSection", () => {
   })
 
   it("Part 3: row ⋮ → Delete adjustment → confirm deletes via the row's inventory route", async () => {
-    deletePendingAdjustmentRequestMock.mockResolvedValue({
+    deleteAdjustmentRequestMock.mockResolvedValue({
       deletedId: "adj-1",
       inventoryId: "inv-1",
       netDeducted: "0",
@@ -238,10 +238,10 @@ describe("WorkOrderMaterialItemsSection", () => {
     // Confirm dialog → commit.
     await user.click(screen.getByRole("button", { name: "Delete" }))
 
-    await waitFor(() => expect(deletePendingAdjustmentRequestMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(deleteAdjustmentRequestMock).toHaveBeenCalledTimes(1))
     // Deletes via the adjustment's own INVENTORY route — there is no
     // work-order-scoped adjustment route (regression guard: WO scope 404'd).
-    expect(deletePendingAdjustmentRequestMock).toHaveBeenCalledWith(
+    expect(deleteAdjustmentRequestMock).toHaveBeenCalledWith(
       expect.objectContaining({
         scope: { kind: "inventory", inventoryId: "inv-1" },
         adjustmentId: "adj-1",

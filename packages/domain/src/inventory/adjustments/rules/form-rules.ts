@@ -1,14 +1,14 @@
-import type { InventoryAdjustmentPendingForm } from "../types.js"
+import type { InventoryAdjustmentForm } from "../types.js"
 
-export type AdjustmentPendingFormIssue =
+export type AdjustmentFormIssue =
   | { code: "ADJUSTMENT_QUANTITY_REQUIRED" }
   | { code: "ADJUSTMENT_QUANTITY_INVALID"; value: string }
   | { code: "ADJUSTMENT_QUANTITY_NOT_POSITIVE"; value: string }
 
-export function validateAdjustmentPendingForm(
-  input: InventoryAdjustmentPendingForm,
-): AdjustmentPendingFormIssue[] {
-  const issues: AdjustmentPendingFormIssue[] = []
+export function validateAdjustmentForm(
+  input: InventoryAdjustmentForm,
+): AdjustmentFormIssue[] {
+  const issues: AdjustmentFormIssue[] = []
 
   const raw = input.quantity.trim()
   if (raw.length === 0) {
@@ -25,7 +25,7 @@ export function validateAdjustmentPendingForm(
   return issues
 }
 
-export function describeAdjustmentPendingFormIssue(issue: AdjustmentPendingFormIssue): string {
+export function describeAdjustmentFormIssue(issue: AdjustmentFormIssue): string {
   switch (issue.code) {
     case "ADJUSTMENT_QUANTITY_REQUIRED":
       return "Quantity is required."
@@ -36,6 +36,6 @@ export function describeAdjustmentPendingFormIssue(issue: AdjustmentPendingFormI
   }
 }
 
-export function describeAdjustmentPendingFormIssues(issues: AdjustmentPendingFormIssue[]): string {
-  return issues.map(describeAdjustmentPendingFormIssue).join(" ")
+export function describeAdjustmentFormIssues(issues: AdjustmentFormIssue[]): string {
+  return issues.map(describeAdjustmentFormIssue).join(" ")
 }

@@ -15,10 +15,10 @@ export {
 } from "./components/list/table/adjustment-row-actions"
 export {
   createAdjustmentRequest,
-  updatePendingAdjustmentRequest,
-  deletePendingAdjustmentRequest,
+  updateAdjustmentRequest,
+  deleteAdjustmentRequest,
   type AdjustmentScopeUrl,
-  type PendingAdjustmentMutationResponse,
-  type DeletePendingAdjustmentResponse,
+  type AdjustmentMutationResponse,
+  type DeleteAdjustmentResponse,
 } from "./data/mutations"
 export { useAdjustmentReconcile } from "./controllers/use-adjustment-reconcile"

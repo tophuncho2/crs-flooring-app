@@ -15,7 +15,7 @@ export type AdjustmentMutationScope =
  * (the persisted warehouse is always the inventory's). `isWaste` is a reporting
  * flag allowed on either direction.
  */
-export type CreatePendingAdjustmentInput = {
+export type CreateAdjustmentInput = {
   adjustmentType: FlooringInventoryAdjustmentType
   inventoryId: string
   warehouseId?: string | null
@@ -31,7 +31,7 @@ export type CreatePendingAdjustmentInput = {
   area?: string | null
 }
 
-export type UpdatePendingAdjustmentPatch = {
+export type UpdateAdjustmentPatch = {
   /**
    * Always positive (validator enforces); direction lives in `adjustmentType`.
    * Freely editable for the row's whole lifecycle — editing it re-flows the
@@ -60,14 +60,14 @@ export type UpdatePendingAdjustmentPatch = {
   link?: { workOrderId: string | null }
 }
 
-export type UpdatePendingAdjustmentInput = {
+export type UpdateAdjustmentInput = {
   scope: AdjustmentMutationScope
   adjustmentId: string
   expectedUpdatedAt: string
-  patch: UpdatePendingAdjustmentPatch
+  patch: UpdateAdjustmentPatch
 }
 
-export type DeletePendingAdjustmentInput = {
+export type DeleteAdjustmentInput = {
   scope: AdjustmentMutationScope
   adjustmentId: string
   expectedUpdatedAt: string

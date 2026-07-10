@@ -4,7 +4,7 @@ import {
   computeNetDeducted,
   type FlooringInventoryAdjustmentType,
   type PaletteColor,
-  type PendingAdjustmentInventorySnapshot,
+  type AdjustmentInventorySnapshot,
 } from "@builders/domain"
 import {
   listAdjustmentsForInventoryIds,
@@ -22,8 +22,8 @@ import { adjustmentRowSelect } from "./shared.js"
 // via `recomputeAndPersistNetDeducted`.
 
 // ---------------------------------------------------------------------------
-// Synchronous per-row pending-adjustment primitives (used by both WO-side and
-// inv-side application use cases — adjustments are the entity; the calling
+// Synchronous per-row adjustment primitives, used by the create/update/delete
+// adjustment application use cases (adjustments are the entity; the calling
 // scope just differs by which identity columns it supplies).
 // ---------------------------------------------------------------------------
 
@@ -33,11 +33,11 @@ import { adjustmentRowSelect } from "./shared.js"
  * link even if the parent inventory's row is later changed. Replaces the two
  * frozen unit-label snapshot strings (display now derives from the join).
  */
-export type PendingAdjustmentUnitSnapshot = {
+export type AdjustmentUnitSnapshot = {
   unitId: string
 }
 
-export type InsertPendingAdjustmentRowInput = {
+export type InsertAdjustmentRowInput = {
   /** Direction of the adjustment. */
   adjustmentType: FlooringInventoryAdjustmentType
   /** Always positive in storage; direction lives in `adjustmentType`. */
@@ -50,16 +50,16 @@ export type InsertPendingAdjustmentRowInput = {
   internalNotes: string
   /** Non-semantic palette tag; omitted → DB default SLATE. */
   color?: PaletteColor
-  unitSnapshot: PendingAdjustmentUnitSnapshot
+  unitSnapshot: AdjustmentUnitSnapshot
   /**
    * Identity snapshot from the parent inventory: the 5 underlying primitives
    * (`inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`, `inventoryNote`).
    * Stamped at insert and frozen — never re-stamped.
    */
-  inventorySnapshot: PendingAdjustmentInventorySnapshot
+  inventorySnapshot: AdjustmentInventorySnapshot
   /**
    * User-owned free-text location. Not seeded from the parent inventory and
-   * never re-snapped by update-pending.
+   * never re-snapped by update-adjustment.
    */
   location: string | null
   /** User-owned free-text area label. User-typed in create + edit; never snapshotted. */
@@ -93,9 +93,9 @@ export type InsertPendingAdjustmentRowInput = {
  * in `createdAt` order and stamps `before`/`after` on every row (including this
  * one). `adjustmentNumber` is DB-generated via the sequence default.
  */
-export async function insertPendingAdjustmentRow(
+export async function insertAdjustmentRow(
   tx: Prisma.TransactionClient,
-  input: InsertPendingAdjustmentRowInput,
+  input: InsertAdjustmentRowInput,
 ): Promise<InventoryAdjustmentRecord> {
   const inserted = await tx.flooringInventoryAdjustment.create({
     data: {
@@ -127,7 +127,7 @@ export async function insertPendingAdjustmentRow(
   return normalizeAdjustmentRow(inserted)
 }
 
-export type UpdatePendingAdjustmentRowPatch = {
+export type UpdateAdjustmentRowPatch = {
   /** Always positive (validator enforces); direction lives in `adjustmentType`. */
   quantity?: string
   /**
@@ -165,9 +165,9 @@ export type UpdatePendingAdjustmentRowPatch = {
   updatedBy: string
 }
 
-export type UpdatePendingAdjustmentRowInput = {
+export type UpdateAdjustmentRowInput = {
   id: string
-  patch: UpdatePendingAdjustmentRowPatch
+  patch: UpdateAdjustmentRowPatch
 }
 
 /**
@@ -184,9 +184,9 @@ export type UpdatePendingAdjustmentRowInput = {
  * `createdAt`, the 5 inventory-identity snapshot primitives, and the
  * stock unit-snapshot fields. Empty-patch calls return the row as-is.
  */
-export async function updatePendingAdjustmentRow(
+export async function updateAdjustmentRow(
   tx: Prisma.TransactionClient,
-  input: UpdatePendingAdjustmentRowInput,
+  input: UpdateAdjustmentRowInput,
 ): Promise<InventoryAdjustmentRecord> {
   const data: Prisma.FlooringInventoryAdjustmentUpdateInput = {}
   if (input.patch.quantity !== undefined) data.quantity = input.patch.quantity
@@ -224,7 +224,7 @@ export async function updatePendingAdjustmentRow(
   return normalizeAdjustmentRow(updated)
 }
 
-export type DeletePendingAdjustmentRowInput = {
+export type DeleteAdjustmentRowInput = {
   id: string
 }
 
@@ -233,9 +233,9 @@ export type DeletePendingAdjustmentRowInput = {
  * row, asserted OCC, and locked the parent inventory FOR UPDATE. Pure
  * persistence call — any adjustment is freely deletable.
  */
-export async function deletePendingAdjustmentRow(
+export async function deleteAdjustmentRow(
   tx: Prisma.TransactionClient,
-  input: DeletePendingAdjustmentRowInput,
+  input: DeleteAdjustmentRowInput,
 ): Promise<void> {
   await tx.flooringInventoryAdjustment.delete({ where: { id: input.id } })
 }
@@ -325,8 +325,8 @@ export async function recomputeAndPersistNetDeducted(
       // LOAD-BEARING INVARIANT: NEVER stamp createdBy/updatedBy here. This loop
       // rewrites before/after on EVERY sibling adjustment — a derived projection
       // of the ledger, not a human edit. updatedBy must stay "last human author"
-      // per row; it is stamped in exactly two places (insertPendingAdjustmentRow
-      // + updatePendingAdjustmentRow). A sibling's updatedAt does bump here (via
+      // per row; it is stamped in exactly two places (insertAdjustmentRow
+      // + updateAdjustmentRow). A sibling's updatedAt does bump here (via
       // @updatedAt) and that divergence is accepted — its stored balance genuinely
       // changed. Do not "fix the oversight" by adding actor writes to this update.
       await tx.flooringInventoryAdjustment.update({

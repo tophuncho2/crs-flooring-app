@@ -1,4 +1,4 @@
-export type PendingAdjustmentInventorySnapshot = {
+export type AdjustmentInventorySnapshot = {
   inventoryNumber: string | null
   rollPrefix: string | null
   rollNumber: string | null
@@ -8,9 +8,9 @@ export type PendingAdjustmentInventorySnapshot = {
   warehouseId: string
 }
 
-export function buildPendingAdjustmentInventorySnapshot(
-  inv: PendingAdjustmentInventorySnapshot,
-): PendingAdjustmentInventorySnapshot {
+export function buildAdjustmentInventorySnapshot(
+  inv: AdjustmentInventorySnapshot,
+): AdjustmentInventorySnapshot {
   return {
     inventoryNumber: inv.inventoryNumber,
     rollPrefix: inv.rollPrefix,
