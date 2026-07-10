@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { afterEach, describe, expect, it } from "vitest"
-import { act, renderHook, waitFor } from "@testing-library/react"
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { NuqsTestingAdapter } from "nuqs/adapters/testing"
 import { ListPreferencesUserProvider, useFetchListController } from "@/engines/list-view"
@@ -48,6 +48,13 @@ function renderController(userId: string | null = null) {
 }
 
 afterEach(() => {
+  // Unmount rendered controllers FIRST. `globals` is off in vitest.config, so RTL
+  // never auto-registers `cleanup()` — without this, each `renderHook` controller
+  // stays mounted as a live nuqs subscriber. A later test's Clear-all now clears
+  // sort/page through the nuqs setters (which correctly notify subscribers), and
+  // that URL change would wake a zombie controller whose write-through re-persists
+  // its stale snapshot into localStorage after we clear it below.
+  cleanup()
   window.localStorage.clear()
   // Controllers mirror filters to the URL via history.replaceState; jsdom keeps
   // window.location across tests, so reset it or a later test's hydration guard

@@ -609,27 +609,23 @@ export function useFetchListController<TRow, TFilters>(
   )
 
   // Single toolbar "Clear all" — resets sort back to its default (drops the
-  // explicit `?sorts=`/`?sortField=`/`?sort=` params) AND clears every filter.
+  // explicit `?sorts=`/`?sortField=`/`?sort=` params), resets the page, AND
+  // clears every filter.
   //
-  // This must be ONE history write. nuqs (which owns the sort/page params) patches
-  // `history.replaceState`, so any un-marked manual write re-syncs nuqs from that
-  // URL and resets its pending queue. Firing a nuqs `setSortsParam(null)` AND a
-  // separate manual filter write in the same tick races: the manual write reads
-  // the pre-flush URL (still carrying `?sorts=`) and re-adopts the old sort,
-  // clobbering the queued clear — the URL flickers back to the same sort. So we
-  // strip sort + page + every filter in a single `replaceState`; nuqs adopts the
-  // cleared sort/page for free. Filters live in React state (not nuqs), so also
-  // reset them locally.
+  // Sort + page are nuqs-owned. A raw `replaceState` updates the address bar but
+  // does NOT notify nuqs's `useQueryState` subscribers, so clearing them that way
+  // leaves `sortsParam`/`pageValue` stale — the Sort menu + `hasNonDefaultSort`
+  // stay lit even though `?sorts=` is gone from the URL. So clear them through
+  // their nuqs setters (`null` → default → param dropped). Filters live in React
+  // state + a manual URL mirror; that manual write must run FIRST — a manual write
+  // AFTER a nuqs setter re-adopts the stale URL and clobbers the queued clear (the
+  // exact ordering rule the hydration effect below follows). Search (`q`) is left
+  // to consumers, which already clear it in their own `handleClearAll`.
   const onClearAllFilters = useCallback(() => {
     if (typeof window === "undefined") return
+
+    // 1) Filters — manual URL mirror + React state, FIRST (see ordering note).
     const params = new URLSearchParams(window.location.search)
-    if (multiSort) {
-      params.delete("sorts")
-    } else {
-      params.delete("sortField")
-      params.delete("sort")
-    }
-    params.delete("page")
     if (filterableFields) {
       for (const key of filterableFields) params.delete(key)
     }
@@ -645,13 +641,32 @@ export function useFetchListController<TRow, TFilters>(
       })
     }
 
-    // Column widths are one of the "tools" Clear All resets: emptying them flips
-    // the DataTable back to auto content-fit. The write-through effect below then
-    // sees an all-default state and removes the stored snapshot — but wipe the
-    // key here too so the reset is immediate even if the effect is coalesced.
+    // 2) nuqs-owned params via their setters — notifies the subscribers so the
+    // Sort menu + `hasNonDefaultSort` (and pagination) actually follow the clear.
+    if (multiSort) {
+      setSortsParam(null)
+    } else {
+      setSortFieldValue(null)
+      setSortDirection(null)
+    }
+    setPageValue(null)
+
+    // 3) Column widths are one of the "tools" Clear All resets: emptying them
+    // flips the DataTable back to auto content-fit. The write-through effect below
+    // then sees an all-default state and removes the stored snapshot — but wipe
+    // the key here too so the reset is immediate even if the effect is coalesced.
     setColumnWidths({})
     if (prefsKey) clearListPreferences(prefsKey)
-  }, [multiSort, filterableFields, setFilters, prefsKey])
+  }, [
+    multiSort,
+    filterableFields,
+    setFilters,
+    setSortsParam,
+    setSortFieldValue,
+    setSortDirection,
+    setPageValue,
+    prefsKey,
+  ])
 
   // --- Sticky preferences (localStorage, per `tableKey`) -------------------
   // Hydrate ONCE on mount, and only when the URL carries no tool params — a
