@@ -192,22 +192,6 @@ const templateOptionSelect = {
   _count: { select: { plannedProducts: true } },
 } as const
 
-export async function listTemplateOptions(
-  client: TemplatesDbClient = db,
-): Promise<TemplateOption[]> {
-  const templates = await client.template.findMany({
-    orderBy: [
-      { property: { name: "asc" } },
-      { unitType: "asc" },
-      { createdAt: "asc" },
-      { id: "asc" },
-    ],
-    select: templateOptionSelect,
-  })
-
-  return templates.map(normalizeTemplateOption)
-}
-
 export type TemplateOptionsSearchArgs = {
   search?: string
   /** Scope to a single property. Optional — when absent the search is unscoped. */

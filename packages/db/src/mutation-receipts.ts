@@ -113,16 +113,3 @@ export async function finalizeAppMutationReceipt(
 
   return toRecord(receipt)
 }
-
-export async function deleteExpiredAppMutationReceipts(
-  now: Date = new Date(),
-  client: MutationReceiptDbClient = db,
-) {
-  return client.appMutationReceipt.deleteMany({
-    where: {
-      expiresAt: {
-        lt: now,
-      },
-    },
-  })
-}

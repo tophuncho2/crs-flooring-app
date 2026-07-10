@@ -27,13 +27,6 @@ export const NO_JOB_TYPE_NEIGHBORS: JobTypeNeighbors = {
 
 export type JobTypeDetailRecord = JobType & JobTypeNeighbors
 
-export async function listJobTypes(client: JobTypesDbClient = db): Promise<JobType[]> {
-  const jobTypes = await client.flooringJobType.findMany({
-    orderBy: { name: "asc" },
-  })
-  return jobTypes.map(normalizeJobType)
-}
-
 export type JobTypeListViewOptions = {
   search?: string
   jobTypeNumber?: string
@@ -80,14 +73,6 @@ export async function listJobTypesForListView(
     total,
     rows: rows.map(normalizeJobType),
   }
-}
-
-export async function listJobTypeOptions(client: JobTypesDbClient = db): Promise<JobTypeOption[]> {
-  const jobTypes = await client.flooringJobType.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  })
-  return jobTypes.map(normalizeJobTypeOption)
 }
 
 export type JobTypeOptionsSearchArgs = {
@@ -162,10 +147,6 @@ export async function getJobTypeDetailById(
       ? NO_JOB_TYPE_NEIGHBORS
       : await getJobTypeNeighbors(row.jobTypeNumberInt, client)
   return { ...normalizeJobType(row), ...neighbors }
-}
-
-export async function countJobTypes(client: JobTypesDbClient = db): Promise<number> {
-  return client.flooringJobType.count()
 }
 
 // Fetched separately from the row select so the list view never pays for the

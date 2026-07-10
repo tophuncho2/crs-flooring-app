@@ -112,13 +112,6 @@ export async function updateStagedInventoryRecord(
   return record
 }
 
-export async function deleteStagedInventoryRecordById(
-  id: string,
-  client: StagedInventoryDbClient = db,
-): Promise<void> {
-  await client.flooringImportStagedInventoryRow.delete({ where: { id } })
-}
-
 // --- Mark-for-import primitive ---
 
 /**

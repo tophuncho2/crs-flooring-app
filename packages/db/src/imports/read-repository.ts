@@ -14,11 +14,6 @@ import { buildImportsOrderBy } from "./order-by.js"
 export type ImportRecord = ImportRow
 export type ImportDetailRecord = ImportDetail
 
-export type ImportsListFilter = {
-  searchQuery?: string
-  warehouseId?: string
-}
-
 export type ImportsListSortEntry = {
   field: string
   direction: Prisma.SortOrder
@@ -73,32 +68,6 @@ export function normalizeImportDetail(
     previousImport: neighbors.previousImport,
     nextImport: neighbors.nextImport,
   }
-}
-
-function buildListWhere(filter?: ImportsListFilter) {
-  if (!filter) return undefined
-  const where: Record<string, unknown> = {}
-  if (filter.warehouseId) where.warehouseId = filter.warehouseId
-  if (filter.searchQuery) {
-    const searchQuery = filter.searchQuery
-    where.OR = [
-      { purchaseOrderNumber: { contains: searchQuery, mode: "insensitive" } },
-      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
-    ]
-  }
-  return where
-}
-
-export async function listImports(
-  filter?: ImportsListFilter,
-  client: ImportsDbClient = db,
-): Promise<ImportRecord[]> {
-  const rows = await client.flooringImportEntry.findMany({
-    where: buildListWhere(filter),
-    select: importRowSelect,
-    orderBy: [{ createdAt: "desc" }, { importNumber: "desc" }],
-  })
-  return rows.map(normalizeImportRow)
 }
 
 export async function getImportById(
@@ -168,13 +137,6 @@ export async function getImportDetailById(
       : await getImportNeighbors(row.importNumber, client)
 
   return normalizeImportDetail(row, neighbors)
-}
-
-export async function countImports(
-  filter?: ImportsListFilter,
-  client: ImportsDbClient = db,
-): Promise<number> {
-  return client.flooringImportEntry.count({ where: buildListWhere(filter) })
 }
 
 export type ImportListViewOptions = {
@@ -253,20 +215,6 @@ export async function listImportsForListView(
     total,
     rows: rows.map(normalizeImportRow),
   }
-}
-
-export async function countStagedInventoryByImportId(
-  importEntryId: string,
-  client: ImportsDbClient = db,
-): Promise<number> {
-  return client.flooringImportStagedInventoryRow.count({ where: { importEntryId } })
-}
-
-export async function countLiveInventoryByImportId(
-  importEntryId: string,
-  client: ImportsDbClient = db,
-): Promise<number> {
-  return client.flooringInventory.count({ where: { importEntryId } })
 }
 
 /**

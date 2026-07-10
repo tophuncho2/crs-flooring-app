@@ -211,17 +211,6 @@ const workOrderOptionSelect = {
   description: true,
 } as const
 
-export async function listWorkOrderOptions(
-  client: WorkOrdersDbClient = db,
-): Promise<WorkOrderOption[]> {
-  const workOrders = await client.flooringWorkOrder.findMany({
-    orderBy: { createdAt: "desc" },
-    select: workOrderOptionSelect,
-  })
-
-  return workOrders.map(normalizeWorkOrderOption)
-}
-
 /**
  * Async-picker search: work-order options for the cut-log relink dropdown.
  * Not warehouse-scoped — adjustments cross-source inventory across warehouses,
@@ -268,18 +257,6 @@ export async function searchWorkOrderOptions(
   const hasMore = workOrders.length > take
   const page = hasMore ? workOrders.slice(0, take) : workOrders
   return { items: page.map(normalizeWorkOrderOption), hasMore }
-}
-
-export async function getWorkOrderById(
-  id: string,
-  client: WorkOrdersDbClient = db,
-): Promise<WorkOrderListRow> {
-  const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
-    where: { id },
-    select: workOrderListSelect,
-  })
-
-  return normalizeWorkOrderListRow(workOrder)
 }
 
 export type WorkOrderNeighbors = {

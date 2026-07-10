@@ -85,18 +85,3 @@ export async function updateStagedInventoryFilterRecord(
   return record
 }
 
-/**
- * Standalone delete. The FK from FlooringImportStagedInventoryRow →
- * FlooringImportStagedInventoryFilterRow is RESTRICT, so this throws
- * if any staged inv rows still reference the filter row. The domain
- * diff validator catches that case ahead of time with
- * `FILTER_DELETE_BLOCKED_BY_CHILDREN`; the FK is the last-line
- * backstop.
- */
-export async function deleteStagedInventoryFilterRecordById(
-  id: string,
-  client: StagedInventoryFilterDbClient = db,
-): Promise<void> {
-  await client.flooringImportStagedInventoryFilterRow.delete({ where: { id } })
-}
-

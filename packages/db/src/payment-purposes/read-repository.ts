@@ -26,15 +26,6 @@ export const NO_PAYMENT_PURPOSE_NEIGHBORS: PaymentPurposeNeighbors = {
 
 export type PaymentPurposeDetailRecord = PaymentPurpose & PaymentPurposeNeighbors
 
-export async function listPaymentPurposes(
-  client: PaymentPurposesDbClient = db,
-): Promise<PaymentPurpose[]> {
-  const paymentPurposes = await client.flooringPaymentPurpose.findMany({
-    orderBy: { name: "asc" },
-  })
-  return paymentPurposes.map(normalizePaymentPurpose)
-}
-
 export type PaymentPurposeListViewOptions = {
   search?: string
   paymentPurposeNumber?: string
@@ -135,12 +126,6 @@ export async function getPaymentPurposeDetailById(
       ? NO_PAYMENT_PURPOSE_NEIGHBORS
       : await getPaymentPurposeNeighbors(row.paymentPurposeNumberInt, client)
   return { ...normalizePaymentPurpose(row), ...neighbors }
-}
-
-export async function countPaymentPurposes(
-  client: PaymentPurposesDbClient = db,
-): Promise<number> {
-  return client.flooringPaymentPurpose.count()
 }
 
 /**

@@ -231,14 +231,6 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
 
 // --- Read functions ---
 
-export async function listProducts(client: ProductsDbClient = db): Promise<ProductRecord[]> {
-  const rows = await client.flooringProduct.findMany({
-    select: productRowSelect,
-    orderBy: [{ name: "asc" }, { createdAt: "desc" }],
-  })
-  return rows.map(normalizeProductRow)
-}
-
 export async function getProductById(
   id: string,
   client: ProductsDbClient = db,
@@ -302,14 +294,6 @@ export async function getProductStats(
     inventoryCount: row._count.inventories,
     adjustmentsCount: row._count.inventoryAdjustments,
   }
-}
-
-export async function listProductOptions(client: ProductsDbClient = db): Promise<ProductOptionRecord[]> {
-  const rows = await client.flooringProduct.findMany({
-    select: productOptionSelect,
-    orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
-  })
-  return rows.map(normalizeProductOption)
 }
 
 export async function productNameExists(

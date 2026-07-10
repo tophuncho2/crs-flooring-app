@@ -26,13 +26,6 @@ export const NO_ENTITY_TYPE_NEIGHBORS: EntityTypeNeighbors = {
 
 export type EntityTypeDetailRecord = EntityType & EntityTypeNeighbors
 
-export async function listEntityTypes(client: EntityTypesDbClient = db): Promise<EntityType[]> {
-  const entityTypes = await client.flooringEntityType.findMany({
-    orderBy: { type: "asc" },
-  })
-  return entityTypes.map(normalizeEntityType)
-}
-
 export type EntityTypeListViewOptions = {
   search?: string
   entityTypeNumber?: string
@@ -131,10 +124,6 @@ export async function getEntityTypeDetailById(
       ? NO_ENTITY_TYPE_NEIGHBORS
       : await getEntityTypeNeighbors(row.entityTypeNumberInt, client)
   return { ...normalizeEntityType(row), ...neighbors }
-}
-
-export async function countEntityTypes(client: EntityTypesDbClient = db): Promise<number> {
-  return client.flooringEntityType.count()
 }
 
 /**

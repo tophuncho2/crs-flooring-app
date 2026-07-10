@@ -74,15 +74,6 @@ export type UpdateInventoryRecordInput = {
   updatedBy: string
 }
 
-/**
- * Transactional helper — only called inside adjustment write transactions
- * so the `netDeducted` running total stays in sync with the adjustment
- * rows. Regular user / worker code should never touch this directly.
- */
-export type UpdateInventoryNetDeductedInput = {
-  netDeducted: Prisma.Decimal | string | number
-}
-
 function buildUpdateData(
   input: UpdateInventoryRecordInput,
 ): Prisma.FlooringInventoryUpdateInput {
@@ -111,29 +102,6 @@ export async function updateInventoryRecord(
   }
   const record = await getInventoryById(id, client)
   if (!record) throw new Error(`updateInventoryRecord: inventory ${id} not found after update`)
-  return record
-}
-
-/**
- * Adjusts the inventory row's `netDeducted` atomically. Called by adjustment
- * application use cases inside the same transaction as the adjustment
- * mutation. Currently has no direct callers — the recompute primitive
- * (`recomputeAndPersistNetDeducted`) issues the update inline.
- */
-export async function updateInventoryNetDeducted(
-  id: string,
-  input: UpdateInventoryNetDeductedInput,
-  client: InventoryDbClient = db,
-): Promise<InventoryRecord> {
-  await client.flooringInventory.update({
-    where: { id },
-    data: { netDeducted: input.netDeducted },
-    select: { id: true },
-  })
-  const record = await getInventoryById(id, client)
-  if (!record) {
-    throw new Error(`updateInventoryNetDeducted: inventory ${id} not found after update`)
-  }
   return record
 }
 

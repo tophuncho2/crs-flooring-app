@@ -90,17 +90,6 @@ const propertyOptionSelect = {
   },
 } as const
 
-export async function listPropertyOptions(
-  client: PropertiesDbClient = db,
-): Promise<PropertyOption[]> {
-  const properties = await client.property.findMany({
-    orderBy: { name: "asc" },
-    select: propertyOptionSelect,
-  })
-
-  return properties.map(normalizePropertyOption)
-}
-
 /**
  * Resolve the property rows immediately before/after the given numeric sort key
  * in the global property-number order (`propertyNumberInt`). Powers the

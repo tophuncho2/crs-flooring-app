@@ -14,10 +14,6 @@ export type PrismaPageLoadIssue = PrismaConnectivityIssue | {
   detail: string
 }
 
-export type PrismaPageDataResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: PrismaConnectivityIssue }
-
 export type PrismaDetailPageResult<T> =
   | { ok: true; data: T }
   | { ok: false; notFound: true }
@@ -87,18 +83,4 @@ export function createPrismaPageLoadIssue(
   }
 
   return fallback
-}
-
-export async function withPrismaConnectivityHandling<T>(loader: () => Promise<T>): Promise<PrismaPageDataResult<T>> {
-  try {
-    const data = await loader()
-    return { ok: true, data }
-  } catch (error) {
-    const connectivityIssue = getPrismaConnectivityIssue(error)
-    if (connectivityIssue) {
-      return { ok: false, error: connectivityIssue }
-    }
-
-    throw error
-  }
 }
