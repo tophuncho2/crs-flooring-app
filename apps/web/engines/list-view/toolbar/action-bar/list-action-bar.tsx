@@ -26,14 +26,14 @@ export type ListActionBarProps = {
  * List header chrome, portaled into the app-shell header strip — the caged
  * replacement for the old in-page toolbar card. Renders nothing in place:
  *
- * - The meta cluster (module label + Clear-all) lands in
- *   `#list-meta-slot` via {@link ListHeaderPortal}, in the header's left group
- *   after the record back-button/stepper slots. When a back button ever renders
- *   on a list page, the left group's flex order flows the meta cluster to its
- *   right for free.
- * - The tool buttons (`children`) land in `#list-tools-slot`, in the header's
- *   right group directly left of the `#page-action-slot` "+ Create" button, so
- *   the create action sits inline with the tools.
+ * - The meta cluster (just the module label) lands in `#list-meta-slot` via
+ *   {@link ListHeaderPortal}, in the header's left group after the record
+ *   back-button/stepper slots. When a back button ever renders on a list page,
+ *   the left group's flex order flows the meta cluster to its right for free.
+ * - The tool buttons (`children`) plus the trailing Clear-all button land in
+ *   `#list-tools-slot`, in the header's right group directly left of the
+ *   `#page-action-slot` "+ Create" button, so Clear-all sits rightmost in the
+ *   tool cluster, immediately left of the create action.
  *
  * Portals keep both clusters in the consuming page-client's React tree (their
  * controller wiring stays intact); only the DOM relocates into the header. The
@@ -52,13 +52,16 @@ export function ListActionBar({
 
   return (
     <>
-      <ListHeaderPortal
-        label={label}
-        trailing={<ClearAllFiltersButton hasActive={hasActiveFilters} onClick={onClearAll} />}
-      />
+      <ListHeaderPortal label={label} />
 
-      {toolsSlot && children
-        ? createPortal(<div className="flex items-center gap-2">{children}</div>, toolsSlot)
+      {toolsSlot && (children || hasActiveFilters)
+        ? createPortal(
+            <div className="flex items-center gap-2">
+              {children}
+              <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={onClearAll} />
+            </div>,
+            toolsSlot,
+          )
         : null}
     </>
   )

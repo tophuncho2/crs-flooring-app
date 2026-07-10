@@ -1,6 +1,5 @@
 "use client"
 
-import { type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { usePortalSlot } from "./use-portal-slot"
 
@@ -11,23 +10,22 @@ const META_SLOT_ID = "list-meta-slot"
 export type ListHeaderPortalProps = {
   /** Module label shown in the top-left blue tag (e.g. "Job Types"). */
   label: string
-  /** Trailing meta-cluster node (e.g. the Clear-all button on filtered lists). */
-  trailing?: ReactNode
 }
 
 /**
- * The list-page meta cluster — module label + optional trailing control —
- * portaled into the app-shell header's `#list-meta-slot`. Renders nothing in
- * place: every list page routes its label through here so the blue tag lands in
- * the header strip identically, whether the page has a toolbar (driven by
- * {@link ListActionBar}) or is a bare read-only catalog. The row count is not
- * shown here — the pagination footer carries the count.
+ * The list-page meta cluster — just the module label — portaled into the
+ * app-shell header's `#list-meta-slot`. Renders nothing in place: every list
+ * page routes its label through here so the blue tag lands in the header strip
+ * identically, whether the page has a toolbar (driven by {@link ListActionBar})
+ * or is a bare read-only catalog. The row count is not shown here — the
+ * pagination footer carries the count; the Clear-all button lives with the tool
+ * cluster in `#list-tools-slot`, not here.
  *
  * The label tag's type scale lives here once, so a bump propagates to every page.
  * Stays in the cage: app-shell owns the empty slot div; this engine portals into
  * it by string ID with no import either way.
  */
-export function ListHeaderPortal({ label, trailing }: ListHeaderPortalProps) {
+export function ListHeaderPortal({ label }: ListHeaderPortalProps) {
   const metaSlot = usePortalSlot(META_SLOT_ID)
   if (!metaSlot) return null
 
@@ -36,7 +34,6 @@ export function ListHeaderPortal({ label, trailing }: ListHeaderPortalProps) {
       <span className="inline-block rounded-md border border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-sm font-bold text-black">
         {label}
       </span>
-      {trailing}
     </div>,
     metaSlot,
   )

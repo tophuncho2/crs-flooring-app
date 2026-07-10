@@ -3,6 +3,11 @@
 import { useState, type ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
 import { AnchoredPanel } from "@/engines/common"
+import {
+  TOOLBAR_TRIGGER_ACTIVE,
+  TOOLBAR_TRIGGER_BASE,
+  TOOLBAR_TRIGGER_INACTIVE,
+} from "./toolbar-button-styles"
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -74,20 +79,12 @@ export function ToolbarMenuButton({
           aria-expanded={open}
           aria-label={ariaLabel ?? label}
           className={joinClassNames(
-            "relative inline-flex items-center gap-1.5 rounded-md border bg-[var(--panel-background)] px-2.5 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40",
-            active
-              ? "border-sky-500/60 text-sky-600"
-              : "border-[var(--panel-border)] text-[var(--foreground)]/80 hover:text-[var(--foreground)]",
+            TOOLBAR_TRIGGER_BASE,
+            active ? TOOLBAR_TRIGGER_ACTIVE : TOOLBAR_TRIGGER_INACTIVE,
           )}
         >
           {Icon ? <Icon size={14} strokeWidth={2.5} aria-hidden="true" /> : null}
           {label}
-          {active ? (
-            <span
-              aria-hidden="true"
-              className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-sky-500"
-            />
-          ) : null}
         </button>
       }
     >
