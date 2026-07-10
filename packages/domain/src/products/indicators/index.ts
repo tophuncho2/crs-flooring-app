@@ -1,6 +1,5 @@
 export * from "./types.js"
 export * from "./status.js"
-export * from "./editability.js"
 export * from "./errors.js"
 export * from "./list-config.js"
 export * from "./column-limits.js"
