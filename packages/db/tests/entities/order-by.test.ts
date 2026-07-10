@@ -52,10 +52,10 @@ describe("buildEntitiesOrderBy", () => {
     }
   })
 
-  it("defaults the tiebreak to asc (entity A→Z) with no entries", () => {
+  it("falls back to the uniform base order (createdAt desc, id desc) with no entries", () => {
     expect(buildEntitiesOrderBy({ entries: [] })).toEqual([
-      { createdAt: "asc" },
-      { id: "asc" },
+      { createdAt: "desc" },
+      { id: "desc" },
     ])
   })
 
@@ -93,11 +93,11 @@ describe("buildEntitiesOrderBy", () => {
     ])
   })
 
-  it("skips unknown fields but still produces a deterministic order", () => {
+  it("falls back to the uniform base order when every field is unknown", () => {
     const orderBy = buildEntitiesOrderBy({
       entries: [{ field: "totallyNotAColumn", direction: "asc" }],
     }) as Array<Record<string, unknown>>
-    expect(orderBy).toEqual([{ createdAt: "asc" }, { id: "asc" }])
+    expect(orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }])
   })
 
   it("treats undefined sort the same as an empty chain", () => {

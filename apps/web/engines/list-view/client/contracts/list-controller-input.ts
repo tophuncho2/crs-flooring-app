@@ -1,11 +1,10 @@
-import type { ListInput, ListOutput, ListSort } from "@builders/application"
+import type { ListInput, ListOutput } from "@builders/application"
 
 export type ListControllerUrlSyncMode = "history" | "router"
 
 type ListControllerInputBase<TFilters> = {
   tableKey?: string
   initialSearchQuery?: string
-  initialSort?: ListSort
   initialFilters?: TFilters
   initialPage?: number
   pageSize?: number

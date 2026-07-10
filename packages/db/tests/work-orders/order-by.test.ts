@@ -89,11 +89,11 @@ describe("buildWorkOrdersOrderBy", () => {
     ])
   })
 
-  it("skips unknown fields but still produces a deterministic order", () => {
+  it("falls back to the uniform base order when every field is unknown", () => {
     const orderBy = buildWorkOrdersOrderBy({
       entries: [{ field: "totallyNotAColumn", direction: "asc" }],
     }) as Array<Record<string, unknown>>
-    expect(orderBy).toEqual([{ createdAt: "asc" }, { id: "asc" }])
+    expect(orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }])
   })
 
   it("collapses an identical duplicate clause (field-level dedup is the parser's job)", () => {

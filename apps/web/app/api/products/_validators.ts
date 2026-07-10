@@ -168,11 +168,6 @@ export const PRODUCTS_UI_SORT_FIELDS = [
 ] as const
 const PRODUCTS_MAX_SORT_LEVELS = 3
 
-/** The list's default order when no `sorts` param is supplied (category A→Z). The
- * db order-by builder expands this lone entry into the historical
- * `category.name → name → id` chain, so the default view is byte-identical. */
-const PRODUCTS_DEFAULT_SORT: ListSort = { field: "category", direction: "asc" }
-
 /** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
 function parseSortsParam(raw: string | null): ListSort[] {
   if (!raw) return []
@@ -227,14 +222,14 @@ export function validateListProductsQuery(
     ),
   )
 
-  // Canonical ordered sort via `sorts`; absent → the category-asc default.
-  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
-  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [PRODUCTS_DEFAULT_SORT]
+  // Canonical ordered sort via `sorts`. With no sort param the list falls back
+  // to the server's uniform base order (createdAt desc, id desc) — pass empty so
+  // nothing reads as sorted on load.
+  const sorts = parseSortsParam(searchParams.get("sorts"))
 
   return {
     search,
-    sort: sorts[0],
-    sorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters:
       prodNumber || color || style || namingAddon || categoryId.length > 0
         ? {

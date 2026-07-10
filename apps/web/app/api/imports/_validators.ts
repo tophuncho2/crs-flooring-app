@@ -327,9 +327,6 @@ export const IMPORTS_UI_SORT_FIELDS = [
 /** Cap on user-selected sort columns — mirrors the engine + request + use case. */
 const IMPORTS_MAX_SORT_LEVELS = 3
 
-/** The list's default order when no `sorts` param is supplied (newest first). */
-const IMPORTS_DEFAULT_SORT: ListSort = { field: "createdAt", direction: "desc" }
-
 /** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
 function parseSortsParam(raw: string | null): ListSort[] {
   if (!raw) return []
@@ -391,14 +388,13 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
     ),
   )
 
-  // Canonical ordered sort via `sorts`; absent → the createdAt-desc default.
-  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
-  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [IMPORTS_DEFAULT_SORT]
+  // Canonical ordered sort via `sorts`. With no sort param the list falls back to
+  // the server's uniform base order (createdAt desc, id desc) — pass empty.
+  const sorts = parseSortsParam(searchParams.get("sorts"))
 
   return {
     search,
-    sort: sorts[0],
-    sorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters:
       impNumber || warehouseId.length > 0
         ? {

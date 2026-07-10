@@ -80,7 +80,6 @@ export default function TemplatesClient({
     mode: "fetch",
     queryKey: [...TEMPLATES_LIST_QUERY_KEY],
     listFn: listTemplatesRequest,
-    initialSort: { field: "property", direction: "asc" },
     initialPage,
     initialFilters,
     pageSize: LIST_TEMPLATES_PAGE_SIZE,

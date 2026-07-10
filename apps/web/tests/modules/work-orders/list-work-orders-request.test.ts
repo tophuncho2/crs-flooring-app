@@ -49,10 +49,15 @@ describe("parseWorkOrdersListInputFromSearchParams — ?sorts= parsing", () => {
     expect(input.sorts?.map((entry) => entry.field)).toEqual(["property", "entity", "warehouse"])
   })
 
-  it("falls back to createdAt desc when no sorts param is present", () => {
+  it("emits no sort when no sort params are present (server base order applies)", () => {
     const input = parseWorkOrdersListInputFromSearchParams({})
-    expect(input.sorts).toEqual([{ field: "createdAt", direction: "desc" }])
-    expect(input.sort).toEqual({ field: "createdAt", direction: "desc" })
+    expect(input.sorts).toBeUndefined()
+    expect(input.sort).toBeUndefined()
+  })
+
+  it("still honors a legacy ?sortField= bookmark", () => {
+    const input = parseWorkOrdersListInputFromSearchParams({ sortField: "property", sort: "asc" })
+    expect(input.sorts).toEqual([{ field: "property", direction: "asc" }])
   })
 })
 

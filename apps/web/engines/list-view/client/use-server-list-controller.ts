@@ -67,16 +67,6 @@ function normalizeSorts(
   return result
 }
 
-/** Structural equality for two ordered sort lists (field + direction, in order).
- * Used to tell whether the live sort deviates from the seeded default. */
-function sortsEqual(a: readonly ListSort[], b: readonly ListSort[]): boolean {
-  if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i += 1) {
-    if (a[i].field !== b[i].field || a[i].direction !== b[i].direction) return false
-  }
-  return true
-}
-
 function readFiltersFromSearchParams(
   searchParams: URLSearchParams | null,
   filterableFields: readonly string[] | undefined,
@@ -175,9 +165,11 @@ export function useSsrListController<TRow, TFilters>(
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const initialSort = input.initialSort ?? null
-  const initialIsAscendingSort = initialSort ? initialSort.direction !== "desc" : true
-  const sortFieldKey = initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
+  // Sort is no longer client-seeded (the server owns the uniform base order), so
+  // the retained-but-unused SSR twin keeps a neutral ascending default + a fixed
+  // field for contract parity.
+  const initialIsAscendingSort = true
+  const sortFieldKey = input.allowedSortFields?.[0] ?? ""
   const filterableFields = input.filterableFields
   const urlSyncMode = input.urlSyncMode ?? "history"
   const initialFiltersMap = useMemo(
@@ -389,9 +381,13 @@ export function useFetchListController<TRow, TFilters>(
   const searchParams = useSearchParams()
 
   const initialSearchQuery = input.initialSearchQuery ?? ""
-  const initialDirection = input.initialSort?.direction ?? "asc"
   const initialPageValue = input.initialPage ?? 1
-  const initialFieldKey = input.initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
+  // Legacy single-sort defaults for consumers that don't use the multi-sort
+  // (`?sorts=`) path. Sort is no longer client-seeded — an empty user sort falls
+  // through to the server's uniform base order — so these only feed the inert
+  // single-sort nuqs params + the legacy `?sortField=` fallback.
+  const initialDirection: "asc" | "desc" = "asc"
+  const initialFieldKey = input.allowedSortFields?.[0] ?? ""
   // Opt-in multi-column sort. `1` (default) keeps the single-sort behavior +
   // URL byte-identical; `> 1` activates the ordered `?sorts=` param path.
   const maxSortLevels = Math.max(1, Math.floor(input.maxSortLevels ?? 1))
@@ -474,38 +470,23 @@ export function useFetchListController<TRow, TFilters>(
     [filterableFields],
   )
 
-  // Canonical ordered sort list. In multi-sort mode it is driven by the `sorts`
-  // param (falling back to `initialSort`); otherwise it mirrors the single
-  // `sortField`/`sort` params as an array of zero or one. Memoized on primitives
-  // so its identity (and the query key) stays stable across renders.
+  // Canonical ordered sort list. In multi-sort mode it is driven purely by the
+  // `sorts` param — NO `initialSort` seed, so an empty `?sorts=` yields an EMPTY
+  // user sort that flows to the server's uniform base order (createdAt desc, id
+  // desc). Nothing reads as "sorted" on load and Clear-all can truly empty it.
+  // Single-sort consumers still mirror the legacy `sortField`/`sort` params.
+  // Memoized on primitives so its identity (and the query key) stays stable.
   const sorts: ListSort[] = useMemo(() => {
     if (multiSort) {
-      const parsed = parseSorts(sortsParam, allowedSortFields, maxSortLevels)
-      if (parsed.length > 0) return parsed
-      return initialFieldKey ? [{ field: initialFieldKey, direction: initialDirection }] : []
+      return parseSorts(sortsParam, allowedSortFields, maxSortLevels)
     }
     return sortFieldKey ? [{ field: sortFieldKey, direction: sortDirection }] : []
-  }, [
-    multiSort,
-    sortsParam,
-    allowedSortFields,
-    maxSortLevels,
-    initialFieldKey,
-    initialDirection,
-    sortFieldKey,
-    sortDirection,
-  ])
+  }, [multiSort, sortsParam, allowedSortFields, maxSortLevels, sortFieldKey, sortDirection])
 
-  // True once the live sort deviates from the seeded default. `sorts` always
-  // carries at least the default (see the fallback above), so a plain
-  // `sorts.length > 0` can't distinguish default from user-applied — compare
-  // against the default list instead. Drives the toolbar "Clear all" visibility.
-  const hasNonDefaultSort = useMemo(() => {
-    const defaults: ListSort[] = initialFieldKey
-      ? [{ field: initialFieldKey, direction: initialDirection }]
-      : []
-    return !sortsEqual(sorts, defaults)
-  }, [sorts, initialFieldKey, initialDirection])
+  // True whenever the user has an active sort. With no per-module seed, an empty
+  // `sorts` means "no user sort" (→ server base order), so a plain length check
+  // is exact. Drives the toolbar "Clear all" visibility + the persistence gate.
+  const hasNonDefaultSort = sorts.length > 0
 
   const listInput: ListInput<TFilters> = useMemo(
     () => ({
@@ -554,13 +535,8 @@ export function useFetchListController<TRow, TFilters>(
   const onToggleSortDirection = useCallback(() => {
     if (multiSort) {
       // Flip the primary (highest-priority) column; keep the rest of the chain.
-      const current = parseSorts(sortsParam, allowedSortFields, maxSortLevels)
-      const base =
-        current.length > 0
-          ? current
-          : initialFieldKey
-            ? [{ field: initialFieldKey, direction: initialDirection }]
-            : []
+      // With no `initialSort` seed, an empty sort has no lead column to flip.
+      const base = parseSorts(sortsParam, allowedSortFields, maxSortLevels)
       if (base.length === 0) return
       const flipped: ListSort[] = [
         { field: base[0].field, direction: base[0].direction === "asc" ? "desc" : "asc" },
@@ -575,8 +551,6 @@ export function useFetchListController<TRow, TFilters>(
     if (pageValue !== 1) setPageValue(1)
   }, [
     allowedSortFields,
-    initialDirection,
-    initialFieldKey,
     maxSortLevels,
     multiSort,
     pageValue,
@@ -748,7 +722,7 @@ export function useFetchListController<TRow, TFilters>(
     const snapshot: ListPreferencesSnapshot = {}
     const trimmedQuery = searchUrlValue?.trim()
     if (trimmedQuery) snapshot.q = trimmedQuery
-    if (hasNonDefaultSort && sorts.length > 0) snapshot.sorts = sorts
+    if (sorts.length > 0) snapshot.sorts = sorts
     if (filterableFields) {
       const activeFilters: ListFilterValueMap = {}
       let anyFilter = false
@@ -768,7 +742,6 @@ export function useFetchListController<TRow, TFilters>(
   }, [
     prefsKey,
     searchUrlValue,
-    hasNonDefaultSort,
     sorts,
     filters,
     filterableFields,

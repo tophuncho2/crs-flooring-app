@@ -109,7 +109,6 @@ export default function EntitiesClient({
     queryKey: [...ENTITIES_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
-    initialSort: { field: "entity", direction: "asc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_ENTITIES_PAGE_SIZE,

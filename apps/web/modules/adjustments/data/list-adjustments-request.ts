@@ -98,15 +98,13 @@ export function parseAdjustmentsListInputFromSearchParams(
 
   const hasAnyFilter = Object.keys(filters).length > 0
 
-  // Ordered multi-column sort via `?sorts=`; falls back to the newest-first
-  // ledger default so the SSR input matches the controller's `initialSort`.
+  // Ordered multi-column sort via `?sorts=`. With no sort param the list falls
+  // back to the server's uniform base order (createdAt desc, id desc) — pass
+  // empty so the SSR key matches the client's de-seeded first render.
   const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
-  const effectiveSorts: ListSort[] =
-    sorts.length > 0 ? sorts : [{ field: "createdAt", direction: "desc" }]
 
   return {
-    sort: effectiveSorts[0],
-    sorts: effectiveSorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters: hasAnyFilter ? (filters as InventoryAdjustmentListFilters) : undefined,
     page,
     pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,

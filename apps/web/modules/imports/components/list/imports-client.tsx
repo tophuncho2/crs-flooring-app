@@ -110,7 +110,6 @@ export default function ImportsClient({
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
-    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_IMPORTS_PAGE_SIZE,
@@ -156,8 +155,8 @@ export default function ImportsClient({
     (option) => option.name,
   )
 
-  // A non-default sort (default is createdAt desc) folds into the single
-  // "Clear all" signal; the Sort menu no longer carries its own Clear.
+  // An active user sort folds into the single "Clear all" signal; the Sort menu
+  // no longer carries its own Clear.
   const hasActiveSortTool = hasNonDefaultSort
 
   const hasActiveFilters = useMemo(() => {

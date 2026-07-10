@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest"
 import { parseImportsListInputFromSearchParams } from "@/modules/imports/data/list-imports-request"
 
 describe("parseImportsListInputFromSearchParams — sort", () => {
-  it("defaults to createdAt DESC when no sorts param is present", () => {
+  it("emits no sort when no sorts param is present (server base order applies)", () => {
     const input = parseImportsListInputFromSearchParams({})
-    expect(input.sorts).toEqual([{ field: "createdAt", direction: "desc" }])
-    expect(input.sort).toEqual({ field: "createdAt", direction: "desc" })
+    expect(input.sorts).toBeUndefined()
+    expect(input.sort).toBeUndefined()
   })
 
   it("parses an ordered multi-column sorts param", () => {

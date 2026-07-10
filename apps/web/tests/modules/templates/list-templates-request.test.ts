@@ -32,10 +32,10 @@ describe("parseTemplatesListInputFromSearchParams — unit-type / description se
 })
 
 describe("parseTemplatesListInputFromSearchParams — sort", () => {
-  it("defaults to property ASC when no sorts param is present", () => {
+  it("emits no sort when no sorts param is present (server base order applies)", () => {
     const input = parseTemplatesListInputFromSearchParams({})
-    expect(input.sorts).toEqual([{ field: "property", direction: "asc" }])
-    expect(input.sort).toEqual({ field: "property", direction: "asc" })
+    expect(input.sorts).toBeUndefined()
+    expect(input.sort).toBeUndefined()
   })
 
   it("parses an ordered multi-column sorts param", () => {

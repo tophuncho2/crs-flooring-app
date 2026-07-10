@@ -175,7 +175,6 @@ export default function InventoryClient({
     queryKey: [...INVENTORY_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
-    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_INVENTORY_PAGE_SIZE,

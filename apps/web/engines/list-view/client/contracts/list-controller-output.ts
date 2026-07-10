@@ -15,10 +15,11 @@ export type ListControllerOutput<TRow> = {
   /** Ordered sort columns, highest priority first. `[]` when unsorted. With
    * `maxSortLevels` unset/1 this is always `sort` as an array of zero or one. */
   sorts: ListSort[]
-  /** True when the live sort deviates from the list's default (`initialSort`).
+  /** True when the user has an active sort (`sorts.length > 0`). Sort is no
+   * longer client-seeded — an empty sort falls through to the server's uniform
+   * base order (createdAt desc, id desc), so "no user sort" reads as unsorted.
    * Clients OR this into their `hasActiveFilters` so the toolbar "Clear all"
-   * shows for a sort-only change; `onClearAllFilters` resets sort back to
-   * default. Always false while the list sits on its seeded default order. */
+   * shows for a sort-only change; `onClearAllFilters` truly empties the sort. */
   hasNonDefaultSort: boolean
   filters: ListFilterValueMap
   page: number

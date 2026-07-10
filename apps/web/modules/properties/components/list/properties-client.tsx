@@ -124,7 +124,6 @@ export default function PropertiesClient({
     queryKey: [...PROPERTIES_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
-    initialSort: { field: "name", direction: "asc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_PROPERTIES_PAGE_SIZE,

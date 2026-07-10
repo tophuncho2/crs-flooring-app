@@ -1,4 +1,5 @@
 import type { Prisma } from "../generated/prisma/client.js"
+import { DEFAULT_LIST_ORDER, appendUniqueOrderBy } from "../shared/order-by.js"
 import type { ImportsListSort } from "./read-repository.js"
 
 /**
@@ -6,13 +7,6 @@ import type { ImportsListSort } from "./read-repository.js"
  * (only `import type`) so it unit-tests without a DB connection.
  * `read-repository` consumes `buildImportsOrderBy`; the rest is internal.
  */
-
-export function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {
-  if (!nextValue) return
-  const serialized = JSON.stringify(nextValue)
-  if (values.some((value) => JSON.stringify(value) === serialized)) return
-  values.push(nextValue)
-}
 
 // Single source of truth for how each sortable field maps to a Prisma orderBy
 // clause. This pass exposes only the two timestamp scalars; the warehouse/entity
@@ -40,8 +34,9 @@ export function importFieldOrderBy(
  * autoincrement int) then `id`: `createdAt` ties on rows created in the same
  * transaction (batched seed/materialize paths), so `importNumber` — monotonic
  * and unique — is the deterministic secondary key that keeps the visible order
- * stable. With no entries this naturally reproduces the historical default
- * (`importNumber desc, id desc`).
+ * stable. With no user sort the list falls back to the uniform invisible base
+ * order (`createdAt desc, id desc`); since `importNumber` is monotonic with
+ * creation, the visible newest-first order is unchanged.
  */
 export function buildImportsOrderBy(
   sort: ImportsListSort | undefined,
@@ -56,10 +51,14 @@ export function buildImportsOrderBy(
     appendUniqueOrderBy(orderBy, importFieldOrderBy(entry.field, entry.direction))
   }
 
-  // Deterministic tiebreak. Its direction mirrors the highest-priority entry so
-  // the trailing order matches the leading column; with no entries it falls back
-  // to `desc` (the newest-first default). `importNumber` is never user-sortable,
-  // so it is always appended; `id` is the final unique tiebreak.
+  // No user sort (nothing selected, or every selected field was unknown and
+  // dropped) → the uniform invisible base order (`createdAt desc, id desc`).
+  if (orderBy.length === 0) return [...DEFAULT_LIST_ORDER]
+
+  // Deterministic tiebreak for a user-applied sort. Its direction mirrors the
+  // highest-priority entry so the trailing order matches the leading column.
+  // `importNumber` is never user-sortable, so it is always appended; `id` is the
+  // final unique tiebreak.
   const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "desc"
   appendUniqueOrderBy(orderBy, { importNumber: tiebreakDirection })
   appendUniqueOrderBy(orderBy, { id: tiebreakDirection })

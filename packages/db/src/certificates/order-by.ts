@@ -1,18 +1,16 @@
 import type { Prisma } from "../generated/prisma/client.js"
+import { appendUniqueOrderBy } from "../shared/order-by.js"
 import type { CertificatesListSort } from "./read-repository.js"
 
 /**
  * Pure certificates list-view `orderBy` builder. Kept free of the Prisma *client*
  * (only `import type`) so it unit-tests without a DB connection.
  * `read-repository` consumes `buildCertificatesOrderBy`; the rest is internal.
+ *
+ * NOTE: certificates has no Sort tool — `expirationDate asc` (soonest first) is
+ * the only ordering its users ever get, so it deliberately keeps that default
+ * rather than the shared `DEFAULT_LIST_ORDER`. Only the dedup helper is shared.
  */
-
-export function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {
-  if (!nextValue) return
-  const serialized = JSON.stringify(nextValue)
-  if (values.some((value) => JSON.stringify(value) === serialized)) return
-  values.push(nextValue)
-}
 
 // Single source of truth for how each sortable field maps to a Prisma orderBy
 // clause. `entity` sorts through the linked entity's name (`entity.entity`);

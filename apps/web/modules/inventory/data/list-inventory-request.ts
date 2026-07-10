@@ -110,21 +110,26 @@ export function parseInventoryListInputFromSearchParams(
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
-  // Ordered multi-column sort is canonical via `?sorts=`; fall back to the legacy
-  // single `?sort=`/`?sortField=` pair so old bookmarks keep working.
+  // Ordered multi-column sort is canonical via `?sorts=`; else honor a legacy
+  // `?sortField=` bookmark when present. With NO sort params the list falls back
+  // to the server's uniform base order (createdAt desc, id desc) — pass empty.
   const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
-  const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
   const sortFieldRaw = readSearchParam(searchParams, "sortField")
-  const field = INVENTORY_LIST_SORT_FIELDS.includes(
-    sortFieldRaw as (typeof INVENTORY_LIST_SORT_FIELDS)[number],
-  )
-    ? (sortFieldRaw as string)
-    : "createdAt"
-  const effectiveSorts: ListSort[] = sorts.length > 0 ? sorts : [{ field, direction }]
+  const legacySort: ListSort | undefined =
+    sortFieldRaw === undefined
+      ? undefined
+      : {
+          field: INVENTORY_LIST_SORT_FIELDS.includes(
+            sortFieldRaw as (typeof INVENTORY_LIST_SORT_FIELDS)[number],
+          )
+            ? (sortFieldRaw as string)
+            : "createdAt",
+          direction: readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc",
+        }
+  const effectiveSorts: ListSort[] = sorts.length > 0 ? sorts : legacySort ? [legacySort] : []
 
   return {
-    sort: effectiveSorts[0],
-    sorts: effectiveSorts,
+    ...(effectiveSorts.length > 0 ? { sort: effectiveSorts[0], sorts: effectiveSorts } : {}),
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page,
     pageSize: LIST_INVENTORY_PAGE_SIZE,

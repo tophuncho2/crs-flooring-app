@@ -30,9 +30,6 @@ export const TEMPLATES_LIST_SORT_FIELDS = [
 /** Cap on user-selected sort columns — mirrors the engine + API + use case. */
 const TEMPLATES_MAX_SORT_LEVELS = 3
 
-/** The list's default order when the URL carries no `?sorts=` (preserve property A→Z). */
-const TEMPLATES_DEFAULT_SORT: ListSort = { field: "property", direction: "asc" }
-
 function isAllowedSortField(value: string): boolean {
   return (TEMPLATES_LIST_SORT_FIELDS as readonly string[]).includes(value)
 }
@@ -90,13 +87,13 @@ export function parseTemplatesListInputFromSearchParams(
   }
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
-  // Multi-column sort via `?sorts=`; absent → the list's property-asc default.
-  const parsedSorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
-  const sorts = parsedSorts.length > 0 ? parsedSorts : [TEMPLATES_DEFAULT_SORT]
+  // Multi-column sort via `?sorts=`. With no sort param the list falls back to
+  // the server's uniform base order (createdAt desc, id desc) — pass empty so the
+  // SSR key matches the client's de-seeded first render (nothing reads as sorted).
+  const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
 
   return {
-    sort: sorts[0],
-    sorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters: hasAnyFilter ? (filterRecord as TemplatesListFilters) : undefined,
     page,
     pageSize: LIST_TEMPLATES_PAGE_SIZE,

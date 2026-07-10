@@ -132,10 +132,9 @@ export default function ProductsClient({
     initialSearchQuery,
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
-    // Default = category A→Z, matching the SSR parser's PRODUCTS_DEFAULT_SORT so
-    // SSR/client keys align. The db builder expands this lone entry into the
-    // historical category.name → name → id order (name = canonical secondary).
-    initialSort: { field: "category", direction: "asc" },
+    // No client sort seed: an empty sort falls through to the server's uniform
+    // base order (createdAt desc, id desc). Category grouping is one Sort-menu
+    // click away and now persists across navigations.
     allowedSortFields: PRODUCTS_ALLOWED_SORT_FIELDS,
     maxSortLevels: PRODUCTS_MAX_SORT_LEVELS,
     pageSize: LIST_PRODUCTS_PAGE_SIZE,
@@ -217,8 +216,8 @@ export default function ProductsClient({
     [onFilterChange],
   )
 
-  // A non-default sort (default is category A→Z) folds into the single
-  // "Clear all" signal; the Sort menu no longer carries its own Clear.
+  // An active user sort folds into the single "Clear all" signal; the Sort menu
+  // no longer carries its own Clear.
   const hasActiveSortTool = hasNonDefaultSort
 
   const hasActiveFilters = useMemo(() => {

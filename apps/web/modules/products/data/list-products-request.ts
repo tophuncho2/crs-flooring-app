@@ -24,15 +24,6 @@ export const PRODUCTS_LIST_SORT_FIELDS = [
   "updatedAt",
 ] as const
 
-/**
- * The list's default order when the URL carries no `?sorts=` — category A→Z.
- * The db order-by builder expands this lone entry into the historical
- * `category.name → name → id` chain (name is products' canonical secondary
- * key). Emitting it here keeps the SSR prefetch key identical to the client's
- * first-render key so hydration lands (mirrors properties/inventory).
- */
-const PRODUCTS_DEFAULT_SORT: ListSort = { field: "category", direction: "asc" }
-
 /** Cap on user-selected sort columns — mirrors the engine + API + use case. */
 const PRODUCTS_MAX_SORT_LEVELS = 3
 
@@ -95,10 +86,10 @@ export function parseProductsListInputFromSearchParams(
     new Set(readSearchParamArray(searchParams, "categoryId")),
   )
 
-  // Multi-column sort via `?sorts=`; absent → the list's category-asc default
-  // (always populated so the SSR key matches the client's first render).
-  const parsedSorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
-  const sorts = parsedSorts.length > 0 ? parsedSorts : [PRODUCTS_DEFAULT_SORT]
+  // Multi-column sort via `?sorts=`. With no sort param the list falls back to
+  // the server's uniform base order (createdAt desc, id desc) — pass empty so the
+  // SSR key matches the client's de-seeded first render (nothing reads as sorted).
+  const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
 
   return {
     search: searchRaw || undefined,
@@ -112,8 +103,7 @@ export function parseProductsListInputFromSearchParams(
             ...(categoryId.length > 0 ? { categoryId } : {}),
           }
         : undefined,
-    sort: sorts[0],
-    sorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     page,
     pageSize: LIST_PRODUCTS_PAGE_SIZE,
   }

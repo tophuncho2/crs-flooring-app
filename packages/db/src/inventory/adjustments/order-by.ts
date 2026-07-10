@@ -1,11 +1,11 @@
 import type { Prisma } from "../../generated/prisma/client.js"
-import { appendUniqueOrderBy } from "../order-by.js"
+import { DEFAULT_LIST_ORDER, appendUniqueOrderBy } from "../../shared/order-by.js"
 import type { AdjustmentsListViewSort } from "./read-repository.js"
 
 /**
  * Pure adjustments list-view `orderBy` builder. Kept free of the Prisma *client*
  * (only `import type`) so it unit-tests without a DB connection. Mirrors the
- * inventory builder; reuses its `appendUniqueOrderBy` helper.
+ * inventory builder; reuses the shared `appendUniqueOrderBy` helper.
  * `read-repository` consumes `buildAdjustmentsListViewOrderBy`.
  */
 
@@ -53,11 +53,15 @@ export function buildAdjustmentsListViewOrderBy(
     appendUniqueOrderBy(orderBy, adjustmentFieldOrderBy(entry.field, entry.direction))
   }
 
-  // Deterministic tiebreak. Its direction mirrors the highest-priority entry so
-  // the trailing order matches the leading column; with no entries it falls back
-  // to `desc` (the canonical newest-first ledger default). Skip the createdAt
-  // tiebreak when the user already sorts by it — its own clause is already in the
-  // chain. `id` (rowid) is always appended last as the unique final tiebreak.
+  // No user sort (nothing selected, or every selected field was unknown and
+  // dropped) → the uniform invisible base order (`createdAt desc, id desc`).
+  if (orderBy.length === 0) return [...DEFAULT_LIST_ORDER]
+
+  // Deterministic tiebreak for a user-applied sort. Its direction mirrors the
+  // highest-priority entry so the trailing order matches the leading column.
+  // Skip the createdAt tiebreak when the user already sorts by it — its own
+  // clause is already in the chain. `id` (rowid) is always appended last as the
+  // unique final tiebreak.
   const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "desc"
   if (!entries.some((entry) => entry.field === "createdAt")) {
     appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })

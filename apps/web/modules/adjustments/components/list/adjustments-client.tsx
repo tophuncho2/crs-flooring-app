@@ -152,7 +152,6 @@ export default function AdjustmentsClient({
     queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
-    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -296,8 +295,8 @@ export default function AdjustmentsClient({
     [adjNumberValue, invNumberValue, rollNumberValue, dyeLotValue, noteValue],
   )
 
-  // A non-default sort (default is createdAt desc) folds into the single
-  // "Clear all" signal; the Sort menu no longer carries its own Clear.
+  // An active user sort folds into the single "Clear all" signal; the Sort menu
+  // no longer carries its own Clear.
   const hasActiveSortTool = hasNonDefaultSort
 
   const hasActiveFilters = useMemo(

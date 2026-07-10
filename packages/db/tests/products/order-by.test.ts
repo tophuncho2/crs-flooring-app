@@ -14,7 +14,12 @@ const FIELD_CLAUSE: Record<string, Record<string, unknown>> = {
   updatedAt: { updatedAt: "asc" },
 }
 
-const DEFAULT_ORDER_BY = [
+/** The uniform invisible base order applied when there is no user sort. */
+const BASE_ORDER_BY = [{ createdAt: "desc" }, { id: "desc" }]
+
+/** The familiar category grouping a user gets by applying `category:asc` — the
+ * builder still expands that lone entry into `category.name → name → id`. */
+const CATEGORY_GROUPED_ORDER_BY = [
   { category: { name: "asc" } },
   { name: "asc" },
   { id: "asc" },
@@ -44,21 +49,20 @@ describe("buildProductListViewOrderBy", () => {
     expect(productFieldOrderBy("category", "desc")).toEqual({ category: { name: "desc" } })
   })
 
-  it("returns the historical default chain with no entries", () => {
-    expect(buildProductListViewOrderBy({ entries: [] })).toEqual(DEFAULT_ORDER_BY)
+  it("falls back to the uniform base order with no entries", () => {
+    expect(buildProductListViewOrderBy({ entries: [] })).toEqual(BASE_ORDER_BY)
   })
 
-  it("treats undefined sort the same as an empty chain (default order)", () => {
-    expect(buildProductListViewOrderBy(undefined)).toEqual(DEFAULT_ORDER_BY)
+  it("treats undefined sort the same as an empty chain (base order)", () => {
+    expect(buildProductListViewOrderBy(undefined)).toEqual(BASE_ORDER_BY)
   })
 
-  it("expands a lone category:asc into the historical default (SSR/client parity)", () => {
-    // The client + SSR both send the default as `[category:asc]`; the builder
-    // must reproduce the empty-entries `category.name → name → id` order so the
-    // list never reorders between server paint and client fetch.
+  it("expands a user-applied lone category:asc into the category grouping", () => {
+    // Category grouping is no longer the default — it is a user-applied sort. The
+    // builder still expands that lone entry into `category.name → name → id`.
     expect(
       buildProductListViewOrderBy({ entries: [{ field: "category", direction: "asc" }] }),
-    ).toEqual(DEFAULT_ORDER_BY)
+    ).toEqual(CATEGORY_GROUPED_ORDER_BY)
   })
 
   it("always ends with `id`, preceded by the `name` secondary key", () => {
@@ -101,11 +105,11 @@ describe("buildProductListViewOrderBy", () => {
     ])
   })
 
-  it("skips unknown fields but still produces a deterministic name→id order", () => {
+  it("falls back to the uniform base order when every field is unknown", () => {
     const orderBy = buildProductListViewOrderBy({
       entries: [{ field: "totallyNotAColumn", direction: "asc" }],
     }) as Array<Record<string, unknown>>
-    expect(orderBy).toEqual([{ name: "asc" }, { id: "asc" }])
+    expect(orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }])
   })
 
   it("collapses an identical duplicate clause (field-level dedup is the parser's job)", () => {

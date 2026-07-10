@@ -378,8 +378,6 @@ export const TEMPLATES_UI_SORT_FIELDS = [
   "updatedAt",
 ] as const
 const TEMPLATES_MAX_SORT_LEVELS = 3
-/** The list's default order when no `sorts` param is supplied (property A→Z). */
-const TEMPLATES_DEFAULT_SORT: ListSort = { field: "property", direction: "asc" }
 
 /** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
 function parseSortsParam(raw: string | null): ListSort[] {
@@ -439,13 +437,12 @@ export function validateListTemplatesQuery(
   }
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
-  // Canonical ordered sort via `sorts`; absent → the list's property-asc default.
-  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
-  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [TEMPLATES_DEFAULT_SORT]
+  // Canonical ordered sort via `sorts`. With no sort param the list falls back to
+  // the server's uniform base order (createdAt desc, id desc) — pass empty.
+  const sorts = parseSortsParam(searchParams.get("sorts"))
 
   return {
-    sort: sorts[0],
-    sorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters: hasAnyFilter ? (filterRecord as TemplatesListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

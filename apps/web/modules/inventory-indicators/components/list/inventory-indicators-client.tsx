@@ -114,7 +114,6 @@ export default function InventoryIndicatorsClient({
     queryKey: [...INDICATORS_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
-    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: INVENTORY_INDICATORS_LIST_PAGE_SIZE,

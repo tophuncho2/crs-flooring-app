@@ -78,10 +78,10 @@ describe("parseAdjustmentsListInputFromSearchParams — ?sorts= parsing", () => 
     ])
   })
 
-  it("falls back to createdAt desc when no sorts param is present", () => {
+  it("emits no sort when no sorts param is present (server base order applies)", () => {
     const input = parseAdjustmentsListInputFromSearchParams({})
-    expect(input.sorts).toEqual([{ field: "createdAt", direction: "desc" }])
-    expect(input.sort).toEqual({ field: "createdAt", direction: "desc" })
+    expect(input.sorts).toBeUndefined()
+    expect(input.sort).toBeUndefined()
   })
 })
 

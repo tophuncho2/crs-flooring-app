@@ -40,7 +40,6 @@ function renderController(userId: string | null = null) {
         listFn: async () => ({ rows: [], total: 0 }),
         tableKey: TABLE_KEY,
         filterableFields: ["warehouseId"],
-        initialSort: { field: "createdAt", direction: "desc" },
         allowedSortFields: ["createdAt", "name"],
         maxSortLevels: 3,
       }),

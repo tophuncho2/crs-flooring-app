@@ -1,4 +1,5 @@
 import type { Prisma } from "../generated/prisma/client.js"
+import { DEFAULT_LIST_ORDER, appendUniqueOrderBy } from "../shared/order-by.js"
 import type { PropertiesListSort } from "./read-repository.js"
 
 /**
@@ -6,13 +7,6 @@ import type { PropertiesListSort } from "./read-repository.js"
  * (only `import type`) so it unit-tests without a DB connection.
  * `read-repository` consumes `buildPropertiesOrderBy`; the rest is internal.
  */
-
-export function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {
-  if (!nextValue) return
-  const serialized = JSON.stringify(nextValue)
-  if (values.some((value) => JSON.stringify(value) === serialized)) return
-  values.push(nextValue)
-}
 
 // Single source of truth for how each sortable field maps to a Prisma orderBy
 // clause. `entity` sorts through the linked entity's name (`entity.entity`);
@@ -58,11 +52,15 @@ export function buildPropertiesOrderBy(
     appendUniqueOrderBy(orderBy, propertyFieldOrderBy(entry.field, entry.direction))
   }
 
-  // Deterministic tiebreak. Its direction mirrors the highest-priority entry so
-  // the trailing order matches the leading column; with no entries it falls back
-  // to `asc` (the name-asc default). Skip the createdAt tiebreak when the user
-  // already sorts by it — its own clause is already in the chain. `id` is always
-  // appended last as the unique final tiebreak.
+  // No user sort (nothing selected, or every selected field was unknown and
+  // dropped) → the uniform invisible base order (`createdAt desc, id desc`).
+  if (orderBy.length === 0) return [...DEFAULT_LIST_ORDER]
+
+  // Deterministic tiebreak for a user-applied sort. Its direction mirrors the
+  // highest-priority entry so the trailing order matches the leading column.
+  // Skip the createdAt tiebreak when the user already sorts by it — its own
+  // clause is already in the chain. `id` is always appended last as the unique
+  // final tiebreak.
   const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "asc"
   if (!entries.some((entry) => entry.field === "createdAt")) {
     appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })

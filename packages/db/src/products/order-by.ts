@@ -1,4 +1,5 @@
 import type { Prisma } from "../generated/prisma/client.js"
+import { DEFAULT_LIST_ORDER, appendUniqueOrderBy } from "../shared/order-by.js"
 import type { ProductListViewSort } from "./read-repository.js"
 
 /**
@@ -6,13 +7,6 @@ import type { ProductListViewSort } from "./read-repository.js"
  * (only `import type`) so it unit-tests without a DB connection.
  * `read-repository` consumes `buildProductListViewOrderBy`; the rest is internal.
  */
-
-export function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {
-  if (!nextValue) return
-  const serialized = JSON.stringify(nextValue)
-  if (values.some((value) => JSON.stringify(value) === serialized)) return
-  values.push(nextValue)
-}
 
 // Single source of truth for how each sortable field maps to a Prisma orderBy
 // clause. `category` sorts on the related category name; `style`/`color` are
@@ -38,40 +32,33 @@ export function productFieldOrderBy(
   }
 }
 
-// The default order applied when the user has selected no sort columns. Matches
-// the historical hardcoded product list order (category name, then product
-// name, then id) so the unsorted view is byte-identical to before the install.
-const PRODUCT_DEFAULT_ORDER_BY: Prisma.FlooringProductOrderByWithRelationInput[] = [
-  { category: { name: "asc" } },
-  { name: "asc" },
-  { id: "asc" },
-]
-
 /**
  * Builds the products list-view `orderBy`. With no user-selected columns it
- * returns the default `category.name → name → id` chain (unchanged behavior).
- * The user-selectable fields are `category` (→ category.name), `style`/`color`
- * (nullable free-text → nulls last), `createdAt` and `updatedAt`.
+ * falls back to the uniform invisible base order (`createdAt desc, id desc`) —
+ * newest first, nothing reads as sorted on load. The user-selectable fields are
+ * `category` (→ category.name), `style`/`color` (nullable free-text → nulls
+ * last), `createdAt` and `updatedAt`.
  *
- * `name` (the product name) is products' canonical SECONDARY key — the analog
- * of inventory's `createdAt` tiebreak. It is appended after the user's columns
- * (unless they already sort by it) so a lone `category` selection reproduces the
- * historical `category.name → name → id` default EXACTLY, and every other sort
- * stays alphabetically stable within ties. `id` is always the unique final
- * tiebreak; both trailing clauses mirror the highest-priority column's direction.
+ * `name` (the product name) is products' canonical SECONDARY key for a
+ * user-applied sort — the analog of inventory's `createdAt` tiebreak. It is
+ * appended after the user's columns (unless they already sort by it) so a lone
+ * `category` selection reproduces the familiar `category.name → name → id`
+ * grouping, and every other sort stays alphabetically stable within ties. `id`
+ * is always the unique final tiebreak; both trailing clauses mirror the
+ * highest-priority column's direction.
  */
 export function buildProductListViewOrderBy(
   sort: ProductListViewSort | undefined,
 ): Prisma.FlooringProductOrderByWithRelationInput[] {
   const entries = sort?.entries ?? []
-  if (entries.length === 0) {
-    return PRODUCT_DEFAULT_ORDER_BY.map((clause) => ({ ...clause }))
-  }
-
   const orderBy: Prisma.FlooringProductOrderByWithRelationInput[] = []
   for (const entry of entries) {
     appendUniqueOrderBy(orderBy, productFieldOrderBy(entry.field, entry.direction))
   }
+
+  // No user sort (nothing selected, or every selected field was unknown and
+  // dropped) → the uniform invisible base order (`createdAt desc, id desc`).
+  if (orderBy.length === 0) return [...DEFAULT_LIST_ORDER]
 
   const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "asc"
   // Products' canonical secondary key. Skip it when the user already sorts by

@@ -128,8 +128,6 @@ export const PROPERTIES_UI_SORT_FIELDS = [
   "updatedAt",
 ] as const
 const PROPERTIES_MAX_SORT_LEVELS = 3
-/** The list's default order when no `sorts` param is supplied (name A→Z). */
-const PROPERTIES_DEFAULT_SORT: ListSort = { field: "name", direction: "asc" }
 
 /** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
 function parseSortsParam(raw: string | null): ListSort[] {
@@ -196,14 +194,13 @@ export function validateListPropertiesQuery(
         }
       : undefined
 
-  // Canonical ordered sort via `sorts`; absent → the list's name-asc default.
-  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
-  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [PROPERTIES_DEFAULT_SORT]
+  // Canonical ordered sort via `sorts`. With no sort param the list falls back to
+  // the server's uniform base order (createdAt desc, id desc) — pass empty.
+  const sorts = parseSortsParam(searchParams.get("sorts"))
 
   return {
     search,
-    sort: sorts[0],
-    sorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters,
     page: parsed.page,
     pageSize: parsed.pageSize,

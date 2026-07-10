@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest"
 import { parseEntitiesListInputFromSearchParams } from "@/modules/entities/data/list-entities-request"
 
 describe("parseEntitiesListInputFromSearchParams — sort", () => {
-  it("defaults to entity ASC when no sorts param is present", () => {
+  it("emits no sort when no sorts param is present (server base order applies)", () => {
     const input = parseEntitiesListInputFromSearchParams({})
-    expect(input.sorts).toEqual([{ field: "entity", direction: "asc" }])
-    expect(input.sort).toEqual({ field: "entity", direction: "asc" })
+    expect(input.sorts).toBeUndefined()
+    expect(input.sort).toBeUndefined()
   })
 
   it("parses an ordered multi-column sorts param", () => {

@@ -111,8 +111,10 @@ export function parseWorkOrdersListInputFromSearchParams(
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
-  // Multi-column sort is canonical via `?sorts=`; fall back to the legacy
-  // single `?sort=&sortField=` pair so shared/bookmarked links still resolve.
+  // Multi-column sort is canonical via `?sorts=`; else honor a legacy
+  // `?sortField=` bookmark when present. With NO sort params the list falls back
+  // to the server's uniform base order (createdAt desc, id desc) — pass empty so
+  // the SSR key matches the client's de-seeded first render.
   const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
   if (sorts.length > 0) {
     return {
@@ -124,17 +126,20 @@ export function parseWorkOrdersListInputFromSearchParams(
     }
   }
 
-  const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
   const sortFieldRaw = readSearchParam(searchParams, "sortField")
-  const field = WORK_ORDERS_LIST_SORT_FIELDS.includes(
-    sortFieldRaw as (typeof WORK_ORDERS_LIST_SORT_FIELDS)[number],
-  )
-    ? (sortFieldRaw as string)
-    : "createdAt"
-  const fallbackSort: ListSort = { field, direction }
+  const legacySort: ListSort | undefined =
+    sortFieldRaw === undefined
+      ? undefined
+      : {
+          field: WORK_ORDERS_LIST_SORT_FIELDS.includes(
+            sortFieldRaw as (typeof WORK_ORDERS_LIST_SORT_FIELDS)[number],
+          )
+            ? (sortFieldRaw as string)
+            : "createdAt",
+          direction: readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc",
+        }
   return {
-    sort: fallbackSort,
-    sorts: [fallbackSort],
+    ...(legacySort ? { sort: legacySort, sorts: [legacySort] } : {}),
     filters: readFiltersFromSearchParams(searchParams),
     page,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,

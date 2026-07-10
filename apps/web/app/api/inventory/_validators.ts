@@ -349,14 +349,19 @@ export function validateListInventoryQuery(
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
-  // Canonical ordered sort via `sorts`; fall back to the legacy single pair.
+  // Canonical ordered sort via `sorts`; else honor a legacy `?sortField=` bookmark
+  // when present. With NO sort params the list falls back to the server's uniform
+  // base order (createdAt desc, id desc) — pass empty so nothing reads as sorted.
   const parsedSorts = parseSortsParam(searchParams.get("sorts"))
   const sorts: ListSort[] =
-    parsedSorts.length > 0 ? parsedSorts : [{ field: parsed.sortField, direction: parsed.sort }]
+    parsedSorts.length > 0
+      ? parsedSorts
+      : searchParams.has("sortField")
+        ? [{ field: parsed.sortField, direction: parsed.sort }]
+        : []
 
   return {
-    sort: sorts[0],
-    sorts,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

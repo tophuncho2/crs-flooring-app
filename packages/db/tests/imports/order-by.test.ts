@@ -27,9 +27,10 @@ describe("buildImportsOrderBy", () => {
     expect(importFieldOrderBy("importNumber", "desc")).toBeUndefined()
   })
 
-  it("reproduces the historical default (importNumber desc, id desc) for an empty chain", () => {
+  it("falls back to the uniform base order (createdAt desc, id desc) for an empty chain", () => {
+    // importNumber is monotonic with creation, so newest-first is unchanged.
     expect(buildImportsOrderBy({ entries: [] })).toEqual([
-      { importNumber: "desc" },
+      { createdAt: "desc" },
       { id: "desc" },
     ])
   })
@@ -80,10 +81,10 @@ describe("buildImportsOrderBy", () => {
     ])
   })
 
-  it("skips unknown fields but still produces a deterministic order", () => {
+  it("falls back to the uniform base order when every field is unknown", () => {
     const orderBy = buildImportsOrderBy({
       entries: [{ field: "totallyNotAColumn", direction: "asc" }],
     }) as Array<Record<string, unknown>>
-    expect(orderBy).toEqual([{ importNumber: "asc" }, { id: "asc" }])
+    expect(orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }])
   })
 })

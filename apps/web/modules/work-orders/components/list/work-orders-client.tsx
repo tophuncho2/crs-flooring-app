@@ -127,7 +127,6 @@ export default function WorkOrdersClient({
     queryKey: [...WORK_ORDERS_LIST_QUERY_KEY],
     listFn: listWorkOrdersRequest,
     initialSearchQuery,
-    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
@@ -355,7 +354,7 @@ export default function WorkOrdersClient({
   // Each tool lights its own dot. Sort = the multi-column builder; Filter = the
   // Entity→Property→Template chain + Warehouse/JobType/Vacancy + the scheduled-for
   // date range; Search = the unit type / unit # / description / WO # bars.
-  // A non-default sort folds into the single ListActionBar "Clear all" signal
+  // An active user sort folds into the single ListActionBar "Clear all" signal
   // (filters + search + sort); the Sort menu no longer carries its own Clear.
   const hasActiveSortTool = hasNonDefaultSort
 

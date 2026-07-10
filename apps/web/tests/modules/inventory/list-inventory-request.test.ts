@@ -56,9 +56,14 @@ describe("parseInventoryListInputFromSearchParams — ?sorts= parsing", () => {
     ])
   })
 
-  it("falls back to createdAt desc when no sorts param is present", () => {
+  it("emits no sort when no sort params are present (server base order applies)", () => {
     const input = parseInventoryListInputFromSearchParams({})
-    expect(input.sorts).toEqual([{ field: "createdAt", direction: "desc" }])
-    expect(input.sort).toEqual({ field: "createdAt", direction: "desc" })
+    expect(input.sorts).toBeUndefined()
+    expect(input.sort).toBeUndefined()
+  })
+
+  it("still honors a legacy ?sortField= bookmark", () => {
+    const input = parseInventoryListInputFromSearchParams({ sortField: "location", sort: "asc" })
+    expect(input.sorts).toEqual([{ field: "location", direction: "asc" }])
   })
 })
