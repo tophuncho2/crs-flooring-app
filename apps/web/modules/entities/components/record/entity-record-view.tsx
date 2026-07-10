@@ -30,6 +30,7 @@ import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { PropertyHubQuickCreateModal } from "./properties/property-hub-quick-create-modal"
 import { EntityCellsSection } from "./primary/entity-cells-section"
 import { EntityTemplatesSection } from "./templates/entity-templates-section"
+import { EntityWorkOrdersSection } from "./work-orders/entity-work-orders-section"
 
 /**
  * The Entity record view. ① editable entity cells (primary) · ② the
@@ -175,6 +176,12 @@ export function EntityRecordView({
       type: "item",
       order: 20,
       render: () => <EntityTemplatesSection entity={entry} />,
+    },
+    {
+      key: "work-orders",
+      type: "item",
+      order: 30,
+      render: () => <EntityWorkOrdersSection entity={entry} />,
     },
   ]
 

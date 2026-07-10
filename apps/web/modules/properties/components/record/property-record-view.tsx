@@ -38,6 +38,7 @@ import { usePropertyPrimarySection } from "@/modules/properties/controllers/reco
 import { PropertyFieldsSection } from "./primary/property-fields-section"
 import { EntityPickerSection } from "./primary/entity-picker-section"
 import { PropertyTemplatesSection } from "./templates/property-templates-section"
+import { PropertyWorkOrdersSection } from "./work-orders/property-work-orders-section"
 
 /** Hydrate the read-only contact cells from a freshly picked option. */
 function toDisplayForm(option: EntityOption): EntityForm {
@@ -262,6 +263,13 @@ export function PropertyRecordView({
     render: () => (
       <PropertyTemplatesSection entity={linkedEntity} property={record} />
     ),
+  })
+
+  sections.push({
+    key: "work-orders",
+    type: "item",
+    order: 30,
+    render: () => <PropertyWorkOrdersSection property={record} />,
   })
 
   return (
