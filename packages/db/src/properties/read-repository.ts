@@ -13,6 +13,7 @@ import {
 } from "@builders/domain"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import { buildPropertiesOrderBy } from "./order-by.js"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
@@ -268,7 +269,6 @@ export async function searchPropertyOptions(
     select: propertyOptionSelect,
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { items: page.map(normalizePropertyOption), hasMore }
 }

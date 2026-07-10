@@ -16,6 +16,7 @@ import {
 } from "./shared.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import { buildProductListViewOrderBy } from "./order-by.js"
 
 // --- Record types ---
@@ -481,7 +482,6 @@ export async function searchProductOptions(
     select: productOptionSelect,
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { items: page.map(normalizeProductOption), hasMore }
 }

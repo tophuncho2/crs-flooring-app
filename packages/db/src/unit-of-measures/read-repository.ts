@@ -1,4 +1,5 @@
 import { db } from "../client.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeUnitOfMeasureDetail,
@@ -153,8 +154,7 @@ export async function searchUnitOfMeasureOptions(
     select: { id: true, name: true, abbreviation: true },
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return {
     items: page.map((row) => ({ id: row.id, name: row.name, abbreviation: row.abbreviation })),
     hasMore,

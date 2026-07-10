@@ -1,5 +1,6 @@
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import { buildTemplatesOrderBy } from "./order-by.js"
 import { entityTypesSelect } from "../entities/read-repository.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
@@ -242,8 +243,7 @@ export async function searchTemplateOptions(
     select: templateOptionSelect,
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { items: page.map(normalizeTemplateOption), hasMore }
 }
 

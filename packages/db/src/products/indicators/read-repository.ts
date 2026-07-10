@@ -9,6 +9,7 @@ import {
 } from "@builders/domain"
 import { db } from "../../client.js"
 import { exactNumberIntEquals } from "../../shared/exact-number-search.js"
+import { sliceHasMore } from "../../shared/paginate.js"
 import { buildIndicatorsListViewOrderBy } from "./order-by.js"
 import {
   indicatorRowSelect,
@@ -156,8 +157,7 @@ export async function listIndicatorsForProduct(
     take: args.take + 1,
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { rows: await normalizeIndicatorRows(page, client), hasMore }
 }
 

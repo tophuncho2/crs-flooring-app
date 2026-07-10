@@ -1,4 +1,5 @@
 import { db } from "../client.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeCategoryDetail,
@@ -146,8 +147,7 @@ export async function searchCategoryOptions(
     select: { id: true, name: true },
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return {
     items: page.map((row) => ({ id: row.id, name: row.name })),
     hasMore,

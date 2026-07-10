@@ -2,6 +2,7 @@ import { db } from "../client.js"
 import type { FlooringVacancyStatus, Prisma } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import {
   buildFlooringProductDisplayName,
   normalizeWorkOrder,
@@ -253,8 +254,7 @@ export async function searchWorkOrderOptions(
     take: take + 1,
   })
 
-  const hasMore = workOrders.length > take
-  const page = hasMore ? workOrders.slice(0, take) : workOrders
+  const { page, hasMore } = sliceHasMore(workOrders, take)
   return { items: page.map(normalizeWorkOrderOption), hasMore }
 }
 

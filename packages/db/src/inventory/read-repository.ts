@@ -16,6 +16,7 @@ import { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import { normalizeEnrichedInventoryAdjustmentRow } from "./adjustments/read-repository.js"
 import {
   inventoryDetailSelect,
@@ -612,8 +613,7 @@ export async function searchInventoryLocationsForWarehouse(
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { items: page.map((row) => ({ value: row.location })), hasMore }
 }
 
@@ -676,8 +676,7 @@ export async function searchInventoryPurchaseOrderNumbers(
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { items: page.map((row) => ({ value: row.purchaseOrderNumber })), hasMore }
 }
 
@@ -741,8 +740,7 @@ export async function searchInventoryImportNumbers(
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { items: page.map((row) => ({ value: String(row.importNumber) })), hasMore }
 }
 

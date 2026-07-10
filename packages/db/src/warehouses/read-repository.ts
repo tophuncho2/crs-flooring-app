@@ -9,6 +9,7 @@ import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import {
   type WarehouseDetailPayload,
   type WarehouseListRowPayload,
@@ -118,8 +119,8 @@ export async function searchWarehouseOptions(
     select: { id: true, name: true },
   })
 
-  const hasMore = rows.length > args.take
-  return { items: hasMore ? rows.slice(0, args.take) : rows, hasMore }
+  const { page, hasMore } = sliceHasMore(rows, args.take)
+  return { items: page, hasMore }
 }
 
 export async function getWarehouseById(

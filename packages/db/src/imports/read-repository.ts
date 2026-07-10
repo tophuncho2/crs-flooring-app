@@ -3,6 +3,7 @@ import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import {
   importDetailSelect,
   importRowSelect,
@@ -312,8 +313,7 @@ export async function searchImportOptions(
     },
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return {
     items: page.map((row) => ({
       id: row.id,

@@ -2,6 +2,7 @@ import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
+import { sliceHasMore } from "../shared/paginate.js"
 import {
   normalizePaymentPurpose,
   normalizePaymentPurposeOption,
@@ -174,7 +175,6 @@ export async function searchPaymentPurposeOptions(
     select: { id: true, name: true, color: true },
   })
 
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
+  const { page, hasMore } = sliceHasMore(rows, args.take)
   return { items: page.map(normalizePaymentPurposeOption), hasMore }
 }
