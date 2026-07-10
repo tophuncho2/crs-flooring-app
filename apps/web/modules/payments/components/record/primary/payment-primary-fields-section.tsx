@@ -12,11 +12,13 @@ import {
   RecordSectionDivider,
   SegmentedChoiceCell,
   StaticFieldValue,
+  TextareaCell,
   TextCell,
 } from "@/engines/record-view"
 import {
   formatEasternDateTime,
   PAYMENT_METHOD_MAX,
+  INTERNAL_NOTES_MAX,
   RECEIPT_NUMBER_MAX,
   STORE_ADDRESS_MAX,
   STORE_NUMBER_MAX,
@@ -295,6 +297,19 @@ export function PaymentPrimaryFieldsSection({
                   maxLength={STORE_NUMBER_MAX}
                   placeholder="Store #"
                   ariaLabel="Store number"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Internal Notes">
+                <TextareaCell
+                  editable={editable}
+                  value={draft.internalNotes}
+                  onChange={(next) => onFieldChange("internalNotes", next)}
+                  placeholder="Internal notes"
+                  ariaLabel="Internal notes"
+                  rows={3}
+                  maxLength={INTERNAL_NOTES_MAX}
                 />
               </FormField>
             </CellAt>

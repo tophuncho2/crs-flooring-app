@@ -20,6 +20,7 @@ export type CreatePaymentRecordInput = {
   receiptNumber?: string | null
   storeAddress?: string | null
   storeNumber?: string | null
+  internalNotes?: string | null
   paymentDate?: string
   // Optional, single links. `null`/omitted = unlinked.
   entityId?: string | null
@@ -38,6 +39,7 @@ export type UpdatePaymentRecordInput = {
   receiptNumber?: string | null
   storeAddress?: string | null
   storeNumber?: string | null
+  internalNotes?: string | null
   paymentDate?: string
   // Tri-state: `undefined` = leave as-is, `null` = clear the link, string = set.
   entityId?: string | null
@@ -66,6 +68,7 @@ export async function createPaymentRecord(
       receiptNumber: input.receiptNumber?.trim() || null,
       storeAddress: input.storeAddress?.trim() || null,
       storeNumber: input.storeNumber?.trim() || null,
+      internalNotes: input.internalNotes?.trim() || null,
       paymentDate: optionalDate(input.paymentDate) ?? null,
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,
@@ -92,6 +95,7 @@ export async function updatePaymentRecord(
   if (input.receiptNumber !== undefined) data.receiptNumber = input.receiptNumber?.trim() || null
   if (input.storeAddress !== undefined) data.storeAddress = input.storeAddress?.trim() || null
   if (input.storeNumber !== undefined) data.storeNumber = input.storeNumber?.trim() || null
+  if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes?.trim() || null
   if (input.paymentDate !== undefined) data.paymentDate = optionalDate(input.paymentDate)
   if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.workOrderId !== undefined) data.workOrderId = input.workOrderId

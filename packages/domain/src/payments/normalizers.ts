@@ -16,6 +16,7 @@ type PaymentInput = {
   receiptNumber?: string | null
   storeAddress?: string | null
   storeNumber?: string | null
+  internalNotes?: string | null
   paymentDate: Date | string | null
   entityId?: string | null
   workOrderId?: string | null
@@ -48,6 +49,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     receiptNumber: payment.receiptNumber ?? "",
     storeAddress: payment.storeAddress ?? "",
     storeNumber: payment.storeNumber ?? "",
+    internalNotes: payment.internalNotes ?? "",
     paymentDate: toIso(payment.paymentDate),
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,

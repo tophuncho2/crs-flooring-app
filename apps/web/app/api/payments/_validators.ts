@@ -16,6 +16,7 @@ import {
   PALETTE_COLOR_INVALID_MESSAGE,
   PAYMENT_METHOD_MAX,
   RECEIPT_NUMBER_MAX,
+  INTERNAL_NOTES_MAX,
   STORE_ADDRESS_MAX,
   STORE_NUMBER_MAX,
   type FlooringPaymentDirection,
@@ -122,6 +123,7 @@ export function validateCreatePaymentInput(
     receiptNumber: optionalBoundedString(body.receiptNumber, RECEIPT_NUMBER_MAX, "receiptNumber"),
     storeAddress: optionalBoundedString(body.storeAddress, STORE_ADDRESS_MAX, "storeAddress"),
     storeNumber: optionalBoundedString(body.storeNumber, STORE_NUMBER_MAX, "storeNumber"),
+    internalNotes: optionalBoundedString(body.internalNotes, INTERNAL_NOTES_MAX, "internalNotes"),
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
     entityId: optionalLinkId(body.entityId, "entityId"),
     workOrderId: optionalLinkId(body.workOrderId, "workOrderId"),
@@ -144,6 +146,8 @@ export function validateUpdatePaymentInput(
     input.storeAddress = optionalBoundedString(body.storeAddress, STORE_ADDRESS_MAX, "storeAddress")
   if ("storeNumber" in body)
     input.storeNumber = optionalBoundedString(body.storeNumber, STORE_NUMBER_MAX, "storeNumber")
+  if ("internalNotes" in body)
+    input.internalNotes = optionalBoundedString(body.internalNotes, INTERNAL_NOTES_MAX, "internalNotes")
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
   if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
   if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")

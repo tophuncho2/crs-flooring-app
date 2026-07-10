@@ -15,3 +15,6 @@ export const STORE_ADDRESS_MAX = 150
 
 /** Max length of the free-text `storeNumber` (matches VARCHAR(100)). */
 export const STORE_NUMBER_MAX = 100
+
+/** Max length of the free-text `internalNotes` (matches VARCHAR(250)). */
+export const INTERNAL_NOTES_MAX = 250

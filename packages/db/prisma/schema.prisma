@@ -644,6 +644,7 @@ model FlooringPayment {
   receiptNumber    String?                  @db.VarChar(100) // free-text receipt identifier
   storeAddress     String?                  @db.VarChar(150) // free-text store address
   storeNumber      String?                  @db.VarChar(100) // free-text store number
+  internalNotes    String?                  @db.VarChar(250) // free-text internal notes
   paymentDate      DateTime?
   entityId         String?
   entity           Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
