@@ -103,6 +103,17 @@ export function toInventoryIndicatorUpdateForm(
   }
 }
 
+/**
+ * The product record-view Indicators section's atomic save payload. Mirrors the
+ * templates/WO section diffs but has **no `added`** — the identity triple is
+ * create-only (see editability.ts), so new indicators are created via the modal
+ * (its own POST), never inline. Only edits + deletes travel in the diff.
+ */
+export type InventoryIndicatorsSectionDiff = {
+  modified: { id: string; form: InventoryIndicatorUpdateForm }[]
+  deleted: { id: string }[]
+}
+
 export type InventoryIndicatorListFilters = {
   // Explicit id scope — the CSV-export "selected rows" path. Never parsed from the
   // URL; ANDs with the other filters (mirrors the inventory/adjustments lists).

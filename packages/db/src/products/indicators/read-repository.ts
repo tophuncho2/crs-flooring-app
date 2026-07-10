@@ -4,9 +4,7 @@ import {
   computeIndicatorStatus,
   describeIndicatorStatus,
   normalizeMoneyAmount,
-  type InventoryIndicatorDetail,
   type InventoryIndicatorListFilters,
-  type InventoryIndicatorNeighbors,
   type InventoryIndicatorRow,
 } from "@builders/domain"
 import { db } from "../../client.js"
@@ -138,80 +136,6 @@ export async function getIndicatorById(
   if (!row) return null
   const [normalized] = await normalizeIndicatorRows([row], client)
   return normalized ?? null
-}
-
-/**
- * Prev/next neighbors of one indicator within its parent PRODUCT's indicator set,
- * powering the record-view section stepper. Keyset step over `(createdAt, id)`
- * scoped to `productId` (mirrors the adjustments stepper). Returns `null` when the
- * indicator id does not exist; `productId` lets the use case assert the scope.
- */
-export type InventoryIndicatorNeighborsResult = InventoryIndicatorNeighbors & {
-  productId: string
-}
-
-export async function getIndicatorNeighbors(
-  indicatorId: string,
-  client: InventoryIndicatorDbClient = db,
-): Promise<InventoryIndicatorNeighborsResult | null> {
-  const cursor = await client.flooringInventoryIndicator.findUnique({
-    where: { id: indicatorId },
-    select: { id: true, productId: true, createdAt: true },
-  })
-  if (!cursor) return null
-
-  const neighborSelect = { id: true, indicatorNumber: true } as const
-  const [previous, next] = await Promise.all([
-    // ◀ older: largest (createdAt, id) strictly less than the cursor.
-    client.flooringInventoryIndicator.findFirst({
-      where: {
-        productId: cursor.productId,
-        OR: [
-          { createdAt: { lt: cursor.createdAt } },
-          { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-        ],
-      },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      select: neighborSelect,
-    }),
-    // ▶ newer: smallest (createdAt, id) strictly greater than the cursor.
-    client.flooringInventoryIndicator.findFirst({
-      where: {
-        productId: cursor.productId,
-        OR: [
-          { createdAt: { gt: cursor.createdAt } },
-          { createdAt: cursor.createdAt, id: { gt: cursor.id } },
-        ],
-      },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      select: neighborSelect,
-    }),
-  ])
-
-  return {
-    productId: cursor.productId,
-    previousIndicator: previous,
-    nextIndicator: next,
-  }
-}
-
-export async function getIndicatorDetailById(
-  id: string,
-  options: { withNeighbors?: boolean } = {},
-  client: InventoryIndicatorDbClient = db,
-): Promise<InventoryIndicatorDetail | null> {
-  const record = await getIndicatorById(id, client)
-  if (!record) return null
-
-  if (!options.withNeighbors) {
-    return { ...record, previousIndicator: null, nextIndicator: null }
-  }
-  const neighbors = await getIndicatorNeighbors(id, client)
-  return {
-    ...record,
-    previousIndicator: neighbors?.previousIndicator ?? null,
-    nextIndicator: neighbors?.nextIndicator ?? null,
-  }
 }
 
 /**

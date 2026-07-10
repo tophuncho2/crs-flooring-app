@@ -1,4 +1,5 @@
 import type { InventoryIndicatorRecord } from "@builders/db"
+import type { InventoryIndicatorsSectionDiff } from "@builders/domain"
 
 export type IndicatorMutationResult = InventoryIndicatorRecord
 
@@ -11,20 +12,13 @@ export type CreateIndicatorInput = {
   isActive: boolean
 }
 
-export type UpdateIndicatorInput = {
-  /** Parent-product scope — the record-view route addresses indicators under a product. */
+/** The Indicators-section diff-save payload — one product's edits + deletes. */
+export type SaveIndicatorsSectionInput = {
   productId: string
-  indicatorId: string
-  expectedUpdatedAt: string
-  patch: {
-    lowStockThreshold?: string
-    internalNotes?: string
-    isActive?: boolean
-  }
+  diff: InventoryIndicatorsSectionDiff
 }
 
-export type DeleteIndicatorInput = {
-  productId: string
-  indicatorId: string
-  expectedUpdatedAt: string
+/** The product's fresh indicator rows after the diff is applied. */
+export type SaveIndicatorsSectionResult = {
+  rows: InventoryIndicatorRecord[]
 }

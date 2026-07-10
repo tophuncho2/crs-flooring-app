@@ -78,8 +78,8 @@ export default function InventoryIndicatorsClient({
   initialSelectedProduct?: ProductOption | null
 }) {
   const router = useRouter()
-  // Rows open into the parent product's record view, drilled into the indicators
-  // section at that row (`?indicator=<id>`). `returnTo` brings the user back here.
+  // Rows open the parent product's record view (its Inventory Indicators section
+  // is inline-editable). `returnTo` brings the user back to this list on close.
   const { returnTo } = useRecordEntryNavigation("/dashboard/inventory-indicators")
 
   const adaptedListFn = useCallback(
@@ -190,9 +190,11 @@ export default function InventoryIndicatorsClient({
   const handleOpenIndicator = useCallback(
     (row: InventoryIndicatorRow) => {
       const params = new URLSearchParams()
-      params.set("indicator", row.id)
       if (returnTo) params.set("returnTo", returnTo)
-      router.push(`/dashboard/products/${row.productId}?${params.toString()}`, { scroll: false })
+      const query = params.toString()
+      router.push(`/dashboard/products/${row.productId}${query ? `?${query}` : ""}`, {
+        scroll: false,
+      })
     },
     [router, returnTo],
   )

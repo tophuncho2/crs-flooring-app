@@ -8,6 +8,7 @@ import {
   INVENTORY_INDICATORS_LIST_MAX_PAGE_SIZE,
   INVENTORY_INDICATORS_LIST_PAGE_SIZE,
   type InventoryIndicatorListFilters,
+  type InventoryIndicatorsSectionDiff,
 } from "@builders/domain"
 
 // Inventory-indicator body + query validators. Shared by the product-scoped child
@@ -79,49 +80,47 @@ export function validateCreateIndicatorInput(
   }
 }
 
-// --- Update (PATCH /api/products/[id]/indicators/[indicatorId]) ---
+// --- Section diff (PATCH /api/products/[id]/indicators/section) ---
+// The atomic edits + deletes for one product's Indicators section. Mirrors the
+// WO material-items diff validator but has NO `added` (create stays the modal —
+// the identity triple is create-only). Each modified form carries the full
+// editable subset; domain validity (threshold shape) is re-checked in the use
+// case, so this just coerces/bounds the wire shape.
 
-export type ValidatedUpdateIndicatorPatch = {
-  lowStockThreshold?: string
-  internalNotes?: string
-  isActive?: boolean
+function requireIndicatorArray(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) failIndicator(`${path} must be an array`, path)
+  return value
 }
 
-export type ValidatedUpdateIndicatorInput = {
-  patch: ValidatedUpdateIndicatorPatch
+function validateIndicatorUpdateFormWire(
+  value: unknown,
+  path: string,
+): { lowStockThreshold: string; internalNotes: string; isActive: boolean } {
+  const obj = requireIndicatorObject(value, path)
+  return {
+    lowStockThreshold: optionalThreshold(obj.lowStockThreshold, `${path}.lowStockThreshold`) ?? "",
+    internalNotes: optionalNotes(obj.internalNotes, `${path}.internalNotes`) ?? "",
+    isActive: typeof obj.isActive === "boolean" ? obj.isActive : true,
+  }
 }
 
-export function validateUpdateIndicatorInput(
+export function validateIndicatorsSectionDiffInput(
   body: Record<string, unknown>,
-): ValidatedUpdateIndicatorInput {
-  const patchBody = requireIndicatorObject(body.patch, "patch")
-  const patch: ValidatedUpdateIndicatorPatch = {}
-  if ("lowStockThreshold" in patchBody) {
-    patch.lowStockThreshold = optionalThreshold(patchBody.lowStockThreshold, "patch.lowStockThreshold") ?? ""
-  }
-  if ("internalNotes" in patchBody) {
-    patch.internalNotes = optionalNotes(patchBody.internalNotes, "patch.internalNotes") ?? ""
-  }
-  if ("isActive" in patchBody && typeof patchBody.isActive === "boolean") {
-    patch.isActive = patchBody.isActive
-  }
-  if (Object.keys(patch).length === 0) {
-    failIndicator(
-      "Patch must contain at least one of lowStockThreshold, internalNotes, or isActive",
-      "patch",
-    )
-  }
-  return { patch }
-}
+): InventoryIndicatorsSectionDiff {
+  const modified = requireIndicatorArray(body.modified, "modified").map((entry, idx) => {
+    const obj = requireIndicatorObject(entry, `modified[${idx}]`)
+    return {
+      id: requireIndicatorString(obj.id, `modified[${idx}].id`),
+      form: validateIndicatorUpdateFormWire(obj.form, `modified[${idx}].form`),
+    }
+  })
 
-// --- Delete (DELETE /api/products/[id]/indicators/[indicatorId]) ---
+  const deleted = requireIndicatorArray(body.deleted, "deleted").map((entry, idx) => {
+    const obj = requireIndicatorObject(entry, `deleted[${idx}]`)
+    return { id: requireIndicatorString(obj.id, `deleted[${idx}].id`) }
+  })
 
-export type ValidatedDeleteIndicatorInput = Record<string, never>
-
-export function validateDeleteIndicatorInput(
-  _body: Record<string, unknown>,
-): ValidatedDeleteIndicatorInput {
-  return {}
+  return { modified, deleted }
 }
 
 // --- Section page query (GET /api/products/[id]/indicators) ---
