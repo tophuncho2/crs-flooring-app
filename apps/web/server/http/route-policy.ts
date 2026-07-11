@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import { Prisma, getAppMutationReceipt, reserveAppMutationReceipt, finalizeAppMutationReceipt } from "@builders/db"
-import type { AuthorizedRouteContext } from "@/server/auth/route-auth"
+import type { UserRank } from "@builders/db"
+import { enforceRankAtLeast, type AuthorizedRouteContext } from "@/server/auth/route-auth"
 import { QUERY_DEFAULT } from "@/server/http/rate-limit-presets"
 import { enforceRouteRateLimit, requireRouteAccess } from "@/server/http/route-helpers"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
@@ -16,6 +17,12 @@ export type MutationRequest<T> = T & {
 }
 
 export type RoutePolicy = {
+  /**
+   * Minimum rank the caller must hold. Enforced immediately after auth and
+   * BEFORE rate-limit, so an under-ranked caller gets a 403 without consuming a
+   * rate-limit token. Use `USER_MANAGEMENT_MIN_RANK` for the manage-users gate.
+   */
+  minRank?: UserRank
   rateLimit?: {
     scope: string
     limit: number
@@ -98,6 +105,16 @@ export async function applyRoutePolicy(
 
   if (access instanceof Response) {
     return access
+  }
+
+  // Rank gate — after auth, before rate-limit. An under-ranked caller gets 403
+  // without draining a rate-limit token (previously the rank check ran after
+  // rate-limit, so a wrong-rank caller could 429 before the correct 403).
+  if (policy.minRank) {
+    const forbidden = enforceRankAtLeast(access, policy.minRank)
+    if (forbidden) {
+      return forbidden
+    }
   }
 
   if (!policy.rateLimit) {
