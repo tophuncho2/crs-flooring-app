@@ -10,11 +10,9 @@ import type {
 import {
   LIST_ENTITIES_MAX_PAGE_SIZE,
   LIST_ENTITIES_PAGE_SIZE,
-  PALETTE_COLOR_INVALID_MESSAGE,
-  isPaletteColor,
   normalizePhoneNumber,
-  type PaletteColor,
 } from "@builders/domain"
+import { optionsQuerySchema, requireColor, requireString } from "@/app/api/_shared/validators"
 
 function fail(message: string, field?: string): never {
   throw new EntityExecutionError({
@@ -23,13 +21,6 @@ function fail(message: string, field?: string): never {
     status: 400,
     field,
   })
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string") fail(`${field} is required`, field)
-  const trimmed = (value as string).trim()
-  if (!trimmed) fail(`${field} is required`, field)
-  return trimmed
 }
 
 function optionalString(value: unknown): string | null {
@@ -64,14 +55,6 @@ function pickPostalCode(body: Record<string, unknown>): unknown {
 // Linked entity-type ids. Must be an array of non-empty strings; dedup'd to keep
 // set semantics. Referential validity (the ids point at real types) is the
 // data/application layer's job (FK → P2003 → 400).
-// Palette tag is strict-when-present on update: a supplied value must be a real
-// PaletteColor, else 400 with the shared message. Edit-only — create never
-// accepts color (new rows fall to the DB default SLATE).
-function requireColor(value: unknown): PaletteColor {
-  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, "color")
-  return value
-}
-
 function requireTypeIds(value: unknown): string[] {
   if (!Array.isArray(value)) fail("typeIds must be an array", "typeIds")
   const ids = value.map((entry) => {
@@ -87,7 +70,7 @@ export function validateCreateEntityInput(
   body: Record<string, unknown>,
 ): CreateEntityUseCaseInput {
   return {
-    entity: requireString(body.entity, "entity"),
+    entity: requireString(body.entity, "entity", fail),
     streetAddress: optionalString(body.streetAddress),
     city: optionalString(body.city),
     state: optionalState(body.state, "state"),
@@ -103,7 +86,7 @@ export function validateUpdateEntityInput(
 ): UpdateEntityUseCaseInput {
   const input: UpdateEntityUseCaseInput = {}
 
-  if ("entity" in body) input.entity = requireString(body.entity, "entity")
+  if ("entity" in body) input.entity = requireString(body.entity, "entity", fail)
   if ("streetAddress" in body) input.streetAddress = optionalString(body.streetAddress)
   if ("city" in body) input.city = optionalString(body.city)
   if ("state" in body) input.state = optionalState(body.state, "state")
@@ -111,7 +94,7 @@ export function validateUpdateEntityInput(
   if ("phone" in body) input.phone = optionalPhone(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
   if ("typeIds" in body) input.typeIds = requireTypeIds(body.typeIds)
-  if ("color" in body) input.color = requireColor(body.color)
+  if ("color" in body) input.color = requireColor(body.color, "color", fail)
 
   return input
 }
@@ -225,11 +208,7 @@ export function validateListEntitiesQuery(
 
 // --- Options query validator ---
 
-const entityOptionsQuerySchema = z.object({
-  search: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce.number().int().min(1).max(50).default(20),
-})
+const entityOptionsQuerySchema = optionsQuerySchema()
 
 export type ValidatedEntityOptionsQuery = {
   search?: string

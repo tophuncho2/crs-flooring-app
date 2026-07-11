@@ -9,10 +9,13 @@ import type {
 import {
   LIST_ENTITY_TYPES_MAX_PAGE_SIZE,
   LIST_ENTITY_TYPES_PAGE_SIZE,
-  PALETTE_COLOR_INVALID_MESSAGE,
-  isPaletteColor,
-  type PaletteColor,
 } from "@builders/domain"
+import {
+  optionsQuerySchema,
+  parseQuery,
+  requireColor,
+  requireString,
+} from "@/app/api/_shared/validators"
 
 function fail(message: string, field?: string): never {
   throw new EntityTypeExecutionError({
@@ -23,24 +26,12 @@ function fail(message: string, field?: string): never {
   })
 }
 
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string") fail(`${field} is required`, field)
-  const trimmed = (value as string).trim()
-  if (!trimmed) fail(`${field} is required`, field)
-  return trimmed
-}
-
-function requireColor(value: unknown): PaletteColor {
-  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, "color")
-  return value
-}
-
 export function validateCreateEntityTypeInput(
   body: Record<string, unknown>,
 ): CreateEntityTypeUseCaseInput {
   return {
-    type: requireString(body.type, "type"),
-    color: requireColor(body.color),
+    type: requireString(body.type, "type", fail),
+    color: requireColor(body.color, "color", fail),
   }
 }
 
@@ -48,8 +39,8 @@ export function validateUpdateEntityTypeInput(
   body: Record<string, unknown>,
 ): UpdateEntityTypeUseCaseInput {
   const input: UpdateEntityTypeUseCaseInput = {}
-  if ("type" in body) input.type = requireString(body.type, "type")
-  if ("color" in body) input.color = requireColor(body.color)
+  if ("type" in body) input.type = requireString(body.type, "type", fail)
+  if ("color" in body) input.color = requireColor(body.color, "color", fail)
   return input
 }
 
@@ -70,21 +61,8 @@ const listEntityTypesQuerySchema = z.object({
 export function validateListEntityTypesQuery(
   searchParams: URLSearchParams,
 ): ListInput<EntityTypesListFilters> {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
+  const parsed = parseQuery(searchParams, listEntityTypesQuerySchema, fail, "Invalid entity types list query")
 
-  const parseResult = listEntityTypesQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    fail(
-      issue?.message ?? "Invalid entity types list query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
   const trimmedEntityTypeNumber = parsed.entityTypeNumber?.trim()
@@ -100,11 +78,7 @@ export function validateListEntityTypesQuery(
 
 // --- Options query validator (powers the entity-type array picker) ---
 
-const entityTypeOptionsQuerySchema = z.object({
-  search: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce.number().int().min(1).max(50).default(20),
-})
+const entityTypeOptionsQuerySchema = optionsQuerySchema()
 
 export type ValidatedEntityTypeOptionsQuery = {
   search?: string
@@ -115,21 +89,7 @@ export type ValidatedEntityTypeOptionsQuery = {
 export function validateEntityTypeOptionsQuery(
   searchParams: URLSearchParams,
 ): ValidatedEntityTypeOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = entityTypeOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    fail(
-      issue?.message ?? "Invalid options query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(searchParams, entityTypeOptionsQuerySchema, fail, "Invalid options query")
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,

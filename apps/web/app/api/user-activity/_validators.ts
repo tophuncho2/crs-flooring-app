@@ -4,17 +4,7 @@ import {
   LIST_USER_LOGIN_ACTIVITY_MAX_PAGE_SIZE,
   LIST_USER_LOGIN_ACTIVITY_PAGE_SIZE,
 } from "@builders/domain"
-
-export class UserActivityListValidationError extends Error {
-  readonly status = 400
-  readonly field: string | undefined
-
-  constructor(message: string, field?: string) {
-    super(message)
-    this.name = "UserActivityListValidationError"
-    this.field = field
-  }
-}
+import { failValidation, parseQuery } from "@/app/api/_shared/validators"
 
 // Read-only list — pagination only (no search/filter on this surface).
 const listUserActivityQuerySchema = z.object({
@@ -30,21 +20,12 @@ const listUserActivityQuerySchema = z.object({
 export function validateListUserActivityQuery(
   searchParams: URLSearchParams,
 ): ListInput<UserLoginActivityListFilters> {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = listUserActivityQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new UserActivityListValidationError(
-      issue?.message ?? "Invalid user activity list query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(
+    searchParams,
+    listUserActivityQuerySchema,
+    failValidation,
+    "Invalid user activity list query",
+  )
   return {
     filters: {},
     page: parsed.page,

@@ -7,14 +7,13 @@ import type {
   ProductsListFilters,
 } from "@builders/application"
 import {
-  isPaletteColor,
   isValidMoneyAmount,
   LIST_PRODUCTS_MAX_PAGE_SIZE,
   LIST_PRODUCTS_PAGE_SIZE,
-  PALETTE_COLOR_INVALID_MESSAGE,
   type PaletteColor,
 } from "@builders/domain"
 import { parseOptionalString } from "@/server/http/api-helpers"
+import { optionsQuerySchema, parseQuery, requireColor } from "@/app/api/_shared/validators"
 
 function fail(message: string, field?: string): never {
   throw new ProductExecutionError({
@@ -61,16 +60,6 @@ function parseCost(value: unknown): string | null {
     fail("cost must be a valid money amount", "cost")
   }
   return trimmed
-}
-
-// Palette color — non-semantic visual tag. Strictly validated when present on
-// update (the edit form always carries the current color). Create never accepts
-// it: new rows fall to the DB default (SLATE).
-function requireColor(value: unknown, field: string): PaletteColor {
-  if (!isPaletteColor(value)) {
-    fail(PALETTE_COLOR_INVALID_MESSAGE, field)
-  }
-  return value
 }
 
 // Required FK id — trimmed non-empty. Structural guard only; existence is
@@ -134,7 +123,7 @@ export function validateUpdateProductInput(
     // Edit-only palette tag — strict when present. Absent on a stale client →
     // left unchanged. Create has no equivalent (defaults to SLATE in the DB).
     ...(body.paletteColor !== undefined
-      ? { paletteColor: requireColor(body.paletteColor, "paletteColor") }
+      ? { paletteColor: requireColor(body.paletteColor, "paletteColor", fail) }
       : {}),
   }
 }
@@ -247,11 +236,8 @@ export function validateListProductsQuery(
 
 // --- Options query validator ---
 
-const productOptionsQuerySchema = z.object({
-  search: z.string().optional(),
+const productOptionsQuerySchema = optionsQuerySchema().extend({
   categoryId: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedProductOptionsQuery = {
@@ -264,21 +250,7 @@ export type ValidatedProductOptionsQuery = {
 export function validateProductOptionsQuery(
   searchParams: URLSearchParams,
 ): ValidatedProductOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = productOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    fail(
-      issue?.message ?? "Invalid product options query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(searchParams, productOptionsQuerySchema, fail, "Invalid product options query")
   const trimmedSearch = parsed.search?.trim()
   const trimmedCategoryId = parsed.categoryId?.trim()
   return {

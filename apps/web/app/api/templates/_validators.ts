@@ -12,14 +12,12 @@ import type {
   UpdateTemplateUseCaseInput,
 } from "@builders/application"
 import {
-  isPaletteColor,
   isValidMarginPercent,
   isValidMoneyAmount,
   normalizeMarginPercent,
   normalizeMoneyAmount,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
-  PALETTE_COLOR_INVALID_MESSAGE,
   TEMPLATE_CUSTOMER_NAME_MAX,
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
@@ -28,12 +26,17 @@ import {
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type FlooringPaymentDirection,
-  type PaletteColor,
   type TemplatePlannedPaymentForm,
   type TemplatePlannedPaymentsDiff,
   type TemplatePlannedProductForm,
   type TemplatePlannedProductsDiff,
 } from "@builders/domain"
+import {
+  optionsQuerySchema,
+  parseQuery,
+  requireColor,
+  requireString,
+} from "@/app/api/_shared/validators"
 
 function failTemplate(message: string, field?: string): never {
   throw new TemplateExecutionError({
@@ -51,13 +54,6 @@ function failDiff(message: string, field?: string): never {
     status: 400,
     field,
   })
-}
-
-function requireString(value: unknown, field: string, fail: (m: string, f?: string) => never): string {
-  if (typeof value !== "string") fail(`${field} is required`, field)
-  const trimmed = (value as string).trim()
-  if (!trimmed) fail(`${field} is required`, field)
-  return trimmed
 }
 
 function optionalString(value: unknown): string | null {
@@ -124,13 +120,6 @@ function optionalBoundedText(
   return value
 }
 
-// Edit-only palette tag — strict when present. Create has no equivalent: new
-// rows default to SLATE in the DB.
-function requireColor(value: unknown, field: string): PaletteColor {
-  if (!isPaletteColor(value)) failTemplate(PALETTE_COLOR_INVALID_MESSAGE, field)
-  return value
-}
-
 export function validateCreateTemplateInput(
   body: Record<string, unknown>,
 ): CreateTemplateUseCaseInput {
@@ -193,7 +182,7 @@ export function validateUpdateTemplateInput(
   }
   // Edit-only palette tag — strict when present, left unchanged when absent
   // (a stale client). Create has no equivalent (defaults to SLATE in the DB).
-  if ("color" in body) input.color = requireColor(body.color, "color")
+  if ("color" in body) input.color = requireColor(body.color, "color", failTemplate)
 
   return input
 }
@@ -451,14 +440,11 @@ export function validateListTemplatesQuery(
 
 // --- Options query validator ---
 
-const templateOptionsQuerySchema = z.object({
-  search: z.string().optional(),
-  // Both scopes optional: property wins, else entity scopes via the property
-  // relation, else the search is unscoped (lists all templates).
+// Both scopes optional: property wins, else entity scopes via the property
+// relation, else the search is unscoped (lists all templates).
+const templateOptionsQuerySchema = optionsQuerySchema().extend({
   propertyId: z.string().optional(),
   entityId: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedTemplateOptionsQuery = {
@@ -472,21 +458,7 @@ export type ValidatedTemplateOptionsQuery = {
 export function validateTemplateOptionsQuery(
   searchParams: URLSearchParams,
 ): ValidatedTemplateOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = templateOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    failTemplate(
-      issue?.message ?? "Invalid template options query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(searchParams, templateOptionsQuerySchema, failTemplate, "Invalid template options query")
   const trimmedSearch = parsed.search?.trim()
   const trimmedPropertyId = parsed.propertyId?.trim()
   const trimmedEntityId = parsed.entityId?.trim()

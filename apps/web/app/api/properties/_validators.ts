@@ -10,11 +10,9 @@ import type {
 import {
   LIST_PROPERTIES_MAX_PAGE_SIZE,
   LIST_PROPERTIES_PAGE_SIZE,
-  PALETTE_COLOR_INVALID_MESSAGE,
-  isPaletteColor,
   normalizePhoneNumber,
-  type PaletteColor,
 } from "@builders/domain"
+import { optionsQuerySchema, parseQuery, requireColor, requireString } from "@/app/api/_shared/validators"
 
 function fail(message: string, field?: string): never {
   throw new PropertyExecutionError({
@@ -23,13 +21,6 @@ function fail(message: string, field?: string): never {
     status: 400,
     field,
   })
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string") fail(`${field} is required`, field)
-  const trimmed = (value as string).trim()
-  if (!trimmed) fail(`${field} is required`, field)
-  return trimmed
 }
 
 function optionalString(value: unknown): string | null {
@@ -55,14 +46,6 @@ function optionalState(value: unknown, field: string): string | null {
   return trimmed.toUpperCase()
 }
 
-// Palette tag is strict-when-present on update: a supplied value must be a real
-// PaletteColor, else 400 with the shared message. Edit-only — create never
-// accepts color (new rows fall to the DB default SLATE).
-function requireColor(value: unknown): PaletteColor {
-  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, "color")
-  return value
-}
-
 function pickPostalCode(body: Record<string, unknown>): unknown {
   if ("postalCode" in body) return body.postalCode
   if ("zip" in body) return body.zip
@@ -74,7 +57,7 @@ export function validateCreatePropertyInput(
 ): CreatePropertyUseCaseInput {
   return {
     entityId: optionalString(body.entityId),
-    name: requireString(body.name, "name"),
+    name: requireString(body.name, "name", fail),
     streetAddress: optionalString(body.streetAddress),
     city: optionalString(body.city),
     state: optionalState(body.state, "state"),
@@ -91,7 +74,7 @@ export function validateUpdatePropertyInput(
   const input: UpdatePropertyUseCaseInput = {}
 
   if ("entityId" in body) input.entityId = optionalString(body.entityId)
-  if ("name" in body) input.name = requireString(body.name, "name")
+  if ("name" in body) input.name = requireString(body.name, "name", fail)
   if ("streetAddress" in body) input.streetAddress = optionalString(body.streetAddress)
   if ("city" in body) input.city = optionalString(body.city)
   if ("state" in body) input.state = optionalState(body.state, "state")
@@ -99,7 +82,7 @@ export function validateUpdatePropertyInput(
   if ("phone" in body) input.phone = optionalPhone(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
   if ("instructions" in body) input.instructions = optionalString(body.instructions)
-  if ("color" in body) input.color = requireColor(body.color)
+  if ("color" in body) input.color = requireColor(body.color, "color", fail)
 
   return input
 }
@@ -209,11 +192,8 @@ export function validateListPropertiesQuery(
 
 // --- Options query validator ---
 
-const propertyOptionsQuerySchema = z.object({
-  search: z.string().optional(),
+const propertyOptionsQuerySchema = optionsQuerySchema().extend({
   entityId: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedPropertyOptionsQuery = {
@@ -226,21 +206,7 @@ export type ValidatedPropertyOptionsQuery = {
 export function validatePropertyOptionsQuery(
   searchParams: URLSearchParams,
 ): ValidatedPropertyOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = propertyOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    fail(
-      issue?.message ?? "Invalid property options query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(searchParams, propertyOptionsQuerySchema, fail, "Invalid property options query")
   const trimmedSearch = parsed.search?.trim()
   const trimmedEntityId = parsed.entityId?.trim()
   return {

@@ -14,9 +14,6 @@ import {
   LIST_IMPORTS_MAX_PAGE_SIZE,
   LIST_IMPORTS_PAGE_SIZE,
   MAX_MARK_FOR_IMPORT_ROWS,
-  PALETTE_COLOR_INVALID_MESSAGE,
-  isPaletteColor,
-  type PaletteColor,
 } from "@builders/domain"
 import type {
   ImportStagedInventorySectionDiff,
@@ -31,6 +28,16 @@ import type {
   StagedInventoryRowUpdate,
   StagedInventoryRowsDiff,
 } from "@builders/domain"
+import { optionsQuerySchema, parseQuery, requireColor } from "@/app/api/_shared/validators"
+
+function failImport(message: string, field?: string): never {
+  throw new ImportExecutionError({
+    code: "IMPORT_VALIDATION_FAILED",
+    message,
+    status: 400,
+    ...(field ? { field } : {}),
+  })
+}
 
 function requireString(value: unknown, field: string): string {
   if (typeof value !== "string") {
@@ -57,21 +64,6 @@ function optionalString(value: unknown, field: string): string {
   return value
 }
 
-// Palette tag is strict-when-present on update: a supplied value must be a real
-// PaletteColor, else 400 with the shared message. Edit-only — create never
-// accepts color (new rows fall to the DB default SLATE).
-function requireColor(value: unknown): PaletteColor {
-  if (!isPaletteColor(value)) {
-    throw new ImportExecutionError({
-      code: "IMPORT_VALIDATION_FAILED",
-      message: PALETTE_COLOR_INVALID_MESSAGE,
-      status: 400,
-      field: "color",
-    })
-  }
-  return value
-}
-
 export function validateCreateImportInput(body: Record<string, unknown>): CreateImportInput {
   return {
     purchaseOrderNumber: optionalString(body.purchaseOrderNumber, "purchaseOrderNumber"),
@@ -89,7 +81,7 @@ export function validateUpdateImportInput(body: Record<string, unknown>): Update
     input.internalNotes = optionalString(body.internalNotes, "internalNotes")
   if (body.warehouseId !== undefined) input.warehouseId = requireString(body.warehouseId, "warehouseId")
   if (body.entityId !== undefined) input.entityId = optionalString(body.entityId, "entityId")
-  if ("color" in body) input.color = requireColor(body.color)
+  if ("color" in body) input.color = requireColor(body.color, "color", failImport)
   return input
 }
 
@@ -409,16 +401,14 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
 
 // --- Options (picker) query validator ---
 
+// Kept inline (not `optionsQuerySchema().extend`) to preserve the original key
+// order — `warehouseId` first — so the surfaced `issues[0]` field is unchanged
+// when it fails alongside skip/take.
 const importOptionsQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   search: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(IMPORT_OPTIONS_MAX_TAKE)
-    .default(IMPORT_OPTIONS_DEFAULT_TAKE),
+  take: z.coerce.number().int().min(1).max(IMPORT_OPTIONS_MAX_TAKE).default(IMPORT_OPTIONS_DEFAULT_TAKE),
 })
 
 export type ValidatedImportOptionsQuery = {
@@ -431,23 +421,12 @@ export type ValidatedImportOptionsQuery = {
 export function validateImportOptionsQuery(
   searchParams: URLSearchParams,
 ): ValidatedImportOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = importOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new ImportExecutionError({
-      code: "IMPORT_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid import options query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(
+    searchParams,
+    importOptionsQuerySchema,
+    failImport,
+    "Invalid import options query",
+  )
   const trimmed = parsed.search?.trim()
   return {
     warehouseId: parsed.warehouseId.trim(),

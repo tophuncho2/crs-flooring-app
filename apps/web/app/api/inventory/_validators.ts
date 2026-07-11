@@ -11,13 +11,20 @@ import {
   INVENTORY_EXPORT_COLUMNS,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
-  isPaletteColor,
   LIST_INVENTORY_MAX_PAGE_SIZE,
   LIST_INVENTORY_PAGE_SIZE,
-  PALETTE_COLOR_INVALID_MESSAGE,
-  type PaletteColor,
 } from "@builders/domain"
 import { parseExportEnvelope } from "@/server/http/export-request"
+import { optionsQuerySchema, parseQuery, requireColor } from "@/app/api/_shared/validators"
+
+function failInventory(message: string, field?: string): never {
+  throw new InventoryExecutionError({
+    code: "INVENTORY_VALIDATION_FAILED",
+    message,
+    status: 400,
+    ...(field ? { field } : {}),
+  })
+}
 
 function optionalString(value: unknown, field: string): string {
   if (value === undefined || value === null) return ""
@@ -57,38 +64,16 @@ function requireBoolean(value: unknown, field: string): boolean {
   return value
 }
 
-// Palette color. Non-semantic visual tag — strictly validated when present on
-// update (the form always carries the current color). Create never accepts it:
-// manual + worker-materialized rows fall to the DB default (SLATE).
-function requireColor(value: unknown, field: string): PaletteColor {
-  if (!isPaletteColor(value)) {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_VALIDATION_FAILED",
-      message: PALETTE_COLOR_INVALID_MESSAGE,
-      status: 400,
-      field,
-    })
-  }
-  return value
-}
-
-// --- Shared picker pagination bounds (locations / PO# / import# search) ---
-
-const OPTIONS_DEFAULT_TAKE = 20
-const OPTIONS_MAX_TAKE = 50
-
 // --- Locations picker (warehouse-scoped, distinct) validator ---
 
+// Kept inline (not `optionsQuerySchema().extend`) to preserve the original key
+// order — `warehouseId` first — so the surfaced `issues[0]` field is unchanged
+// when it fails alongside skip/take.
 const inventoryLocationsSearchQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   search: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
+  take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedInventoryLocationsSearchQuery = {
@@ -101,23 +86,12 @@ export type ValidatedInventoryLocationsSearchQuery = {
 export function validateInventoryLocationsSearchQuery(
   searchParams: URLSearchParams,
 ): ValidatedInventoryLocationsSearchQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = inventoryLocationsSearchQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new InventoryExecutionError({
-      code: "INVENTORY_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid inventory locations query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(
+    searchParams,
+    inventoryLocationsSearchQuerySchema,
+    failInventory,
+    "Invalid inventory locations query",
+  )
   const trimSearch = parsed.search?.trim()
   return {
     warehouseId: parsed.warehouseId.trim(),
@@ -129,16 +103,7 @@ export function validateInventoryLocationsSearchQuery(
 
 // --- Import PO# picker (global, distinct) validator ---
 
-const inventoryPurchaseOrderSearchQuerySchema = z.object({
-  search: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
-})
+const inventoryPurchaseOrderSearchQuerySchema = optionsQuerySchema()
 
 export type ValidatedInventoryPurchaseOrderSearchQuery = {
   search?: string
@@ -149,23 +114,12 @@ export type ValidatedInventoryPurchaseOrderSearchQuery = {
 export function validateInventoryPurchaseOrderSearchQuery(
   searchParams: URLSearchParams,
 ): ValidatedInventoryPurchaseOrderSearchQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = inventoryPurchaseOrderSearchQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new InventoryExecutionError({
-      code: "INVENTORY_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid inventory purchase order query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(
+    searchParams,
+    inventoryPurchaseOrderSearchQuerySchema,
+    failInventory,
+    "Invalid inventory purchase order query",
+  )
   const trimSearch = parsed.search?.trim()
   return {
     ...(trimSearch ? { search: trimSearch } : {}),
@@ -176,16 +130,7 @@ export function validateInventoryPurchaseOrderSearchQuery(
 
 // --- Import # picker (global, distinct) validator ---
 
-const inventoryImportNumberSearchQuerySchema = z.object({
-  search: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
-})
+const inventoryImportNumberSearchQuerySchema = optionsQuerySchema()
 
 export type ValidatedInventoryImportNumberSearchQuery = {
   search?: string
@@ -196,23 +141,12 @@ export type ValidatedInventoryImportNumberSearchQuery = {
 export function validateInventoryImportNumberSearchQuery(
   searchParams: URLSearchParams,
 ): ValidatedInventoryImportNumberSearchQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = inventoryImportNumberSearchQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new InventoryExecutionError({
-      code: "INVENTORY_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid inventory import number query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(
+    searchParams,
+    inventoryImportNumberSearchQuerySchema,
+    failInventory,
+    "Invalid inventory import number query",
+  )
   const trimSearch = parsed.search?.trim()
   return {
     ...(trimSearch ? { search: trimSearch } : {}),
@@ -410,7 +344,7 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
   if (body.internalNotes !== undefined)
     input.internalNotes = optionalBoundedString(body.internalNotes, INVENTORY_INTERNAL_NOTES_MAX, "internalNotes")
   if (body.isArchived !== undefined) input.isArchived = requireBoolean(body.isArchived, "isArchived")
-  if (body.color !== undefined) input.color = requireColor(body.color, "color")
+  if (body.color !== undefined) input.color = requireColor(body.color, "color", failInventory)
   return input
 }
 

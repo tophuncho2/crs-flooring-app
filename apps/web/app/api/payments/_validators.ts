@@ -7,21 +7,19 @@ import type {
   UpdatePaymentUseCaseInput,
 } from "@builders/application"
 import {
-  isPaletteColor,
   isValidMoneyAmount,
   normalizeMoneyAmount,
   normalizePhoneNumber,
   LIST_PAYMENTS_MAX_PAGE_SIZE,
   LIST_PAYMENTS_PAGE_SIZE,
-  PALETTE_COLOR_INVALID_MESSAGE,
   PAYMENT_METHOD_MAX,
   RECEIPT_NUMBER_MAX,
   INTERNAL_NOTES_MAX,
   STORE_ADDRESS_MAX,
   STORE_NUMBER_MAX,
   type FlooringPaymentDirection,
-  type PaletteColor,
 } from "@builders/domain"
+import { parseQuery, requireColor } from "@/app/api/_shared/validators"
 
 function fail(message: string, field?: string): never {
   throw new PaymentExecutionError({
@@ -104,14 +102,6 @@ function optionalAmount(value: unknown, field: string): string | undefined {
   return requireAmount(value, field)
 }
 
-// Palette color. Non-semantic visual tag — strictly validated when present on
-// update (the edit form always carries the current color). Create never accepts
-// it: new rows fall to the DB default (SLATE).
-function requireColor(value: unknown, field: string): PaletteColor {
-  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, field)
-  return value
-}
-
 export function validateCreatePaymentInput(
   body: Record<string, unknown>,
 ): CreatePaymentUseCaseInput {
@@ -136,7 +126,7 @@ export function validateUpdatePaymentInput(
   const input: UpdatePaymentUseCaseInput = {}
   if ("amount" in body) input.amount = optionalAmount(body.amount, "amount")
   if ("direction" in body) input.direction = optionalDirection(body.direction, "direction")
-  if ("color" in body) input.color = requireColor(body.color, "color")
+  if ("color" in body) input.color = requireColor(body.color, "color", fail)
   if ("paymentMethod" in body)
     input.paymentMethod = optionalBoundedString(body.paymentMethod, PAYMENT_METHOD_MAX, "paymentMethod")
   if ("storePhone" in body) input.storePhone = optionalPhone(body.storePhone, "storePhone")
@@ -171,21 +161,7 @@ const listPaymentsQuerySchema = z.object({
 export function validateListPaymentsQuery(
   searchParams: URLSearchParams,
 ): ListInput<PaymentsListFilters> {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = listPaymentsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    fail(
-      issue?.message ?? "Invalid payments list query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(searchParams, listPaymentsQuerySchema, fail, "Invalid payments list query")
   const paymentNumber = parsed.paymentNumber?.trim()
   const amount = parsed.amount?.trim()
   const filters: PaymentsListFilters = {}

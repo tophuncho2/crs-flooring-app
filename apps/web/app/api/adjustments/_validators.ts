@@ -11,12 +11,11 @@ import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_PAGE_SIZE,
-  isPaletteColor,
-  PALETTE_COLOR_INVALID_MESSAGE,
   type InventoryAdjustmentListFilters,
   type PaletteColor,
 } from "@builders/domain"
 import { parseExportEnvelope } from "@/server/http/export-request"
+import { parseQuery, requireColor, requireString } from "@/app/api/_shared/validators"
 
 // Adjustment mutation body validators. The use cases are scope-aware, but every
 // adjustment mutation currently enters through the inventory route tree
@@ -31,13 +30,6 @@ function failAdjustment(message: string, field?: string): never {
     status: 400,
     field,
   })
-}
-
-function requireAdjustmentString(value: unknown, field: string): string {
-  if (typeof value !== "string") failAdjustment(`${field} is required`, field)
-  const trimmed = (value as string).trim()
-  if (!trimmed) failAdjustment(`${field} is required`, field)
-  return trimmed
 }
 
 function optionalBoundedAdjustmentText(value: unknown, max: number, field: string): string | null {
@@ -57,14 +49,9 @@ function requireAdjustmentObject(value: unknown, path: string): Record<string, u
 // Palette color. Required-with-default on create (a missing value falls back to
 // the shared default rather than failing), and strictly validated when present
 // on update.
-function requireColor(value: unknown, field: string): PaletteColor {
-  if (!isPaletteColor(value)) failAdjustment(PALETTE_COLOR_INVALID_MESSAGE, field)
-  return value
-}
-
 function colorOrDefault(value: unknown): PaletteColor {
   if (value === undefined || value === null) return DEFAULT_PALETTE_COLOR
-  return requireColor(value, "color")
+  return requireColor(value, "color", failAdjustment)
 }
 
 export type ValidatedCreateManualAdjustmentInput = {
@@ -99,13 +86,13 @@ export function validateCreateManualAdjustmentInput(
   const warehouseId =
     body.warehouseId === undefined || body.warehouseId === null
       ? null
-      : requireAdjustmentString(body.warehouseId, "warehouseId")
+      : requireString(body.warehouseId, "warehouseId", failAdjustment)
   const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
   const location = optionalBoundedAdjustmentText(body.location, INVENTORY_LOCATION_MAX, "location")
   const area = optionalBoundedAdjustmentText(body.area, INVENTORY_ADJUSTMENT_AREA_MAX, "area")
   return {
     adjustmentType: rawType,
-    quantity: requireAdjustmentString(body.quantity, "quantity"),
+    quantity: requireString(body.quantity, "quantity", failAdjustment),
     isWaste,
     internalNotes:
       optionalBoundedAdjustmentText(body.internalNotes, INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX, "internalNotes") ?? "",
@@ -122,7 +109,7 @@ export function validateCreateManualAdjustmentInput(
  */
 function parseOptionalWorkOrderId(rawWorkOrderId: unknown): string | null {
   if (rawWorkOrderId === undefined || rawWorkOrderId === null) return null
-  return requireAdjustmentString(rawWorkOrderId, "workOrderId")
+  return requireString(rawWorkOrderId, "workOrderId", failAdjustment)
 }
 
 export type ValidatedUpdateAdjustmentLink = {
@@ -164,7 +151,7 @@ export function validateUpdateAdjustmentInput(
   const patchBody = requireAdjustmentObject(body.patch, "patch")
   const patch: ValidatedUpdateAdjustmentPatch = {}
   if ("quantity" in patchBody) {
-    patch.quantity = requireAdjustmentString(patchBody.quantity, "patch.quantity")
+    patch.quantity = requireString(patchBody.quantity, "patch.quantity", failAdjustment)
   }
   if ("adjustmentType" in patchBody) {
     const rawType = patchBody.adjustmentType
@@ -180,7 +167,7 @@ export function validateUpdateAdjustmentInput(
     patch.isWaste = patchBody.isWaste
   }
   if ("color" in patchBody) {
-    patch.color = requireColor(patchBody.color, "patch.color")
+    patch.color = requireColor(patchBody.color, "patch.color", failAdjustment)
   }
   if ("internalNotes" in patchBody) {
     const next = optionalBoundedAdjustmentText(
@@ -238,21 +225,12 @@ export type ValidatedAdjustmentsPageQuery = {
 export function validateAdjustmentsPageQuery(
   searchParams: URLSearchParams,
 ): ValidatedAdjustmentsPageQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = adjustmentsPageQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    failAdjustment(
-      issue?.message ?? "Invalid adjustments list query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  return parseResult.data
+  return parseQuery(
+    searchParams,
+    adjustmentsPageQuerySchema,
+    failAdjustment,
+    "Invalid adjustments list query",
+  )
 }
 
 // --- Standalone adjustments ledger list query validator (GET /api/adjustments) ---

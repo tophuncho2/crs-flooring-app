@@ -4,19 +4,18 @@ import {
   LIST_UNIT_OF_MEASURES_MAX_PAGE_SIZE,
   LIST_UNIT_OF_MEASURES_PAGE_SIZE,
 } from "@builders/domain"
+import {
+  failValidation,
+  optionsQuerySchema,
+  parseQuery,
+} from "@/app/api/_shared/validators"
 
 const OPTIONS_DEFAULT_TAKE = 20
 const OPTIONS_MAX_TAKE = 50
 
-const unitOfMeasureOptionsQuerySchema = z.object({
-  search: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
+const unitOfMeasureOptionsQuerySchema = optionsQuerySchema({
+  takeMax: OPTIONS_MAX_TAKE,
+  takeDefault: OPTIONS_DEFAULT_TAKE,
 })
 
 export type ValidatedUnitOfMeasureOptionsQuery = {
@@ -25,51 +24,20 @@ export type ValidatedUnitOfMeasureOptionsQuery = {
   take: number
 }
 
-export class UnitOfMeasureOptionsValidationError extends Error {
-  readonly status = 400
-  readonly field: string | undefined
-
-  constructor(message: string, field?: string) {
-    super(message)
-    this.name = "UnitOfMeasureOptionsValidationError"
-    this.field = field
-  }
-}
-
 export function validateUnitOfMeasureOptionsQuery(
   searchParams: URLSearchParams,
 ): ValidatedUnitOfMeasureOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = unitOfMeasureOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new UnitOfMeasureOptionsValidationError(
-      issue?.message ?? "Invalid unit of measure options query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(
+    searchParams,
+    unitOfMeasureOptionsQuerySchema,
+    failValidation,
+    "Invalid unit of measure options query",
+  )
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,
     skip: parsed.skip,
     take: parsed.take,
-  }
-}
-
-export class UnitOfMeasuresListValidationError extends Error {
-  readonly status = 400
-  readonly field: string | undefined
-
-  constructor(message: string, field?: string) {
-    super(message)
-    this.name = "UnitOfMeasuresListValidationError"
-    this.field = field
   }
 }
 
@@ -87,21 +55,12 @@ const listUnitOfMeasuresQuerySchema = z.object({
 export function validateListUnitOfMeasuresQuery(
   searchParams: URLSearchParams,
 ): ListInput<UnitOfMeasuresListFilters> {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = listUnitOfMeasuresQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new UnitOfMeasuresListValidationError(
-      issue?.message ?? "Invalid unit of measures list query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(
+    searchParams,
+    listUnitOfMeasuresQuerySchema,
+    failValidation,
+    "Invalid unit of measures list query",
+  )
   return {
     filters: {},
     page: parsed.page,

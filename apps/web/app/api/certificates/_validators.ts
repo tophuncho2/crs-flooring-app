@@ -18,6 +18,7 @@ import {
   isAllowedCertificateFileContentType,
   isAllowedCertificateFileSize,
 } from "@builders/domain"
+import { requireString } from "@/app/api/_shared/validators"
 
 function fail(message: string, field?: string): never {
   throw new CertificateExecutionError({
@@ -26,13 +27,6 @@ function fail(message: string, field?: string): never {
     status: 400,
     field,
   })
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string") fail(`${field} is required`, field)
-  const trimmed = (value as string).trim()
-  if (!trimmed) fail(`${field} is required`, field)
-  return trimmed
 }
 
 function optionalString(value: unknown): string | null {
@@ -69,7 +63,7 @@ export function validateCreateCertificateInput(
 ): CreateCertificateUseCaseInput {
   return {
     entityId: optionalString(body.entityId),
-    name: requireString(body.name, "name"),
+    name: requireString(body.name, "name", fail),
     expirationDate: optionalDate(body.expirationDate, "expirationDate"),
     internalNotes: optionalNotes(body.internalNotes),
   }
@@ -80,7 +74,7 @@ export function validateUpdateCertificateInput(
 ): UpdateCertificateUseCaseInput {
   const input: UpdateCertificateUseCaseInput = {}
   if ("entityId" in body) input.entityId = optionalString(body.entityId)
-  if ("name" in body) input.name = requireString(body.name, "name")
+  if ("name" in body) input.name = requireString(body.name, "name", fail)
   if ("expirationDate" in body) input.expirationDate = optionalDate(body.expirationDate, "expirationDate")
   if ("internalNotes" in body) input.internalNotes = optionalNotes(body.internalNotes)
   return input

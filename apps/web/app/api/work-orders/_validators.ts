@@ -15,7 +15,6 @@ import type {
 } from "@builders/application"
 import {
   DEFAULT_PALETTE_COLOR,
-  PALETTE_COLOR_INVALID_MESSAGE,
   WORK_ORDER_EXPORT_COLUMNS,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_MAX,
@@ -27,7 +26,6 @@ import {
   WO_UNIT_TYPE_MAX,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
   WORK_ORDER_PLANNED_PAYMENT_NOTES_MAX,
-  isPaletteColor,
   isValidMoneyAmount,
   normalizeMoneyAmount,
   type FlooringPaymentDirection,
@@ -39,6 +37,12 @@ import {
   type WorkOrderPlannedPaymentsDiff,
 } from "@builders/domain"
 import { parseExportEnvelope } from "@/server/http/export-request"
+import {
+  optionsQuerySchema,
+  parseQuery,
+  requireColor,
+  requireString,
+} from "@/app/api/_shared/validators"
 
 function failWorkOrder(message: string, field?: string): never {
   throw new WorkOrderExecutionError({
@@ -56,13 +60,6 @@ function failMaterialItem(message: string, field?: string): never {
     status: 400,
     field,
   })
-}
-
-function requireString(value: unknown, field: string, fail: (m: string, f?: string) => never): string {
-  if (typeof value !== "string") fail(`${field} is required`, field)
-  const trimmed = (value as string).trim()
-  if (!trimmed) fail(`${field} is required`, field)
-  return trimmed
 }
 
 function optionalString(value: unknown): string | null {
@@ -112,14 +109,9 @@ function optionalBoundedText(
 // Palette color. Required-with-default on create (the form always carries a
 // color; a missing value falls back to the shared default rather than failing),
 // and strictly validated when present on update.
-function requireColor(value: unknown): PaletteColor {
-  if (!isPaletteColor(value)) failWorkOrder(PALETTE_COLOR_INVALID_MESSAGE, "color")
-  return value
-}
-
 function colorOrDefault(value: unknown): PaletteColor {
   if (value === undefined || value === null) return DEFAULT_PALETTE_COLOR
-  return requireColor(value)
+  return requireColor(value, "color", failWorkOrder)
 }
 
 function optionalVacancy(value: unknown): "VACANT" | "OCCUPIED" | null {
@@ -191,7 +183,7 @@ export function validateUpdateWorkOrderInput(
 ): UpdateWorkOrderUseCaseInput {
   const input: UpdateWorkOrderUseCaseInput = {}
 
-  if ("color" in body) input.color = requireColor(body.color)
+  if ("color" in body) input.color = requireColor(body.color, "color", failWorkOrder)
   if ("propertyId" in body) {
     // Property is optional and may be cleared (null).
     input.propertyId = optionalString(body.propertyId)
@@ -631,19 +623,7 @@ export function validateWorkOrdersExportRequest(body: unknown): ValidatedWorkOrd
 // Picker / options search validators (adjustment relink dropdowns)
 // ---------------------------------------------------------------------------
 
-const WO_OPTIONS_DEFAULT_TAKE = 20
-const WO_OPTIONS_MAX_TAKE = 50
-
-const workOrderOptionsSearchQuerySchema = z.object({
-  search: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(WO_OPTIONS_MAX_TAKE)
-    .default(WO_OPTIONS_DEFAULT_TAKE),
-})
+const workOrderOptionsSearchQuerySchema = optionsQuerySchema()
 
 export type ValidatedWorkOrderOptionsSearchQuery = {
   search?: string
@@ -654,19 +634,7 @@ export type ValidatedWorkOrderOptionsSearchQuery = {
 export function validateWorkOrderOptionsSearchQuery(
   searchParams: URLSearchParams,
 ): ValidatedWorkOrderOptionsSearchQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-  const parseResult = workOrderOptionsSearchQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    failWorkOrder(
-      issue?.message ?? "Invalid work-order options query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-  const parsed = parseResult.data
+  const parsed = parseQuery(searchParams, workOrderOptionsSearchQuerySchema, failWorkOrder, "Invalid work-order options query")
   const trimSearch = parsed.search?.trim()
   return {
     ...(trimSearch ? { search: trimSearch } : {}),

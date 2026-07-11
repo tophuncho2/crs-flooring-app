@@ -10,6 +10,16 @@ import {
   LIST_WAREHOUSES_PAGE_SIZE,
   normalizePhoneNumber,
 } from "@builders/domain"
+import { optionsQuerySchema, parseQuery } from "@/app/api/_shared/validators"
+
+function fail(message: string, field?: string): never {
+  throw new WarehouseExecutionError({
+    code: "WAREHOUSE_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
 
 export function validateWarehouseInput(body: Record<string, unknown>): CreateWarehouseInput {
   const name = typeof body.name === "string" ? body.name.trim() : ""
@@ -53,23 +63,8 @@ const listWarehousesQuerySchema = z.object({
 export function validateListWarehousesQuery(
   searchParams: URLSearchParams,
 ): ListInput<WarehousesListFilters> {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
+  const parsed = parseQuery(searchParams, listWarehousesQuerySchema, fail, "Invalid warehouses list query")
 
-  const parseResult = listWarehousesQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new WarehouseExecutionError({
-      code: "WAREHOUSE_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid warehouses list query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
   const trimmedStoreNumber = parsed.storeNumber?.trim()
@@ -88,15 +83,9 @@ export function validateListWarehousesQuery(
 const OPTIONS_DEFAULT_TAKE = 20
 const OPTIONS_MAX_TAKE = 50
 
-const warehouseOptionsQuerySchema = z.object({
-  search: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
+const warehouseOptionsQuerySchema = optionsQuerySchema({
+  takeMax: OPTIONS_MAX_TAKE,
+  takeDefault: OPTIONS_DEFAULT_TAKE,
 })
 
 export type ValidatedWarehouseOptionsQuery = {
@@ -108,23 +97,7 @@ export type ValidatedWarehouseOptionsQuery = {
 export function validateWarehouseOptionsQuery(
   searchParams: URLSearchParams,
 ): ValidatedWarehouseOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = warehouseOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new WarehouseExecutionError({
-      code: "WAREHOUSE_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid warehouse options query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
+  const parsed = parseQuery(searchParams, warehouseOptionsQuerySchema, fail, "Invalid warehouse options query")
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,
