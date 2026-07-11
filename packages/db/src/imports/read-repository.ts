@@ -1,7 +1,7 @@
 import type { ImportDetail, ImportNeighbor, ImportOption, ImportRow } from "@builders/domain"
 import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -96,20 +96,11 @@ async function getImportNeighbors(
   importNumber: number,
   client: ImportsDbClient = db,
 ): Promise<ImportNeighbors> {
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "importNumber",
     importNumber,
+    (q) => client.flooringImportEntry.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.flooringImportEntry.findFirst({
-      ...previousQuery,
-      select: { id: true },
-    }),
-    client.flooringImportEntry.findFirst({
-      ...nextQuery,
-      select: { id: true },
-    }),
-  ])
 
   return {
     previousImport: previous ? { id: previous.id } : null,

@@ -1,6 +1,6 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { combineAnd } from "../shared/where.js"
 import {
@@ -118,16 +118,11 @@ async function getJobTypeNeighbors(
   jobTypeNumberInt: number | null,
   client: JobTypesDbClient = db,
 ): Promise<JobTypeNeighbors> {
-  if (jobTypeNumberInt === null) return NO_JOB_TYPE_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "jobTypeNumberInt",
     jobTypeNumberInt,
+    (q) => client.flooringJobType.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.flooringJobType.findFirst({ ...previousQuery, select: { id: true } }),
-    client.flooringJobType.findFirst({ ...nextQuery, select: { id: true } }),
-  ])
 
   return {
     previousJobType: previous ? { id: previous.id } : null,

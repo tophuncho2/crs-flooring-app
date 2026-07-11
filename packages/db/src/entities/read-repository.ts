@@ -11,7 +11,7 @@ import {
   type EntityNeighbors,
   type EntityOption,
 } from "@builders/domain"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -137,16 +137,11 @@ async function getEntityNeighbors(
   entityNumberInt: number | null,
   client: EntitiesDbClient = db,
 ): Promise<EntityNeighbors> {
-  if (entityNumberInt === null) return NO_ENTITY_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "entityNumberInt",
     entityNumberInt,
+    (q) => client.entity.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.entity.findFirst({ ...previousQuery, select: { id: true } }),
-    client.entity.findFirst({ ...nextQuery, select: { id: true } }),
-  ])
 
   return {
     previousEntity: previous ? { id: previous.id } : null,

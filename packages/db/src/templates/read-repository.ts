@@ -1,5 +1,5 @@
 import { db } from "../client.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
 import { buildTemplatesOrderBy } from "./order-by.js"
@@ -267,22 +267,11 @@ async function getTemplateNeighbors(
   templateNumberInt: number | null,
   client: TemplatesDbClient = db,
 ): Promise<TemplateNeighbors> {
-  if (templateNumberInt === null) return NO_TEMPLATE_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "templateNumberInt",
     templateNumberInt,
+    (q) => client.template.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.template.findFirst({
-      ...previousQuery,
-      select: { id: true },
-    }),
-    client.template.findFirst({
-      ...nextQuery,
-      select: { id: true },
-    }),
-  ])
 
   return {
     previousTemplate: previous ? { id: previous.id } : null,

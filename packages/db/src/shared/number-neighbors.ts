@@ -14,7 +14,8 @@
  * only need `id`). Two single-row lookups on the column's index.
  *
  * Callers must guard the null key themselves (no generated value yet) — there is
- * nothing to step from, so they short-circuit before calling this.
+ * nothing to step from, so they short-circuit before calling this. That guard is
+ * also available for free via `resolveNumberNeighbors` below.
  */
 export function numberNeighborQueries<F extends string>(
   field: F,
@@ -33,4 +34,31 @@ export function numberNeighborQueries<F extends string>(
       orderBy: { [field]: "asc" } as Record<F, "asc">,
     },
   }
+}
+
+/**
+ * Wrapper that runs the full neighbor resolve every read-repo shares: guard the
+ * null key, build the prev/next clauses via `numberNeighborQueries`, then run the
+ * two single-row lookups concurrently.
+ *
+ * The Prisma delegate stays OUT of the signature — callers pass a `find` callback
+ * that supplies their own typed `findFirst` + `select`, so per-model projections
+ * ride along in the row type `T` (e.g. inventory's `warehouseId`) with no special
+ * param. The caller re-keys the generic `{ previous, next }` into its own module
+ * shape. Payments and imports are already-onboarded callers (imports passes a
+ * non-null autoincrement, so its guard simply never trips).
+ */
+export async function resolveNumberNeighbors<F extends string, T>(
+  field: F,
+  currentInt: number | null,
+  find: (q: {
+    where: Record<F, { lt: number } | { gt: number }>
+    orderBy: Record<F, "desc" | "asc">
+  }) => Promise<T | null>,
+): Promise<{ previous: T | null; next: T | null }> {
+  if (currentInt === null) return { previous: null, next: null }
+
+  const { previous, next } = numberNeighborQueries(field, currentInt)
+  const [prev, nxt] = await Promise.all([find(previous), find(next)])
+  return { previous: prev, next: nxt }
 }

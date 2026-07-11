@@ -1,6 +1,6 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -96,16 +96,12 @@ async function getPaymentPurposeNeighbors(
   paymentPurposeNumberInt: number | null,
   client: PaymentPurposesDbClient = db,
 ): Promise<PaymentPurposeNeighbors> {
-  if (paymentPurposeNumberInt === null) return NO_PAYMENT_PURPOSE_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "paymentPurposeNumberInt",
     paymentPurposeNumberInt,
+    (q) =>
+      client.flooringPaymentPurpose.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.flooringPaymentPurpose.findFirst({ ...previousQuery, select: { id: true } }),
-    client.flooringPaymentPurpose.findFirst({ ...nextQuery, select: { id: true } }),
-  ])
 
   return {
     previousPaymentPurpose: previous ? { id: previous.id } : null,

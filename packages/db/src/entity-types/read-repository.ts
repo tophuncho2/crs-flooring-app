@@ -1,6 +1,6 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -96,16 +96,11 @@ async function getEntityTypeNeighbors(
   entityTypeNumberInt: number | null,
   client: EntityTypesDbClient = db,
 ): Promise<EntityTypeNeighbors> {
-  if (entityTypeNumberInt === null) return NO_ENTITY_TYPE_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "entityTypeNumberInt",
     entityTypeNumberInt,
+    (q) => client.flooringEntityType.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.flooringEntityType.findFirst({ ...previousQuery, select: { id: true } }),
-    client.flooringEntityType.findFirst({ ...nextQuery, select: { id: true } }),
-  ])
 
   return {
     previousEntityType: previous ? { id: previous.id } : null,

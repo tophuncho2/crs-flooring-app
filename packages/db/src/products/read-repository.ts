@@ -14,7 +14,7 @@ import {
   type ProductRowPayload,
   type ProductsDbClient,
 } from "./shared.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -192,22 +192,11 @@ async function getProductNeighbors(
   productNumberInt: number | null,
   client: ProductsDbClient = db,
 ): Promise<ProductNeighbors> {
-  if (productNumberInt === null) return NO_PRODUCT_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "productNumberInt",
     productNumberInt,
+    (q) => client.flooringProduct.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.flooringProduct.findFirst({
-      ...previousQuery,
-      select: { id: true },
-    }),
-    client.flooringProduct.findFirst({
-      ...nextQuery,
-      select: { id: true },
-    }),
-  ])
 
   return {
     previousProduct: previous ? { id: previous.id } : null,

@@ -14,7 +14,7 @@ import type {
 } from "@builders/domain"
 import { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -149,22 +149,15 @@ async function getInventoryNeighbors(
   inventoryNumberInt: number | null,
   client: InventoryDbClient = db,
 ): Promise<InventoryNeighbors> {
-  if (inventoryNumberInt === null) return NO_INVENTORY_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "inventoryNumberInt",
     inventoryNumberInt,
+    (q) =>
+      client.flooringInventory.findFirst({
+        ...q,
+        select: { id: true, warehouseId: true },
+      }),
   )
-  const [previous, next] = await Promise.all([
-    client.flooringInventory.findFirst({
-      ...previousQuery,
-      select: { id: true, warehouseId: true },
-    }),
-    client.flooringInventory.findFirst({
-      ...nextQuery,
-      select: { id: true, warehouseId: true },
-    }),
-  ])
 
   return {
     previousInventory: previous
@@ -231,38 +224,6 @@ export async function getInventoryDetailById(
       ? NO_INVENTORY_NEIGHBORS
       : await getInventoryNeighbors(row.inventoryNumberInt, client)
   return normalizeInventoryDetail(row, neighbors)
-}
-
-export type InventoryBalances = Pick<
-  InventoryRow,
-  "stockBalance" | "netDeducted"
->
-
-// Narrow projection used by the inventory record view to reconcile the two
-// derived "balance" cells (stock balance, net deducted) after an inventory
-// adjustment without refetching the full detail row.
-export async function getInventoryBalancesById(
-  id: string,
-  client: InventoryDbClient = db,
-): Promise<InventoryBalances | null> {
-  const row = await client.flooringInventory.findUnique({
-    where: { id },
-    select: {
-      startingStock: true,
-      netDeducted: true,
-    },
-  })
-  if (!row) return null
-
-  const balanceNum = computeInventoryBalance({
-    startingStock: row.startingStock.toString(),
-    netDeducted: row.netDeducted.toString(),
-  })
-
-  return {
-    netDeducted: toDecimalString(row.netDeducted),
-    stockBalance: toInventoryFixedString(balanceNum),
-  }
 }
 
 export async function getInventoryDeleteState(

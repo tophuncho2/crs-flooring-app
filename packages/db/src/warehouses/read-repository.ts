@@ -7,7 +7,7 @@ import {
 } from "@builders/domain"
 import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -157,16 +157,11 @@ async function getWarehouseNeighbors(
   warehouseNumberInt: number | null,
   client: WarehousesDbClient = db,
 ): Promise<WarehouseNeighbors> {
-  if (warehouseNumberInt === null) return NO_WAREHOUSE_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "warehouseNumberInt",
     warehouseNumberInt,
+    (q) => client.flooringWarehouse.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.flooringWarehouse.findFirst({ ...previousQuery, select: { id: true } }),
-    client.flooringWarehouse.findFirst({ ...nextQuery, select: { id: true } }),
-  ])
 
   return {
     previousWarehouse: previous ? { id: previous.id } : null,

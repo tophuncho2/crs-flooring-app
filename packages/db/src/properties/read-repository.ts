@@ -11,7 +11,7 @@ import {
   type PropertyNeighbors,
   type PropertyOption,
 } from "@builders/domain"
-import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
@@ -105,22 +105,11 @@ async function getPropertyNeighbors(
   propertyNumberInt: number | null,
   client: PropertiesDbClient = db,
 ): Promise<PropertyNeighbors> {
-  if (propertyNumberInt === null) return NO_PROPERTY_NEIGHBORS
-
-  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+  const { previous, next } = await resolveNumberNeighbors(
     "propertyNumberInt",
     propertyNumberInt,
+    (q) => client.property.findFirst({ ...q, select: { id: true } }),
   )
-  const [previous, next] = await Promise.all([
-    client.property.findFirst({
-      ...previousQuery,
-      select: { id: true },
-    }),
-    client.property.findFirst({
-      ...nextQuery,
-      select: { id: true },
-    }),
-  ])
 
   return {
     previousProperty: previous ? { id: previous.id } : null,
