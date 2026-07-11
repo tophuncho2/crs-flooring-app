@@ -12,8 +12,8 @@ type RateLimitOptions = {
 }
 
 /**
- * @deprecated Use applyRoutePolicy() from route-policy.ts
- * @see apps/web/server/http/route-policy.ts
+ * Resolve the authorized route context (or a 401 Response). The auth half of the
+ * `applyRoutePolicy` gauntlet; called from there, not directly by handlers.
  */
 export async function requireRouteAccess(
   request: Request,
@@ -22,8 +22,8 @@ export async function requireRouteAccess(
 }
 
 /**
- * @deprecated Use applyRoutePolicy() from route-policy.ts
- * @see apps/web/server/http/route-policy.ts
+ * Consume a rate-limit token (or return a 429 Response). The rate-limit half of
+ * the `applyRoutePolicy`/`enforceQueryRateLimit` gauntlet; called from there.
  */
 export async function enforceRouteRateLimit(
   request: Request,

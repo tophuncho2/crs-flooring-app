@@ -45,67 +45,6 @@ export function parseOptionalString(value: unknown): string | null {
   return trimmed === "" ? null : trimmed
 }
 
-export function parseOptionalStateAbbreviation(value: unknown, field: string): string | null {
-  const parsed = parseOptionalString(value)
-  if (parsed === null) {
-    return null
-  }
-
-  const normalized = parsed.replace(/[^a-zA-Z]/g, "").slice(0, 2).toUpperCase()
-  if (normalized.length === 0) {
-    return null
-  }
-
-  if (normalized.length > 2) {
-    throw createAppError(`${field} must be a 2-letter state abbreviation`, { field })
-  }
-
-  if (parsed.replace(/[^a-zA-Z]/g, "").length > 2) {
-    throw createAppError(`${field} must be a 2-letter state abbreviation`, { field })
-  }
-
-  return normalized
-}
-
-export function parseBoolean(value: unknown, field: string): boolean {
-  if (typeof value !== "boolean") {
-    throw createAppError(`${field} must be true or false`, { field })
-  }
-  return value
-}
-
-export function parseDecimal(value: unknown, field: string, scale: number): Prisma.Decimal {
-  if (value === null || value === undefined || value === "") {
-    throw createAppError(`${field} is required`, { field })
-  }
-
-  const asString = String(value).trim()
-
-  if (!/^-?\d+(\.\d+)?$/.test(asString)) {
-    throw createAppError(`${field} must be a valid number`, { field })
-  }
-
-  const [, fractional = ""] = asString.split(".")
-  if (fractional.length > scale) {
-    throw createAppError(`${field} can have at most ${scale} decimal places`, { field })
-  }
-
-  return new Prisma.Decimal(asString)
-}
-
-export function parseDecimalOrDefault(
-  value: unknown,
-  field: string,
-  scale: number,
-  defaultValue: string,
-): Prisma.Decimal {
-  if (value === null || value === undefined || value === "") {
-    return new Prisma.Decimal(defaultValue)
-  }
-
-  return parseDecimal(value, field, scale)
-}
-
 export function normalizePrismaError(error: unknown): {
   status: number
   message: string
