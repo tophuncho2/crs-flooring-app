@@ -3,6 +3,8 @@ import {
   TEMPLATE_NOT_FOUND_MESSAGE,
   TEMPLATE_UNIT_TYPE_REQUIRED_MESSAGE,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { TemplateExecutionError } from "./errors.js"
 import type { TemplateUseCaseResult, UpdateTemplateUseCaseInput } from "./types.js"
 
@@ -12,9 +14,7 @@ export async function updateTemplateUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<TemplateUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateTemplateUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateTemplateUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -33,7 +33,7 @@ export async function updateTemplateUseCase(
     try {
       return await updateTemplateRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new TemplateExecutionError({
           code: "TEMPLATE_NOT_FOUND",
           message: TEMPLATE_NOT_FOUND_MESSAGE,

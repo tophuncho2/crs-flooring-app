@@ -1,5 +1,7 @@
 import { Prisma, createPaymentRecord, withDatabaseTransaction } from "@builders/db"
 import { DEFAULT_PALETTE_COLOR, describePaymentFormIssues, validatePaymentForm } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2003 } from "../shared/prisma-errors.js"
 import { PaymentExecutionError } from "./errors.js"
 import type { CreatePaymentUseCaseInput, PaymentUseCaseResult } from "./types.js"
 
@@ -8,9 +10,7 @@ export async function createPaymentUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PaymentUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createPaymentUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createPaymentUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -54,7 +54,7 @@ export async function createPaymentUseCase(
       )
     } catch (error) {
       // A linked entity/work-order id that points at no row trips the FK (P2003).
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      if (isP2003(error)) {
         throw new PaymentExecutionError({
           code: "PAYMENT_LINK_INVALID",
           message: "Linked work order or entity could not be found.",

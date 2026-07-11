@@ -4,6 +4,7 @@ import {
   withDatabaseTransaction,
 } from "@builders/db"
 import { ENTITY_NOT_FOUND_MESSAGE } from "@builders/domain"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { EntityExecutionError } from "./errors.js"
 
 export async function deleteEntityUseCase(
@@ -16,7 +17,7 @@ export async function deleteEntityUseCase(
     try {
       await deleteEntityRecordById(id, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new EntityExecutionError({
           code: "ENTITY_NOT_FOUND",
           message: ENTITY_NOT_FOUND_MESSAGE,

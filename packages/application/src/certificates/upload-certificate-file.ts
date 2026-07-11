@@ -16,6 +16,8 @@ import {
   type CertificateFileRecord,
 } from "@builders/domain"
 import { deleteBucketObject, uploadBucketObject, type StorageEnvironment } from "@builders/lib"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { CertificateExecutionError } from "./errors.js"
 
 export type UploadCertificateFileInput = {
@@ -40,9 +42,7 @@ export async function uploadCertificateFileUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<CertificateFileRecord> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("uploadCertificateFileUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "uploadCertificateFileUseCase")
 
   if (!input.data || input.data.byteLength === 0) {
     throw new CertificateExecutionError({
@@ -75,7 +75,7 @@ export async function uploadCertificateFileUseCase(
   try {
     await getCertificateById(input.certificateId, client)
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+    if (isP2025(error)) {
       throw new CertificateExecutionError({
         code: "CERTIFICATE_NOT_FOUND",
         message: CERTIFICATE_NOT_FOUND_MESSAGE,

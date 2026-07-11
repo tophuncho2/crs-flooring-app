@@ -1,5 +1,6 @@
 import { Prisma, deleteTemplateRecordById, withDatabaseTransaction } from "@builders/db"
 import { TEMPLATE_NOT_FOUND_MESSAGE } from "@builders/domain"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { TemplateExecutionError } from "./errors.js"
 
 export async function deleteTemplateUseCase(
@@ -12,7 +13,7 @@ export async function deleteTemplateUseCase(
     try {
       await deleteTemplateRecordById(id, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new TemplateExecutionError({
           code: "TEMPLATE_NOT_FOUND",
           message: TEMPLATE_NOT_FOUND_MESSAGE,

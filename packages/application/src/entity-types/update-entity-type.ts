@@ -3,6 +3,8 @@ import {
   ENTITY_TYPE_NOT_FOUND_MESSAGE,
   ENTITY_TYPE_TYPE_REQUIRED_MESSAGE,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { EntityTypeExecutionError } from "./errors.js"
 import type { EntityTypeUseCaseResult, UpdateEntityTypeUseCaseInput } from "./types.js"
 
@@ -12,9 +14,7 @@ export async function updateEntityTypeUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<EntityTypeUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateEntityTypeUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateEntityTypeUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -31,7 +31,7 @@ export async function updateEntityTypeUseCase(
     try {
       return await updateEntityTypeRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new EntityTypeExecutionError({
           code: "ENTITY_TYPE_NOT_FOUND",
           message: ENTITY_TYPE_NOT_FOUND_MESSAGE,

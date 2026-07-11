@@ -10,6 +10,8 @@ import {
   type WorkOrderMaterialItemRow,
   type WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { WorkOrderExecutionError } from "./errors.js"
 
 export type SyncTemplateToWorkOrderInput = {
@@ -31,9 +33,7 @@ export async function syncTemplateToWorkOrderUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SyncTemplateToWorkOrderResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("syncTemplateToWorkOrderUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "syncTemplateToWorkOrderUseCase")
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -41,7 +41,7 @@ export async function syncTemplateToWorkOrderUseCase(
     try {
       template = await getTemplateById(input.templateId, { withNeighbors: false }, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new WorkOrderExecutionError({
           code: "TEMPLATE_SYNC_TEMPLATE_NOT_FOUND",
           message: TEMPLATE_SYNC_TEMPLATE_NOT_FOUND_MESSAGE,

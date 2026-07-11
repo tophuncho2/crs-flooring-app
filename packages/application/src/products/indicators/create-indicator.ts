@@ -11,6 +11,7 @@ import {
   normalizeMoneyAmount,
   validateIndicatorCreateForm,
 } from "@builders/domain"
+import { assertActorEmail } from "../../shared/assert-actor-email.js"
 import { isP2002 } from "../../shared/prisma-errors.js"
 import { InventoryIndicatorExecutionError } from "./errors.js"
 import type { CreateIndicatorInput, IndicatorMutationResult } from "./types.js"
@@ -20,9 +21,7 @@ export async function createIndicatorUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<IndicatorMutationResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createIndicatorUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createIndicatorUseCase")
 
   const issues = validateIndicatorCreateForm({
     warehouseId: input.warehouseId,

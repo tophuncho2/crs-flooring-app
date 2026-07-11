@@ -15,6 +15,7 @@ import {
   normalizeMoneyAmount,
   validateIndicatorUpdateForm,
 } from "@builders/domain"
+import { assertActorEmail } from "../../shared/assert-actor-email.js"
 import { InventoryIndicatorExecutionError } from "./errors.js"
 import type {
   SaveIndicatorsSectionInput,
@@ -37,9 +38,7 @@ export async function saveIndicatorsSectionUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveIndicatorsSectionResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("saveIndicatorsSectionUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "saveIndicatorsSectionUseCase")
 
   // Validate every edit's form up front (domain rule), before opening the txn.
   for (const modified of input.diff.modified) {

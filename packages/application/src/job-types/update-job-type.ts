@@ -4,7 +4,8 @@ import {
   JOB_TYPE_NAME_REQUIRED_MESSAGE,
   JOB_TYPE_NOT_FOUND_MESSAGE,
 } from "@builders/domain"
-import { isP2002 } from "../shared/prisma-errors.js"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2002, isP2025 } from "../shared/prisma-errors.js"
 import { JobTypeExecutionError } from "./errors.js"
 import type { JobTypeUseCaseResult, UpdateJobTypeUseCaseInput } from "./types.js"
 
@@ -14,9 +15,7 @@ export async function updateJobTypeUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<JobTypeUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateJobTypeUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateJobTypeUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -41,7 +40,7 @@ export async function updateJobTypeUseCase(
           field: "name",
         })
       }
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new JobTypeExecutionError({
           code: "JOB_TYPE_NOT_FOUND",
           message: JOB_TYPE_NOT_FOUND_MESSAGE,

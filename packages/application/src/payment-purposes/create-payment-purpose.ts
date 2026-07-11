@@ -3,6 +3,7 @@ import {
   PAYMENT_PURPOSE_NAME_CONFLICT_MESSAGE,
   PAYMENT_PURPOSE_NAME_REQUIRED_MESSAGE,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { isP2002 } from "../shared/prisma-errors.js"
 import { PaymentPurposeExecutionError } from "./errors.js"
 import type {
@@ -15,9 +16,7 @@ export async function createPaymentPurposeUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PaymentPurposeUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createPaymentPurposeUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createPaymentPurposeUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

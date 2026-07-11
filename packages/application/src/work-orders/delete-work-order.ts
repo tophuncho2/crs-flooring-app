@@ -1,5 +1,6 @@
 import { Prisma, deleteWorkOrderRecordById, withDatabaseTransaction } from "@builders/db"
 import { WORK_ORDER_NOT_FOUND_MESSAGE } from "@builders/domain"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { WorkOrderExecutionError } from "./errors.js"
 
 /**
@@ -18,7 +19,7 @@ export async function deleteWorkOrderUseCase(
     try {
       await deleteWorkOrderRecordById(id, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new WorkOrderExecutionError({
           code: "WORK_ORDER_NOT_FOUND",
           message: WORK_ORDER_NOT_FOUND_MESSAGE,

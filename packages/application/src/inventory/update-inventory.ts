@@ -6,6 +6,7 @@ import {
   withDatabaseTransaction,
   type UpdateInventoryRecordInput as DbUpdateInventoryInput,
 } from "@builders/db"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { InventoryExecutionError } from "./errors.js"
 import type { InventoryResult, UpdateInventoryInput } from "./types.js"
 
@@ -20,9 +21,7 @@ export async function updateInventoryUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<InventoryResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateInventoryUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateInventoryUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

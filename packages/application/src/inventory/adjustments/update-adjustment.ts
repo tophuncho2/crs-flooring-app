@@ -15,6 +15,7 @@ import {
   InventoryAdjustmentDomainError,
   validateAdjustmentForm,
 } from "@builders/domain"
+import { assertActorEmail } from "../../shared/assert-actor-email.js"
 import { InventoryAdjustmentExecutionError } from "./errors.js"
 import { assertAdjustmentScope } from "./scope.js"
 import type {
@@ -27,9 +28,7 @@ export async function updateAdjustmentUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<AdjustmentMutationResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateAdjustmentUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateAdjustmentUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

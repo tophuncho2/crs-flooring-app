@@ -6,6 +6,7 @@ import {
   withDatabaseTransaction,
 } from "@builders/db"
 import { DEFAULT_PALETTE_COLOR, validateImportPrimaryForm } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { ImportExecutionError } from "./errors.js"
 import type { CreateImportInput, ImportResult } from "./types.js"
 
@@ -19,9 +20,7 @@ export async function createImportUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<ImportResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createImportUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createImportUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

@@ -4,6 +4,8 @@ import {
   withDatabaseTransaction,
 } from "@builders/db"
 import { WORK_ORDER_NOT_FOUND_MESSAGE } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { WorkOrderExecutionError } from "./errors.js"
 import type { UpdateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./types.js"
 
@@ -19,9 +21,7 @@ export async function updateWorkOrderUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<WorkOrderUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateWorkOrderUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateWorkOrderUseCase")
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -30,7 +30,7 @@ export async function updateWorkOrderUseCase(
     try {
       return await updateWorkOrderRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new WorkOrderExecutionError({
           code: "WORK_ORDER_NOT_FOUND",
           message: WORK_ORDER_NOT_FOUND_MESSAGE,

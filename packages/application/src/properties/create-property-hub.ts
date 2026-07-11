@@ -14,6 +14,8 @@ import {
   type EntityDetail,
   type PropertyDetailRecord,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { EntityExecutionError } from "../entities/errors.js"
 import type { CreateEntityUseCaseInput } from "../entities/types.js"
 import { PropertyExecutionError } from "./errors.js"
@@ -92,9 +94,7 @@ export async function createPropertyHubUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<CreatePropertyHubUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createPropertyHubUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createPropertyHubUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -113,10 +113,7 @@ export async function createPropertyHubUseCase(
       try {
         entity = await getEntityById(input.entity.id, { withNeighbors: false }, c)
       } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === "P2025"
-        ) {
+        if (isP2025(error)) {
           throw new EntityExecutionError({
             code: "ENTITY_NOT_FOUND",
             message: ENTITY_NOT_FOUND_MESSAGE,

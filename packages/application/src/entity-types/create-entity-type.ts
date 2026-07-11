@@ -1,5 +1,6 @@
 import { Prisma, createEntityTypeRecord, withDatabaseTransaction } from "@builders/db"
 import { ENTITY_TYPE_TYPE_REQUIRED_MESSAGE } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { EntityTypeExecutionError } from "./errors.js"
 import type { CreateEntityTypeUseCaseInput, EntityTypeUseCaseResult } from "./types.js"
 
@@ -8,9 +9,7 @@ export async function createEntityTypeUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<EntityTypeUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createEntityTypeUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createEntityTypeUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

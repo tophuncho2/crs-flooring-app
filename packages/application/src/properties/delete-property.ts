@@ -9,6 +9,7 @@ import {
   getPropertyDeleteBlockedMessage,
   isPropertyDeleteBlocked,
 } from "@builders/domain"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { PropertyExecutionError } from "./errors.js"
 
 export async function deletePropertyUseCase(
@@ -32,7 +33,7 @@ export async function deletePropertyUseCase(
     try {
       await deletePropertyRecordById(id, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new PropertyExecutionError({
           code: "PROPERTY_NOT_FOUND",
           message: PROPERTY_NOT_FOUND_MESSAGE,

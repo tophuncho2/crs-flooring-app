@@ -15,6 +15,7 @@ import {
   validateImportPrimaryForm,
   type ImportPrimaryForm,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { ImportExecutionError } from "./errors.js"
 import type { ImportResult, UpdateImportInput } from "./types.js"
 
@@ -39,9 +40,7 @@ export async function updateImportUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<ImportResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateImportUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateImportUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

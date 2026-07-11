@@ -4,6 +4,8 @@ import {
   CERTIFICATE_NOT_FOUND_MESSAGE,
   isBlankName,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { CertificateExecutionError } from "./errors.js"
 import type { CertificateUseCaseResult, UpdateCertificateUseCaseInput } from "./types.js"
 
@@ -13,9 +15,7 @@ export async function updateCertificateUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<CertificateUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateCertificateUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateCertificateUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -32,7 +32,7 @@ export async function updateCertificateUseCase(
     try {
       return await updateCertificateRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new CertificateExecutionError({
           code: "CERTIFICATE_NOT_FOUND",
           message: CERTIFICATE_NOT_FOUND_MESSAGE,

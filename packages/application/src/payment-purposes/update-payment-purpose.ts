@@ -4,7 +4,8 @@ import {
   PAYMENT_PURPOSE_NAME_REQUIRED_MESSAGE,
   PAYMENT_PURPOSE_NOT_FOUND_MESSAGE,
 } from "@builders/domain"
-import { isP2002 } from "../shared/prisma-errors.js"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2002, isP2025 } from "../shared/prisma-errors.js"
 import { PaymentPurposeExecutionError } from "./errors.js"
 import type {
   PaymentPurposeUseCaseResult,
@@ -17,9 +18,7 @@ export async function updatePaymentPurposeUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PaymentPurposeUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updatePaymentPurposeUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updatePaymentPurposeUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -44,7 +43,7 @@ export async function updatePaymentPurposeUseCase(
           field: "name",
         })
       }
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new PaymentPurposeExecutionError({
           code: "PAYMENT_PURPOSE_NOT_FOUND",
           message: PAYMENT_PURPOSE_NOT_FOUND_MESSAGE,

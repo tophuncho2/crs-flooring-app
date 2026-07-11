@@ -1,5 +1,6 @@
 import { Prisma, deleteJobTypeRecordById, withDatabaseTransaction } from "@builders/db"
 import { JOB_TYPE_NOT_FOUND_MESSAGE } from "@builders/domain"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { JobTypeExecutionError } from "./errors.js"
 
 export async function deleteJobTypeUseCase(
@@ -12,7 +13,7 @@ export async function deleteJobTypeUseCase(
     try {
       await deleteJobTypeRecordById(id, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new JobTypeExecutionError({
           code: "JOB_TYPE_NOT_FOUND",
           message: JOB_TYPE_NOT_FOUND_MESSAGE,

@@ -1,5 +1,6 @@
 import { Prisma, createCertificateRecord, withDatabaseTransaction } from "@builders/db"
 import { CERTIFICATE_NAME_REQUIRED_MESSAGE, isBlankName } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { CertificateExecutionError } from "./errors.js"
 import type { CertificateUseCaseResult, CreateCertificateUseCaseInput } from "./types.js"
 
@@ -8,9 +9,7 @@ export async function createCertificateUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<CertificateUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createCertificateUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createCertificateUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

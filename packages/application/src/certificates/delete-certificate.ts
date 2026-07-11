@@ -6,6 +6,7 @@ import {
 } from "@builders/db"
 import { CERTIFICATE_NOT_FOUND_MESSAGE } from "@builders/domain"
 import { deleteBucketObject, type StorageEnvironment } from "@builders/lib"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { CertificateExecutionError } from "./errors.js"
 
 // A certificate is now an aggregate root over its files. The FK cascade removes
@@ -26,7 +27,7 @@ export async function deleteCertificateUseCase(
     try {
       await deleteCertificateRecordById(id, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new CertificateExecutionError({
           code: "CERTIFICATE_NOT_FOUND",
           message: CERTIFICATE_NOT_FOUND_MESSAGE,

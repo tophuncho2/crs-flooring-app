@@ -3,6 +3,7 @@ import {
   JOB_TYPE_NAME_CONFLICT_MESSAGE,
   JOB_TYPE_NAME_REQUIRED_MESSAGE,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { isP2002 } from "../shared/prisma-errors.js"
 import { JobTypeExecutionError } from "./errors.js"
 import type { CreateJobTypeUseCaseInput, JobTypeUseCaseResult } from "./types.js"
@@ -12,9 +13,7 @@ export async function createJobTypeUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<JobTypeUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createJobTypeUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createJobTypeUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

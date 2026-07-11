@@ -11,6 +11,7 @@ import {
   describeInventoryCreateIssues,
   validateCreateInventoryEdits,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { guardUnitsExist } from "../shared/guard-units-exist.js"
 import { InventoryExecutionError } from "./errors.js"
 import type { CreateInventoryInput, InventoryResult } from "./types.js"
@@ -20,9 +21,7 @@ export async function createInventoryUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<InventoryResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createInventoryUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createInventoryUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

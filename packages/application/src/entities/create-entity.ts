@@ -3,6 +3,8 @@ import {
   ENTITY_NAME_REQUIRED_MESSAGE,
   isBlankName,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2003 } from "../shared/prisma-errors.js"
 import { EntityExecutionError } from "./errors.js"
 import type {
   CreateEntityUseCaseInput,
@@ -14,9 +16,7 @@ export async function createEntityUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<EntityUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createEntityUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createEntityUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -37,7 +37,7 @@ export async function createEntityUseCase(
       )
     } catch (error) {
       // A typeId that points at no entity-type row trips the FK (P2003).
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      if (isP2003(error)) {
         throw new EntityExecutionError({
           code: "ENTITY_INVALID_TYPE",
           message: "One or more entity types could not be found",

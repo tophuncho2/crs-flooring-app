@@ -1,5 +1,6 @@
 import { Prisma, createPropertyRecord, withDatabaseTransaction } from "@builders/db"
 import { PROPERTY_NAME_REQUIRED_MESSAGE, isBlankName } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { PropertyExecutionError } from "./errors.js"
 import type { CreatePropertyUseCaseInput, PropertyUseCaseResult } from "./types.js"
 
@@ -8,9 +9,7 @@ export async function createPropertyUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PropertyUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createPropertyUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createPropertyUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

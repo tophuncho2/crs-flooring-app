@@ -4,6 +4,7 @@ import {
   warehouseNameExists,
   withDatabaseTransaction,
 } from "@builders/db"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { isP2002 } from "../shared/prisma-errors.js"
 import { WarehouseExecutionError } from "./errors.js"
 import type { CreateWarehouseInput, WarehouseResult } from "./types.js"
@@ -13,9 +14,7 @@ export async function createWarehouseUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<WarehouseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createWarehouseUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createWarehouseUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

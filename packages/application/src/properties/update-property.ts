@@ -4,6 +4,8 @@ import {
   PROPERTY_NOT_FOUND_MESSAGE,
   isBlankName,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { PropertyExecutionError } from "./errors.js"
 import type { PropertyUseCaseResult, UpdatePropertyUseCaseInput } from "./types.js"
 
@@ -13,9 +15,7 @@ export async function updatePropertyUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PropertyUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updatePropertyUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updatePropertyUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -32,7 +32,7 @@ export async function updatePropertyUseCase(
     try {
       return await updatePropertyRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new PropertyExecutionError({
           code: "PROPERTY_NOT_FOUND",
           message: PROPERTY_NOT_FOUND_MESSAGE,

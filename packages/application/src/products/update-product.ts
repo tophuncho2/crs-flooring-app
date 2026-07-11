@@ -11,6 +11,7 @@ import {
   ProductExecutionError,
   buildStoredFlooringProductName,
 } from "@builders/domain"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { isP2002 } from "../shared/prisma-errors.js"
 import type { ProductResult, UpdateProductInput } from "./types.js"
 
@@ -20,9 +21,7 @@ export async function updateProductUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<ProductResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("updateProductUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "updateProductUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

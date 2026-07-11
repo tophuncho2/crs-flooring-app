@@ -8,6 +8,8 @@ import {
   assignDraftIds,
   validateWorkOrderPlannedPaymentForm,
 } from "@builders/domain"
+import { assertActorEmail } from "../../shared/assert-actor-email.js"
+import { isP2003 } from "../../shared/prisma-errors.js"
 import { WorkOrderPlannedPaymentExecutionError } from "./errors.js"
 import type {
   SaveWorkOrderPlannedPaymentsSectionUseCaseInput,
@@ -19,9 +21,7 @@ export async function saveWorkOrderPlannedPaymentsSectionUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveWorkOrderPlannedPaymentsSectionUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("saveWorkOrderPlannedPaymentsSectionUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "saveWorkOrderPlannedPaymentsSectionUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -70,7 +70,7 @@ export async function saveWorkOrderPlannedPaymentsSectionUseCase(
     } catch (error) {
       // A linked entity id that points at no row trips the FK (P2003). Optional
       // link, no pre-guard — the FK is the backstop.
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      if (isP2003(error)) {
         throw new WorkOrderPlannedPaymentExecutionError({
           code: "WORK_ORDER_PLANNED_PAYMENT_LINK_INVALID",
           message: "Linked entity could not be found.",

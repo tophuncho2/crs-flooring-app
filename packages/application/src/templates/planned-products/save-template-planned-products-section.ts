@@ -9,6 +9,7 @@ import {
   assignDraftIds,
   validateTemplatePlannedProductForm,
 } from "@builders/domain"
+import { assertActorEmail } from "../../shared/assert-actor-email.js"
 import { guardProductsExist } from "../../shared/guard-products-exist.js"
 import { TemplatePlannedProductExecutionError } from "./errors.js"
 import type {
@@ -21,9 +22,7 @@ export async function saveTemplatePlannedProductsSectionUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveTemplatePlannedProductsSectionUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("saveTemplatePlannedProductsSectionUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "saveTemplatePlannedProductsSectionUseCase")
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx

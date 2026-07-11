@@ -21,6 +21,7 @@ import {
   validateStagedInventoryForm,
   validateStagedInventoryRowsDiff,
 } from "@builders/domain"
+import { assertActorEmail } from "../../shared/assert-actor-email.js"
 import { guardProductsExist } from "../../shared/guard-products-exist.js"
 import { guardUnitsExist } from "../../shared/guard-units-exist.js"
 import { ImportStagedInventorySectionExecutionError } from "./errors.js"
@@ -43,9 +44,7 @@ export async function saveImportStagedInventorySectionUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveImportStagedInventorySectionResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("saveImportStagedInventorySectionUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "saveImportStagedInventorySectionUseCase")
 
   // Read-only validation work runs BEFORE the transaction, on the pooled client
   // (`db`) unless this use case is composed inside a caller's transaction. These

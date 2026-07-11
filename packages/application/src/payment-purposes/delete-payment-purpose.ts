@@ -1,5 +1,6 @@
 import { Prisma, deletePaymentPurposeRecordById, withDatabaseTransaction } from "@builders/db"
 import { PAYMENT_PURPOSE_NOT_FOUND_MESSAGE } from "@builders/domain"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { PaymentPurposeExecutionError } from "./errors.js"
 
 export async function deletePaymentPurposeUseCase(
@@ -12,7 +13,7 @@ export async function deletePaymentPurposeUseCase(
     try {
       await deletePaymentPurposeRecordById(id, c)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new PaymentPurposeExecutionError({
           code: "PAYMENT_PURPOSE_NOT_FOUND",
           message: PAYMENT_PURPOSE_NOT_FOUND_MESSAGE,

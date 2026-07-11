@@ -3,6 +3,7 @@ import {
   createWorkOrderRecord,
   withDatabaseTransaction,
 } from "@builders/db"
+import { assertActorEmail } from "../shared/assert-actor-email.js"
 import type { CreateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./types.js"
 
 export async function createWorkOrderUseCase(
@@ -10,9 +11,7 @@ export async function createWorkOrderUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<WorkOrderUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("createWorkOrderUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "createWorkOrderUseCase")
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 

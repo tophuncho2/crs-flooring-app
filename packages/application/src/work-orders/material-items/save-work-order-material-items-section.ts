@@ -11,6 +11,7 @@ import {
   validateWorkOrderMaterialItemCreateForm,
   validateWorkOrderMaterialItemUpdateForm,
 } from "@builders/domain"
+import { assertActorEmail } from "../../shared/assert-actor-email.js"
 import { guardProductsExist } from "../../shared/guard-products-exist.js"
 import { WorkOrderMaterialItemExecutionError } from "./errors.js"
 import type {
@@ -40,9 +41,7 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
   actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveWorkOrderMaterialItemsSectionUseCaseResult> {
-  if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("saveWorkOrderMaterialItemsSectionUseCase requires a non-empty actorEmail")
-  }
+  assertActorEmail(actorEmail, "saveWorkOrderMaterialItemsSectionUseCase")
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 

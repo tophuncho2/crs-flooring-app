@@ -1,17 +1,7 @@
+import { canInviteRank, canManageUsers, USER_FORBIDDEN_RANK_MESSAGE, USER_NOT_AUTHORIZED_MESSAGE, USER_NOT_FOUND_MESSAGE, USER_SELF_DELETE_MESSAGE, } from "@builders/domain"
 import {
-  canInviteRank,
-  canManageUsers,
-  USER_FORBIDDEN_RANK_MESSAGE,
-  USER_NOT_AUTHORIZED_MESSAGE,
-  USER_NOT_FOUND_MESSAGE,
-  USER_SELF_DELETE_MESSAGE,
-} from "@builders/domain"
-import {
-  Prisma,
-  deleteUserRecordById,
-  getUserRecordById,
-  withDatabaseTransaction,
-} from "@builders/db"
+  Prisma, deleteUserRecordById, getUserRecordById, withDatabaseTransaction } from "@builders/db"
+import { isP2025 } from "../shared/prisma-errors.js"
 import { UserExecutionError } from "./errors.js"
 import type { UserActor } from "./types.js"
 
@@ -72,7 +62,7 @@ export async function deleteUserUseCase(
     try {
       await deleteUserRecordById(input.id, tx)
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (isP2025(error)) {
         throw new UserExecutionError({
           code: "USER_NOT_FOUND",
           message: USER_NOT_FOUND_MESSAGE,

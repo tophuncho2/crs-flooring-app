@@ -1,3 +1,5 @@
+import { BaseExecutionError } from "../shared/execution-error.js"
+
 export type InventoryErrorCode =
   | "INVENTORY_NOT_FOUND"
   | "INVENTORY_IN_USE"
@@ -8,24 +10,4 @@ export type InventoryErrorCode =
   | "INVENTORY_WAREHOUSE_NOT_FOUND"
   | "INVENTORY_UNIT_NOT_FOUND"
 
-export class InventoryExecutionError extends Error {
-  readonly code: InventoryErrorCode
-  readonly status: number
-  readonly field?: string
-  readonly payload?: Record<string, unknown>
-
-  constructor(input: {
-    code: InventoryErrorCode
-    message: string
-    status: number
-    field?: string
-    payload?: Record<string, unknown>
-  }) {
-    super(input.message)
-    this.name = "InventoryExecutionError"
-    this.code = input.code
-    this.status = input.status
-    this.field = input.field
-    this.payload = input.payload
-  }
-}
+export class InventoryExecutionError extends BaseExecutionError<InventoryErrorCode> {}
