@@ -47,10 +47,10 @@ Each handler calls one use case, takes the necessary `FOR UPDATE` lock, and retu
 
 
 `apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{action}/route.ts`   — e.g. GET /download (signed URL)
-`apps/web/app/api/{module}/[id]/{scope}/route.ts`                           — e.g. GET /balances (recomputed stock balances)
+`apps/web/app/api/{module}/[id]/{scope}/route.ts`                           — e.g. GET /indicators (product low-stock indicators)
 
 
-Used for read-only helpers scoped to a specific record or row (signed download URLs, balance reads, etc.).
+Used for read-only helpers scoped to a specific record or row (signed download URLs, scoped record reads, etc.).
 
 ## Loaders — `apps/web/app/dashboard/{module}/`
 

@@ -58,8 +58,8 @@ export type MaterializeInventoryRowFields = {
 }
 
 /**
- * Update input — editable subset only. Mirrors domain.editability
- * INVENTORY_EDITABLE_FIELDS. The warehouse FK and the identity columns
+ * Update input — the editable subset only (location, internalNotes,
+ * isArchived, color). The warehouse FK and the identity columns
  * (rollNumber, dyeLot, note) are not in this shape — `warehouseId` is
  * set-on-insert by the materialize worker and identity columns are
  * set-on-create only; none are ever patched afterward.

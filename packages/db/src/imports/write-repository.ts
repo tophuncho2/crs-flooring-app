@@ -48,8 +48,7 @@ export type CreateImportRecordInput = {
 }
 
 /**
- * Update input — partial of the user-editable subset (mirrors
- * `IMPORT_USER_EDITABLE_FIELDS` in the domain) plus an always-present
+ * Update input — partial of the user-editable columns plus an always-present
  * `updatedBy` actor stamp. `createdBy` is immutable post-create. `color` is
  * the editable palette tag — added explicitly here (not on the create input, so
  * new rows fall to the DB default SLATE); a non-semantic visual tag carried
