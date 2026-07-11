@@ -1,99 +1,45 @@
 import { getInventoryById, getInventoryDetailById } from "@builders/db"
 import { InventoryExecutionError, deleteInventoryUseCase } from "@builders/application"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
-import { routeError, routeJson } from "@/server/http/route-helpers"
+import { createMutationRoute } from "@/server/http/run-mutation"
+import { createQueryRoute } from "@/server/http/run-query"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
+export const GET = createQueryRoute({
+  route: "/api/inventory/[id]",
+  parseParams: async (raw) => ({ id: (raw as { id: string }).id }),
+  parseInput: () => ({}),
+  useCase: ({ params }) => getInventoryDetailById(params.id),
+  buildResponseBody: ({ result }) => ({ inventory: result }),
+})
 
-export async function GET(request: Request, context: RouteContext) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/inventory/[id]")
-  if (rateLimited) return rateLimited
-
-  try {
-    const { id } = await context.params
-    return routeJson(access, { inventory: await getInventoryDetailById(id) })
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
-
-export async function DELETE(request: Request, context: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_DELETE,
-      scope: "inventory.delete",
-      route: "/api/inventory/[id]",
+export const DELETE = createMutationRoute({
+  scope: "inventory.delete",
+  route: "/api/inventory/[id]",
+  rateLimit: CRUD_DELETE,
+  parseParams: async (raw) => ({ id: (raw as { id: string }).id }),
+  parseInput: (value) => value,
+  concurrency: {
+    loadSnapshot: async ({ params }) => {
+      const currentSnapshot = await getInventoryById(params.id)
+      if (!currentSnapshot) {
+        throw new InventoryExecutionError({
+          code: "INVENTORY_NOT_FOUND",
+          message: "Inventory row not found.",
+          status: 404,
+        })
+      }
+      return currentSnapshot
     },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id } = await context.params
-    const body = (await request.json()) as Record<string, unknown>
-    const { mutation } = parseMutationEnvelope(body, (inputBody) => inputBody, {
-      requireExpectedUpdatedAt: true,
-    })
-
-    const currentSnapshot = await getInventoryById(id)
-    if (!currentSnapshot) {
-      throw new InventoryExecutionError({
-        code: "INVENTORY_NOT_FOUND",
-        message: "Inventory row not found.",
-        status: 404,
-      })
-    }
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { inventory: currentSnapshot },
-      message: "Inventory row changed before save completed. Refresh and try again.",
-    })
-
-    const receipt = await enforceMutationReceipt({
-      scope: "inventory.delete",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    await withMutationTelemetry(
-      access,
-      {
-        message: "Inventory row deleted",
-        action: "inventory.delete",
-        route: "/api/inventory/[id]",
-        entityType: "flooringInventory",
-        entityId: id,
-      },
-      () => deleteInventoryUseCase(id),
-    )
-
-    const responseBody = { ok: true }
-    await finalizeMutationReceipt({
-      scope: "inventory.delete",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+    snapshotKey: "inventory",
+    message: "Inventory row changed before save completed. Refresh and try again.",
+  },
+  useCase: ({ params }) => deleteInventoryUseCase(params.id),
+  telemetry: ({ params }) => ({
+    action: "inventory.delete",
+    message: "Inventory row deleted",
+    entityType: "flooringInventory",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: () => ({ ok: true }),
+})

@@ -1,84 +1,30 @@
 import { createInviteUseCase, listInvitesUseCase } from "@builders/application"
-import { enforceManageUsersAccess } from "@/server/auth/route-auth"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
+import { USER_MANAGEMENT_MIN_RANK } from "@builders/domain"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  enforceMutationReceipt,
-  enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validateCreateInviteInput, validateListInvitesQuery } from "./_validators"
 
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
+export const GET = createQueryRoute({
+  route: "/api/invites",
+  minRank: USER_MANAGEMENT_MIN_RANK,
+  parseInput: (searchParams) => validateListInvitesQuery(searchParams),
+  useCase: ({ input }) => listInvitesUseCase(input),
+})
 
-  const forbidden = enforceManageUsersAccess(access)
-  if (forbidden) return forbidden
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/invites")
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validateListInvitesQuery(url.searchParams)
-    const result = await listInvitesUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
-
-export async function POST(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_CREATE,
-      scope: "invites.create",
-      route: "/api/invites",
-    },
-  })
-  if (access instanceof Response) return access
-
-  const forbidden = enforceManageUsersAccess(access)
-  if (forbidden) return forbidden
-
-  try {
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreateInviteInput)
-
-    const receipt = await enforceMutationReceipt({
-      scope: "invites.create",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Invite created",
-        action: "invites.create",
-        route: "/api/invites",
-        entityType: "userInvite",
-      },
-      () => createInviteUseCase(input, { email: access.user.email, rank: access.user.rank }),
-    )
-
-    const responseBody = { invite: result }
-    await finalizeMutationReceipt({
-      scope: "invites.create",
-      access,
-      mutation,
-      responseStatus: 201,
-      responseBody,
-    })
-    return routeJson(access, responseBody, { status: 201 })
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const POST = createMutationRoute({
+  scope: "invites.create",
+  route: "/api/invites",
+  rateLimit: CRUD_CREATE,
+  minRank: USER_MANAGEMENT_MIN_RANK,
+  parseInput: validateCreateInviteInput,
+  useCase: ({ input, access }) =>
+    createInviteUseCase(input, { email: access.user.email, rank: access.user.rank }),
+  telemetry: {
+    action: "invites.create",
+    message: "Invite created",
+    entityType: "userInvite",
+  },
+  status: 201,
+  buildResponseBody: ({ result }) => ({ invite: result }),
+})

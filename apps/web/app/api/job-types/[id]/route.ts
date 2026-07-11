@@ -1,38 +1,18 @@
 import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
 import { deleteJobTypeUseCase, JobTypeExecutionError } from "@builders/application"
 import { getJobTypeById, getJobTypeDetailById } from "@builders/db"
-import { enforceRankAtLeast } from "@/server/auth/route-auth"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
+import { createQueryRoute } from "@/server/http/run-query"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-export async function GET(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
-  if (forbidden) return forbidden
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/job-types/[id]")
-  if (rateLimited) return rateLimited
-
-  try {
-    const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
-    const jobType = await getJobTypeDetailById(id, { withNeighbors: true })
+export const GET = createQueryRoute({
+  route: "/api/job-types/[id]",
+  minRank: ELEVATED_MODULE_MIN_RANK,
+  parseParams: async (raw) => ({ id: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: () => ({}),
+  useCase: async ({ params }) => {
+    const jobType = await getJobTypeDetailById(params.id, { withNeighbors: true })
     if (!jobType) {
       throw new JobTypeExecutionError({
         code: "JOB_TYPE_NOT_FOUND",
@@ -40,72 +20,30 @@ export async function GET(request: Request, { params }: RouteContext) {
         status: 404,
       })
     }
-    return routeJson(access, { jobType })
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+    return jobType
+  },
+  buildResponseBody: ({ result }) => ({ jobType: result }),
+})
 
-export async function DELETE(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_DELETE,
-      scope: "jobTypes.delete",
-      route: "/api/job-types/[id]",
-    },
-  })
-  if (access instanceof Response) return access
-
-  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
-  if (forbidden) return forbidden
-
-  try {
-    const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
-    const body = (await request.json()) as Record<string, unknown>
-    const { input: _input, mutation } = parseMutationEnvelope(body, (value) => value, {
-      requireExpectedUpdatedAt: true,
-    })
-
-    const currentSnapshot = await getJobTypeById(id)
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { jobType: currentSnapshot },
-      message: "Job type changed before delete completed. Refresh and try again.",
-    })
-
-    const receipt = await enforceMutationReceipt({
-      scope: "jobTypes.delete",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    await withMutationTelemetry(
-      access,
-      {
-        message: "Job type deleted",
-        action: "jobTypes.delete",
-        route: "/api/job-types/[id]",
-        entityType: "flooringJobType",
-        entityId: id,
-      },
-      () => deleteJobTypeUseCase(id),
-    )
-
-    const responseBody = { ok: true as const }
-    await finalizeMutationReceipt({
-      scope: "jobTypes.delete",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const DELETE = createMutationRoute({
+  scope: "jobTypes.delete",
+  route: "/api/job-types/[id]",
+  rateLimit: CRUD_DELETE,
+  minRank: ELEVATED_MODULE_MIN_RANK,
+  parseParams: async (raw) => ({ id: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: (value) => value,
+  concurrency: {
+    loadSnapshot: ({ params }) => getJobTypeById(params.id),
+    snapshotKey: "jobType",
+    message: "Job type changed before delete completed. Refresh and try again.",
+  },
+  useCase: ({ params }) => deleteJobTypeUseCase(params.id),
+  telemetry: ({ params }) => ({
+    action: "jobTypes.delete",
+    message: "Job type deleted",
+    entityType: "flooringJobType",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: () => ({ ok: true as const }),
+})

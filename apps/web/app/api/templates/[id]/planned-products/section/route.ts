@@ -1,85 +1,32 @@
 import { saveTemplatePlannedProductsSectionUseCase } from "@builders/application"
 import { getTemplateById } from "@builders/db"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
 import { validateTemplatePlannedProductsDiffInput } from "../../../_validators"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_UPDATE_SECTION,
-      scope: "templates.planned-products.section.replace",
-      route: "/api/templates/[id]/planned-products/section",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
-    const body = (await request.json()) as Record<string, unknown>
-    const { input: diff, mutation } = parseMutationEnvelope(
-      body,
-      validateTemplatePlannedProductsDiffInput,
-      { requireExpectedUpdatedAt: true },
-    )
-
-    const currentSnapshot = await getTemplateById(id, { withNeighbors: false })
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { template: currentSnapshot },
-      message: "Template changed before planned products save completed. Refresh and try again.",
-    })
-
-    const receipt = await enforceMutationReceipt({
-      scope: "templates.planned-products.section.replace",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Template planned products section replaced",
-        action: "templates.planned-products.section.replace",
-        route: "/api/templates/[id]/planned-products/section",
-        entityType: "template",
-        entityId: id,
-      },
-      () => saveTemplatePlannedProductsSectionUseCase({ templateId: id, diff }, access.user.email),
-    )
-
-    const detail = await getTemplateById(id)
-    const responseBody = {
-      template: detail,
-      tempIdMap: result.tempIdMap,
-    }
-    await finalizeMutationReceipt({
-      scope: "templates.planned-products.section.replace",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const PATCH = createMutationRoute({
+  scope: "templates.planned-products.section.replace",
+  route: "/api/templates/[id]/planned-products/section",
+  rateLimit: CRUD_UPDATE_SECTION,
+  parseParams: async (raw) => ({ id: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: validateTemplatePlannedProductsDiffInput,
+  concurrency: {
+    loadSnapshot: ({ params }) => getTemplateById(params.id, { withNeighbors: false }),
+    snapshotKey: "template",
+    message: "Template changed before planned products save completed. Refresh and try again.",
+  },
+  useCase: ({ input, access, params }) =>
+    saveTemplatePlannedProductsSectionUseCase({ templateId: params.id, diff: input }, access.user.email),
+  telemetry: ({ params }) => ({
+    action: "templates.planned-products.section.replace",
+    message: "Template planned products section replaced",
+    entityType: "template",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: async ({ result, params }) => ({
+    template: await getTemplateById(params.id),
+    tempIdMap: result.tempIdMap,
+  }),
+})

@@ -1,77 +1,26 @@
 import { createPropertyUseCase, listPropertiesUseCase } from "@builders/application"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  enforceMutationReceipt,
-  enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validateCreatePropertyInput, validateListPropertiesQuery } from "./_validators"
 
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
+export const GET = createQueryRoute({
+  route: "/api/properties",
+  parseInput: (searchParams) => validateListPropertiesQuery(searchParams),
+  useCase: ({ input }) => listPropertiesUseCase(input),
+})
 
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/properties")
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validateListPropertiesQuery(url.searchParams)
-    const result = await listPropertiesUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
-
-export async function POST(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_CREATE,
-      scope: "properties.create",
-      route: "/api/properties",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreatePropertyInput)
-
-    const receipt = await enforceMutationReceipt({
-      scope: "properties.create",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Property created",
-        action: "properties.create",
-        route: "/api/properties",
-        entityType: "flooringProperty",
-      },
-      () => createPropertyUseCase(input, access.user.email),
-    )
-
-    const responseBody = { property: result }
-    await finalizeMutationReceipt({
-      scope: "properties.create",
-      access,
-      mutation,
-      responseStatus: 201,
-      responseBody,
-    })
-    return routeJson(access, responseBody, { status: 201 })
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const POST = createMutationRoute({
+  scope: "properties.create",
+  route: "/api/properties",
+  rateLimit: CRUD_CREATE,
+  parseInput: validateCreatePropertyInput,
+  useCase: ({ input, access }) => createPropertyUseCase(input, access.user.email),
+  telemetry: {
+    action: "properties.create",
+    message: "Property created",
+    entityType: "flooringProperty",
+  },
+  status: 201,
+  buildResponseBody: ({ result }) => ({ property: result }),
+})

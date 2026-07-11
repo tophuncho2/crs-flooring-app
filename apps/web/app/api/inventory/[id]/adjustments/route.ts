@@ -2,15 +2,12 @@ import {
   createAdjustmentUseCase,
   listInventoryAdjustmentsUseCase,
 } from "@builders/application"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
+import { createMutationRoute } from "@/server/http/run-mutation"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
-  enforceMutationReceipt,
   enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import {
   validateAdjustmentsPageQuery,
@@ -66,67 +63,31 @@ export async function GET(request: Request, { params }: RouteContext) {
  * inventory FOR UPDATE lock, inserts the row, recomputes `netDeducted`, and
  * asserts the `<= startingStock` invariant. Returns 200 with the inserted row.
  */
-export async function POST(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      scope: "inventory.adjustments.manual.create",
-      limit: 600,
-      windowMs: 10 * 60 * 1000,
-      route: "/api/inventory/[id]/adjustments",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id: rawId } = await params
-    const inventoryId = parseUuidParam(rawId, "id")
-
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreateManualAdjustmentInput)
-
-    const receipt = await enforceMutationReceipt({
-      scope: "inventory.adjustments.manual.create",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Manual adjustment created",
-        action: "inventory.adjustments.manual.create",
-        route: "/api/inventory/[id]/adjustments",
-        entityType: "flooringInventory",
-        entityId: inventoryId,
-      },
-      () =>
-        createAdjustmentUseCase({
-          adjustmentType: input.adjustmentType,
-          inventoryId,
-          warehouseId: input.warehouseId,
-          workOrderId: input.workOrderId,
-          quantity: input.quantity,
-          isWaste: input.isWaste,
-          internalNotes: input.internalNotes,
-          color: input.color,
-          location: input.location,
-          area: input.area,
-        }, access.user.email),
-    )
-
-    const responseBody = result
-    await finalizeMutationReceipt({
-      scope: "inventory.adjustments.manual.create",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody: responseBody as unknown as Record<string, unknown>,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const POST = createMutationRoute({
+  scope: "inventory.adjustments.manual.create",
+  route: "/api/inventory/[id]/adjustments",
+  rateLimit: { limit: 600, windowMs: 10 * 60 * 1000 },
+  parseParams: async (raw) => ({ inventoryId: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: validateCreateManualAdjustmentInput,
+  useCase: ({ input, access, params }) =>
+    createAdjustmentUseCase({
+      adjustmentType: input.adjustmentType,
+      inventoryId: params.inventoryId,
+      warehouseId: input.warehouseId,
+      workOrderId: input.workOrderId,
+      quantity: input.quantity,
+      isWaste: input.isWaste,
+      internalNotes: input.internalNotes,
+      color: input.color,
+      location: input.location,
+      area: input.area,
+    }, access.user.email),
+  telemetry: ({ params }) => ({
+    action: "inventory.adjustments.manual.create",
+    message: "Manual adjustment created",
+    entityType: "flooringInventory",
+    entityId: params.inventoryId,
+  }),
+  status: 200,
+  buildResponseBody: ({ result }) => result as unknown as Record<string, unknown>,
+})

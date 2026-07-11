@@ -1,33 +1,15 @@
 import { createInventoryUseCase, listInventoryUseCase } from "@builders/application"
 import { getInventoryDetailById } from "@builders/db"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
-import {
-  applyRoutePolicy,
-  enforceMutationReceipt,
-  enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
-import { routeError, routeJson } from "@/server/http/route-helpers"
+import { createMutationRoute } from "@/server/http/run-mutation"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validateCreateInventoryInput, validateListInventoryQuery } from "./_validators"
 
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/inventory")
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validateListInventoryQuery(url.searchParams)
-    const result = await listInventoryUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const GET = createQueryRoute({
+  route: "/api/inventory",
+  parseInput: (searchParams) => validateListInventoryQuery(searchParams),
+  useCase: ({ input }) => listInventoryUseCase(input),
+})
 
 /**
  * POST /api/inventory — manually create one inventory row from a selected
@@ -37,57 +19,25 @@ export async function GET(request: Request) {
  * expected-updated-at check (fresh insert); the mutation receipt guards
  * against double-creation on retry.
  */
-export async function POST(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_CREATE,
-      scope: "inventory.create",
-      route: "/api/inventory",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreateInventoryInput, {
-      requireExpectedUpdatedAt: false,
-    })
-
-    const receipt = await enforceMutationReceipt({
-      scope: "inventory.create",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Inventory item created",
-        action: "inventory.create",
-        route: "/api/inventory",
-        entityType: "flooringInventory",
-      },
-      () => createInventoryUseCase(input, access.user.email),
-    )
-
-    // Return the full detail (row + adjustments) so the hub can seed its view on
-    // the brand-new row. A fresh row always has zero adjustments. Skip the
-    // stepper neighbor lookups — the create flow only navigates/invalidates off
-    // this result, never seeds the stepper-read detail query.
+export const POST = createMutationRoute({
+  scope: "inventory.create",
+  route: "/api/inventory",
+  rateLimit: CRUD_CREATE,
+  requireExpectedUpdatedAt: false,
+  parseInput: validateCreateInventoryInput,
+  useCase: ({ input, access }) => createInventoryUseCase(input, access.user.email),
+  telemetry: {
+    action: "inventory.create",
+    message: "Inventory item created",
+    entityType: "flooringInventory",
+  },
+  status: 200,
+  // Return the full detail (row + adjustments) so the hub can seed its view on
+  // the brand-new row. A fresh row always has zero adjustments. Skip the
+  // stepper neighbor lookups — the create flow only navigates/invalidates off
+  // this result, never seeds the stepper-read detail query.
+  buildResponseBody: async ({ result }) => {
     const detail = (await getInventoryDetailById(result.id, { withNeighbors: false })) ?? result
-    const responseBody = { inventory: detail }
-    await finalizeMutationReceipt({
-      scope: "inventory.create",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+    return { inventory: detail }
+  },
+})

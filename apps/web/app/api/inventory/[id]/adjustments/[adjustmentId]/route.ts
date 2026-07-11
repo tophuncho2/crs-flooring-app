@@ -3,16 +3,13 @@ import {
   getInventoryAdjustmentUseCase,
   updateAdjustmentUseCase,
 } from "@builders/application"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
-  enforceMutationReceipt,
   enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
 } from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
 import {
   validateDeleteAdjustmentInput,
   validateUpdateAdjustmentInput,
@@ -69,69 +66,40 @@ export async function GET(request: Request, { params }: RouteContext) {
  * `location` from the parent), recomputes `netDeducted`, and asserts
  * the invariant. Returns 200 with the updated row.
  */
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      scope: "inventory.adjustments.update",
-      limit: 1200,
-      windowMs: 10 * 60 * 1000,
-      route: "/api/inventory/[id]/adjustments/[adjustmentId]",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id: rawId, adjustmentId: rawAdjustmentId } = await params
-    const inventoryId = parseUuidParam(rawId, "id")
-    const adjustmentId = parseUuidParam(rawAdjustmentId, "adjustmentId")
-
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(
-      body,
-      validateUpdateAdjustmentInput,
-      { requireExpectedUpdatedAt: true },
-    )
-
-    const receipt = await enforceMutationReceipt({
-      scope: "inventory.adjustments.update",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
+export const PATCH = createMutationRoute({
+  scope: "inventory.adjustments.update",
+  route: "/api/inventory/[id]/adjustments/[adjustmentId]",
+  rateLimit: { limit: 1200, windowMs: 10 * 60 * 1000 },
+  // OCC is enforced inside the use case via `expectedUpdatedAt`, not a route
+  // snapshot assert — so require it here and thread it through.
+  requireExpectedUpdatedAt: true,
+  parseParams: async (raw) => {
+    const p = raw as { id: string; adjustmentId: string }
+    return {
+      inventoryId: parseUuidParam(p.id, "id"),
+      adjustmentId: parseUuidParam(p.adjustmentId, "adjustmentId"),
+    }
+  },
+  parseInput: validateUpdateAdjustmentInput,
+  useCase: ({ input, access, params, mutation }) =>
+    updateAdjustmentUseCase(
       {
-        message: "Adjustment updated (inv-side)",
-        action: "inventory.adjustments.update",
-        route: "/api/inventory/[id]/adjustments/[adjustmentId]",
-        entityType: "flooringAdjustment",
-        entityId: adjustmentId,
+        scope: { kind: "inventory", inventoryId: params.inventoryId },
+        adjustmentId: params.adjustmentId,
+        expectedUpdatedAt: mutation.expectedUpdatedAt!,
+        patch: input.patch,
       },
-      () =>
-        updateAdjustmentUseCase({
-          scope: { kind: "inventory", inventoryId },
-          adjustmentId: adjustmentId,
-          expectedUpdatedAt: mutation.expectedUpdatedAt!,
-          patch: input.patch,
-        }, access.user.email),
-    )
-
-    const responseBody = result
-    await finalizeMutationReceipt({
-      scope: "inventory.adjustments.update",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody: responseBody as unknown as Record<string, unknown>,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+      access.user.email,
+    ),
+  telemetry: ({ params }) => ({
+    message: "Adjustment updated (inv-side)",
+    action: "inventory.adjustments.update",
+    entityType: "flooringAdjustment",
+    entityId: params.adjustmentId,
+  }),
+  status: 200,
+  buildResponseBody: ({ result }) => result as unknown as Record<string, unknown>,
+})
 
 /**
  * DELETE /api/inventory/[id]/adjustments/[adjustmentId]
@@ -140,65 +108,32 @@ export async function PATCH(request: Request, { params }: RouteContext) {
  * scope. OCC-gated; any adjustment is freely deletable. Returns 200 with the parent
  * inventory's recomputed `netDeducted`.
  */
-export async function DELETE(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      scope: "inventory.adjustments.delete",
-      limit: 600,
-      windowMs: 10 * 60 * 1000,
-      route: "/api/inventory/[id]/adjustments/[adjustmentId]",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id: rawId, adjustmentId: rawAdjustmentId } = await params
-    const inventoryId = parseUuidParam(rawId, "id")
-    const adjustmentId = parseUuidParam(rawAdjustmentId, "adjustmentId")
-
-    const body = (await request.json()) as Record<string, unknown>
-    const { input: _input, mutation } = parseMutationEnvelope(
-      body,
-      validateDeleteAdjustmentInput,
-      { requireExpectedUpdatedAt: true },
-    )
-
-    const receipt = await enforceMutationReceipt({
-      scope: "inventory.adjustments.delete",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Adjustment deleted (inv-side)",
-        action: "inventory.adjustments.delete",
-        route: "/api/inventory/[id]/adjustments/[adjustmentId]",
-        entityType: "flooringAdjustment",
-        entityId: adjustmentId,
-      },
-      () =>
-        deleteAdjustmentUseCase({
-          scope: { kind: "inventory", inventoryId },
-          adjustmentId: adjustmentId,
-          expectedUpdatedAt: mutation.expectedUpdatedAt!,
-        }),
-    )
-
-    const responseBody = result
-    await finalizeMutationReceipt({
-      scope: "inventory.adjustments.delete",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody: responseBody as unknown as Record<string, unknown>,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const DELETE = createMutationRoute({
+  scope: "inventory.adjustments.delete",
+  route: "/api/inventory/[id]/adjustments/[adjustmentId]",
+  rateLimit: { limit: 600, windowMs: 10 * 60 * 1000 },
+  // OCC is enforced inside the use case via `expectedUpdatedAt`.
+  requireExpectedUpdatedAt: true,
+  parseParams: async (raw) => {
+    const p = raw as { id: string; adjustmentId: string }
+    return {
+      inventoryId: parseUuidParam(p.id, "id"),
+      adjustmentId: parseUuidParam(p.adjustmentId, "adjustmentId"),
+    }
+  },
+  parseInput: validateDeleteAdjustmentInput,
+  useCase: ({ access, params, mutation }) =>
+    deleteAdjustmentUseCase({
+      scope: { kind: "inventory", inventoryId: params.inventoryId },
+      adjustmentId: params.adjustmentId,
+      expectedUpdatedAt: mutation.expectedUpdatedAt!,
+    }),
+  telemetry: ({ params }) => ({
+    message: "Adjustment deleted (inv-side)",
+    action: "inventory.adjustments.delete",
+    entityType: "flooringAdjustment",
+    entityId: params.adjustmentId,
+  }),
+  status: 200,
+  buildResponseBody: ({ result }) => result as unknown as Record<string, unknown>,
+})

@@ -1,87 +1,45 @@
 import { getImportDetailById } from "@builders/db"
 import { ImportExecutionError, deleteImportUseCase } from "@builders/application"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
-import { routeError, routeJson } from "@/server/http/route-helpers"
+import { createMutationRoute } from "@/server/http/run-mutation"
+import { createQueryRoute } from "@/server/http/run-query"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
+export const GET = createQueryRoute({
+  route: "/api/imports/[id]",
+  parseParams: async (raw) => ({ id: (raw as { id: string }).id }),
+  parseInput: () => ({}),
+  useCase: ({ params }) => getImportDetailById(params.id),
+  buildResponseBody: ({ result }) => ({ import: result }),
+})
 
-export async function GET(request: Request, context: RouteContext) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/imports/[id]")
-  if (rateLimited) return rateLimited
-
-  try {
-    const { id } = await context.params
-    return routeJson(access, { import: await getImportDetailById(id) })
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
-
-export async function DELETE(request: Request, context: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_DELETE,
-      scope: "imports.delete",
-      route: "/api/imports/[id]",
+export const DELETE = createMutationRoute({
+  scope: "imports.delete",
+  route: "/api/imports/[id]",
+  rateLimit: CRUD_DELETE,
+  parseParams: async (raw) => raw as { id: string },
+  parseInput: (value) => value,
+  concurrency: {
+    loadSnapshot: async ({ params }) => {
+      const snapshot = await getImportDetailById(params.id, { withNeighbors: false })
+      if (!snapshot) {
+        throw new ImportExecutionError({
+          code: "IMPORT_NOT_FOUND",
+          message: "Import not found.",
+          status: 404,
+        })
+      }
+      return snapshot
     },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id } = await context.params
-    const body = (await request.json()) as Record<string, unknown>
-    const { mutation } = parseMutationEnvelope(body, (inputBody) => inputBody, {
-      requireExpectedUpdatedAt: true,
-    })
-
-    const currentSnapshot = await getImportDetailById(id, { withNeighbors: false })
-    if (!currentSnapshot) {
-      throw new ImportExecutionError({
-        code: "IMPORT_NOT_FOUND",
-        message: "Import not found.",
-        status: 404,
-      })
-    }
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { import: currentSnapshot },
-      message: "Import changed before save completed. Refresh and try again.",
-    })
-
-    const receipt = await enforceMutationReceipt({ scope: "imports.delete", request, access, mutation, body })
-    if (receipt.replay) return receipt.replay
-
-    await withMutationTelemetry(
-      access,
-      {
-        message: "Import deleted",
-        action: "imports.delete",
-        route: "/api/imports/[id]",
-        entityType: "flooringImportEntry",
-        entityId: id,
-      },
-      () => deleteImportUseCase(id),
-    )
-
-    const responseBody = { ok: true }
-    await finalizeMutationReceipt({ scope: "imports.delete", access, mutation, responseStatus: 200, responseBody })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+    snapshotKey: "import",
+    message: "Import changed before save completed. Refresh and try again.",
+  },
+  useCase: ({ params }) => deleteImportUseCase(params.id),
+  telemetry: ({ params }) => ({
+    action: "imports.delete",
+    message: "Import deleted",
+    entityType: "flooringImportEntry",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: () => ({ ok: true }),
+})

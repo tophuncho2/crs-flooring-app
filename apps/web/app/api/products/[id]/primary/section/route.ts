@@ -1,88 +1,38 @@
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { ProductExecutionError, updateProductUseCase } from "@builders/application"
 import { getProductById } from "@builders/db"
 import { validateUpdateProductInput } from "../../../_validators"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_UPDATE_SECTION,
-      scope: "products.primary.section.replace",
-      route: "/api/products/[id]/primary/section",
+export const PATCH = createMutationRoute({
+  scope: "products.primary.section.replace",
+  route: "/api/products/[id]/primary/section",
+  rateLimit: CRUD_UPDATE_SECTION,
+  parseParams: async (raw) => ({ id: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: validateUpdateProductInput,
+  concurrency: {
+    loadSnapshot: async ({ params }) => {
+      const snapshot = await getProductById(params.id)
+      if (!snapshot) {
+        throw new ProductExecutionError({
+          code: "PRODUCT_NOT_FOUND",
+          message: "Product not found",
+          status: 404,
+        })
+      }
+      return snapshot
     },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdateProductInput, {
-      requireExpectedUpdatedAt: true,
-    })
-    const currentSnapshot = await getProductById(id)
-    if (!currentSnapshot) {
-      throw new ProductExecutionError({
-        code: "PRODUCT_NOT_FOUND",
-        message: "Product not found",
-        status: 404,
-      })
-    }
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { product: currentSnapshot },
-      message: "Product changed before section save completed. Refresh and try again.",
-    })
-    const receipt = await enforceMutationReceipt({
-      scope: "products.primary.section.replace",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) {
-      return receipt.replay
-    }
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Product primary section replaced",
-        action: "products.primary.section.replace",
-        route: "/api/products/[id]/primary/section",
-        entityType: "flooringProduct",
-        entityId: id,
-      },
-      () => updateProductUseCase(id, input, access.user.email),
-    )
-
-    const responseBody = {
-      product: result,
-    }
-    await finalizeMutationReceipt({
-      scope: "products.primary.section.replace",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+    snapshotKey: "product",
+    message: "Product changed before section save completed. Refresh and try again.",
+  },
+  useCase: ({ input, access, params }) => updateProductUseCase(params.id, input, access.user.email),
+  telemetry: ({ params }) => ({
+    action: "products.primary.section.replace",
+    message: "Product primary section replaced",
+    entityType: "flooringProduct",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: ({ result }) => ({ product: result }),
+})

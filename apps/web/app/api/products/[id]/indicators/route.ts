@@ -2,16 +2,13 @@ import {
   createIndicatorUseCase,
   listIndicatorsForProductUseCase,
 } from "@builders/application"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
-  enforceMutationReceipt,
   enforceQueryRateLimit,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
 } from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
 import {
   validateCreateIndicatorInput,
   validateIndicatorsPageQuery,
@@ -58,66 +55,31 @@ export async function GET(request: Request, { params }: RouteContext) {
  * the product/warehouse/unit exist, and inserts (the DB `@@unique` surfaces a
  * duplicate triple as 409). Returns 200 with the inserted row.
  */
-export async function POST(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      scope: "products.indicators.create",
-      limit: 600,
-      windowMs: 10 * 60 * 1000,
-      route: "/api/products/[id]/indicators",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id: rawId } = await params
-    const productId = parseUuidParam(rawId, "id")
-
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreateIndicatorInput)
-
-    const receipt = await enforceMutationReceipt({
-      scope: "products.indicators.create",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
+export const POST = createMutationRoute({
+  scope: "products.indicators.create",
+  route: "/api/products/[id]/indicators",
+  rateLimit: { limit: 600, windowMs: 10 * 60 * 1000 },
+  parseParams: async (raw) => ({ productId: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: validateCreateIndicatorInput,
+  useCase: ({ input, access, params }) =>
+    createIndicatorUseCase(
       {
-        message: "Inventory indicator created",
-        action: "products.indicators.create",
-        route: "/api/products/[id]/indicators",
-        entityType: "flooringProduct",
-        entityId: productId,
+        productId: params.productId,
+        warehouseId: input.warehouseId,
+        unitId: input.unitId,
+        lowStockThreshold: input.lowStockThreshold,
+        internalNotes: input.internalNotes,
+        isActive: input.isActive,
       },
-      () =>
-        createIndicatorUseCase(
-          {
-            productId,
-            warehouseId: input.warehouseId,
-            unitId: input.unitId,
-            lowStockThreshold: input.lowStockThreshold,
-            internalNotes: input.internalNotes,
-            isActive: input.isActive,
-          },
-          access.user.email,
-        ),
-    )
-
-    const responseBody = result
-    await finalizeMutationReceipt({
-      scope: "products.indicators.create",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody: responseBody as unknown as Record<string, unknown>,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+      access.user.email,
+    ),
+  telemetry: ({ params }) => ({
+    message: "Inventory indicator created",
+    action: "products.indicators.create",
+    entityType: "flooringProduct",
+    entityId: params.productId,
+  }),
+  status: 200,
+  // Bare use-case result (not wrapped in a { indicator } envelope).
+  buildResponseBody: ({ result }) => result as unknown as Record<string, unknown>,
+})

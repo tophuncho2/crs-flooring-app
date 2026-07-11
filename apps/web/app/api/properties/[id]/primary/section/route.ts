@@ -1,79 +1,28 @@
 import { updatePropertyUseCase } from "@builders/application"
 import { getPropertyById } from "@builders/db"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
 import { validateUpdatePropertyInput } from "../../../_validators"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_UPDATE_SECTION,
-      scope: "properties.primary.section.replace",
-      route: "/api/properties/[id]/primary/section",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdatePropertyInput, {
-      requireExpectedUpdatedAt: true,
-    })
-
-    const currentSnapshot = await getPropertyById(id, { withNeighbors: false })
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { property: currentSnapshot },
-      message: "Property changed before section save completed. Refresh and try again.",
-    })
-
-    const receipt = await enforceMutationReceipt({
-      scope: "properties.primary.section.replace",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Property primary section replaced",
-        action: "properties.primary.section.replace",
-        route: "/api/properties/[id]/primary/section",
-        entityType: "flooringProperty",
-        entityId: id,
-      },
-      () => updatePropertyUseCase(id, input, access.user.email),
-    )
-
-    const responseBody = { property: result }
-    await finalizeMutationReceipt({
-      scope: "properties.primary.section.replace",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const PATCH = createMutationRoute({
+  scope: "properties.primary.section.replace",
+  route: "/api/properties/[id]/primary/section",
+  rateLimit: CRUD_UPDATE_SECTION,
+  parseParams: async (raw) => ({ id: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: validateUpdatePropertyInput,
+  concurrency: {
+    loadSnapshot: ({ params }) => getPropertyById(params.id, { withNeighbors: false }),
+    snapshotKey: "property",
+    message: "Property changed before section save completed. Refresh and try again.",
+  },
+  useCase: ({ input, access, params }) => updatePropertyUseCase(params.id, input, access.user.email),
+  telemetry: ({ params }) => ({
+    action: "properties.primary.section.replace",
+    message: "Property primary section replaced",
+    entityType: "flooringProperty",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: ({ result }) => ({ property: result }),
+})

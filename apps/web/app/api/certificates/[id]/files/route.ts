@@ -1,6 +1,5 @@
 import { uploadCertificateFileUseCase } from "@builders/application"
 import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
-import { enforceRankAtLeast } from "@/server/auth/route-auth"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { getStorageEnvironment } from "@/server/platform/env"
@@ -25,6 +24,7 @@ type RouteContext = {
 // directly off a synthetic body hash. Returns 201 with the created file row.
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
+    minRank: ELEVATED_MODULE_MIN_RANK,
     rateLimit: {
       ...UPLOAD,
       scope: "certificates.files.create",
@@ -32,9 +32,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     },
   })
   if (access instanceof Response) return access
-
-  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
-  if (forbidden) return forbidden
 
   try {
     const { id: rawId } = await params

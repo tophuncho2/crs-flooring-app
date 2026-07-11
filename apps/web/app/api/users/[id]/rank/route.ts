@@ -1,77 +1,32 @@
 import { updateUserRankUseCase } from "@builders/application"
-import { enforceManageUsersAccess } from "@/server/auth/route-auth"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
+import { USER_MANAGEMENT_MIN_RANK } from "@builders/domain"
 import { parseRequiredString } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  enforceMutationReceipt,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
 import { validateUpdateUserRankInput } from "../../_validators"
 
-type RouteContext = { params: Promise<{ id: string }> }
-
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_UPDATE_SECTION,
-      scope: "users.rank.update",
-      route: "/api/users/[id]/rank",
-    },
-  })
-  if (access instanceof Response) return access
-
-  const forbidden = enforceManageUsersAccess(access)
-  if (forbidden) return forbidden
-
-  try {
-    const { id: rawId } = await params
-    // User ids are opaque auth identifiers (Better Auth), not UUIDs — require
-    // non-empty, not UUID-shaped.
-    const id = parseRequiredString(rawId, "id")
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdateUserRankInput, {
-      requireExpectedUpdatedAt: true,
-    })
-
-    const receipt = await enforceMutationReceipt({
-      scope: "users.rank.update",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "User rank changed",
-        action: "users.rank.update",
-        route: "/api/users/[id]/rank",
-        entityType: "user",
-        entityId: id,
-      },
-      () =>
-        updateUserRankUseCase(
-          { id, rank: input.rank, expectedUpdatedAt: mutation.expectedUpdatedAt! },
-          { id: access.user.id, email: access.user.email, rank: access.user.rank },
-        ),
-    )
-
-    const responseBody = { user: result }
-    await finalizeMutationReceipt({
-      scope: "users.rank.update",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const PATCH = createMutationRoute({
+  scope: "users.rank.update",
+  route: "/api/users/[id]/rank",
+  rateLimit: CRUD_UPDATE_SECTION,
+  minRank: USER_MANAGEMENT_MIN_RANK,
+  // OCC is enforced inside the use case via `expectedUpdatedAt`, not a route
+  // snapshot assert — so require it here and thread it through.
+  requireExpectedUpdatedAt: true,
+  // User ids are opaque auth identifiers (Better Auth), not UUIDs.
+  parseParams: async (raw) => ({ id: parseRequiredString((raw as { id: string }).id, "id") }),
+  parseInput: validateUpdateUserRankInput,
+  useCase: ({ input, access, params, mutation }) =>
+    updateUserRankUseCase(
+      { id: params.id, rank: input.rank, expectedUpdatedAt: mutation.expectedUpdatedAt! },
+      { id: access.user.id, email: access.user.email, rank: access.user.rank },
+    ),
+  telemetry: ({ params }) => ({
+    action: "users.rank.update",
+    message: "User rank changed",
+    entityType: "user",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: ({ result }) => ({ user: result }),
+})

@@ -1,93 +1,40 @@
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { updateWarehouseUseCase, WarehouseExecutionError } from "@builders/application"
 import { getWarehouseById } from "@builders/db"
 import { ELEVATED_MODULE_MIN_RANK } from "@builders/domain"
-import { enforceRankAtLeast } from "@/server/auth/route-auth"
-import { validateWarehouseInput } from "../../../_validators"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
+import { createMutationRoute } from "@/server/http/run-mutation"
+import { validateWarehouseInput } from "../../../_validators"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_UPDATE_SECTION,
-      scope: "warehouses.primary.section.replace",
-      route: "/api/warehouses/[id]/primary/section",
+export const PATCH = createMutationRoute({
+  scope: "warehouses.primary.section.replace",
+  route: "/api/warehouses/[id]/primary/section",
+  rateLimit: CRUD_UPDATE_SECTION,
+  minRank: ELEVATED_MODULE_MIN_RANK,
+  parseParams: async (raw) => ({ id: parseUuidParam((raw as { id: string }).id, "id") }),
+  parseInput: validateWarehouseInput,
+  concurrency: {
+    loadSnapshot: async ({ params }) => {
+      const snapshot = await getWarehouseById(params.id)
+      if (!snapshot) {
+        throw new WarehouseExecutionError({
+          code: "WAREHOUSE_NOT_FOUND",
+          message: "Warehouse not found",
+          status: 404,
+        })
+      }
+      return snapshot
     },
-  })
-  if (access instanceof Response) return access
-
-  const forbidden = enforceRankAtLeast(access, ELEVATED_MODULE_MIN_RANK)
-  if (forbidden) return forbidden
-
-  try {
-    const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateWarehouseInput, {
-      requireExpectedUpdatedAt: true,
-    })
-    const currentSnapshot = await getWarehouseById(id)
-    if (!currentSnapshot) {
-      throw new WarehouseExecutionError({
-        code: "WAREHOUSE_NOT_FOUND",
-        message: "Warehouse not found",
-        status: 404,
-      })
-    }
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { warehouse: currentSnapshot },
-      message: "Warehouse changed before section save completed. Refresh and try again.",
-    })
-    const receipt = await enforceMutationReceipt({
-      scope: "warehouses.primary.section.replace",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) {
-      return receipt.replay
-    }
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Warehouse primary section replaced",
-        action: "warehouses.primary.section.replace",
-        route: "/api/warehouses/[id]/primary/section",
-        entityType: "flooringWarehouse",
-        entityId: id,
-      },
-      () => updateWarehouseUseCase(id, input, access.user.email),
-    )
-
-    const responseBody = {
-      warehouse: result,
-    }
-    await finalizeMutationReceipt({
-      scope: "warehouses.primary.section.replace",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+    snapshotKey: "warehouse",
+    message: "Warehouse changed before section save completed. Refresh and try again.",
+  },
+  useCase: ({ input, access, params }) => updateWarehouseUseCase(params.id, input, access.user.email),
+  telemetry: ({ params }) => ({
+    action: "warehouses.primary.section.replace",
+    message: "Warehouse primary section replaced",
+    entityType: "flooringWarehouse",
+    entityId: params.id,
+  }),
+  status: 200,
+  buildResponseBody: ({ result }) => ({ warehouse: result }),
+})

@@ -3,97 +3,51 @@ import {
   saveImportStagedInventorySectionUseCase,
 } from "@builders/application"
 import { getImportById, getImportDetailById } from "@builders/db"
-import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
-import {
-  applyRoutePolicy,
-  assertExpectedUpdatedAt,
-  enforceMutationReceipt,
-  finalizeMutationReceipt,
-  parseMutationEnvelope,
-} from "@/server/http/route-policy"
-import { routeError, routeJson } from "@/server/http/route-helpers"
+import { createMutationRoute } from "@/server/http/run-mutation"
 import { validateImportStagedInventorySectionDiffBody } from "../../../_validators"
 
-type RouteContext = {
-  params: Promise<{ id: string }>
-}
-
-export async function PATCH(request: Request, context: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    rateLimit: {
-      ...CRUD_UPDATE_SECTION,
-      scope: "imports.staged-inventory.section.replace",
-      route: "/api/imports/[id]/staged-inventory/section",
+export const PATCH = createMutationRoute({
+  scope: "imports.staged-inventory.section.replace",
+  route: "/api/imports/[id]/staged-inventory/section",
+  rateLimit: CRUD_UPDATE_SECTION,
+  parseParams: async (raw) => raw as { id: string },
+  parseInput: validateImportStagedInventorySectionDiffBody,
+  concurrency: {
+    loadSnapshot: async ({ params }) => {
+      const snapshot = await getImportById(params.id)
+      if (!snapshot) {
+        throw new ImportExecutionError({
+          code: "IMPORT_NOT_FOUND",
+          message: "Import not found.",
+          status: 404,
+        })
+      }
+      return snapshot
     },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id } = await context.params
-    const body = (await request.json()) as Record<string, unknown>
-    const { input: diff, mutation } = parseMutationEnvelope(
-      body,
-      validateImportStagedInventorySectionDiffBody,
-      { requireExpectedUpdatedAt: true },
-    )
-
-    const currentSnapshot = await getImportById(id)
-    if (!currentSnapshot) {
-      throw new ImportExecutionError({
-        code: "IMPORT_NOT_FOUND",
-        message: "Import not found.",
-        status: 404,
-      })
-    }
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { import: currentSnapshot },
-      message: "Import changed before save completed. Refresh and try again.",
-    })
-
-    const receipt = await enforceMutationReceipt({
-      scope: "imports.staged-inventory.section.replace",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) return receipt.replay
-
-    const result = await withMutationTelemetry(
-      access,
-      {
-        message: "Import staged-inventory section replaced",
-        action: "imports.staged-inventory.section.replace",
-        route: "/api/imports/[id]/staged-inventory/section",
-        entityType: "flooringImportEntry",
-        entityId: id,
-      },
-      () => saveImportStagedInventorySectionUseCase({ importEntryId: id, diff }, access.user.email),
-    )
-
-    // Refresh parent detail post-save so the controller can reconcile the
-    // import's `updatedAt` (and any other denormalized fields) alongside
-    // the section's own results.
-    const detail = await getImportDetailById(id)
-    const responseBody = {
+    snapshotKey: "import",
+    message: "Import changed before save completed. Refresh and try again.",
+  },
+  useCase: ({ input, access, params }) =>
+    saveImportStagedInventorySectionUseCase({ importEntryId: params.id, diff: input }, access.user.email),
+  telemetry: ({ params }) => ({
+    action: "imports.staged-inventory.section.replace",
+    message: "Import staged-inventory section replaced",
+    entityType: "flooringImportEntry",
+    entityId: params.id,
+  }),
+  status: 200,
+  // Refresh parent detail post-save so the controller can reconcile the
+  // import's `updatedAt` (and any other denormalized fields) alongside
+  // the section's own results.
+  buildResponseBody: async ({ result, params }) => {
+    const detail = await getImportDetailById(params.id)
+    return {
       import: detail,
       filterRows: result.filterRows,
       stagedRows: result.stagedRows,
       filterTempIdMap: result.filterTempIdMap,
       rowTempIdMap: result.rowTempIdMap,
     }
-    await finalizeMutationReceipt({
-      scope: "imports.staged-inventory.section.replace",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+  },
+})
