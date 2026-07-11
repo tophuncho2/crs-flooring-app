@@ -1,25 +1,11 @@
 import { listUsersUseCase } from "@builders/application"
-import { enforceManageUsersAccess } from "@/server/auth/route-auth"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
+import { USER_MANAGEMENT_MIN_RANK } from "@builders/domain"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validateListUsersQuery } from "./_validators"
 
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const forbidden = enforceManageUsersAccess(access)
-  if (forbidden) return forbidden
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/users")
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validateListUsersQuery(url.searchParams)
-    const result = await listUsersUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const GET = createQueryRoute({
+  route: "/api/users",
+  minRank: USER_MANAGEMENT_MIN_RANK,
+  parseInput: (searchParams) => validateListUsersQuery(searchParams),
+  useCase: ({ input }) => listUsersUseCase(input),
+})

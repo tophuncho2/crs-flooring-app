@@ -1,21 +1,9 @@
 import { listCategoriesUseCase } from "@builders/application"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validateListCategoriesQuery } from "./_validators"
 
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/categories")
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validateListCategoriesQuery(url.searchParams)
-    const result = await listCategoriesUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const GET = createQueryRoute({
+  route: "/api/categories",
+  parseInput: (searchParams) => validateListCategoriesQuery(searchParams),
+  useCase: ({ input }) => listCategoriesUseCase(input),
+})

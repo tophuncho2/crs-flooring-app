@@ -1,6 +1,5 @@
 import { searchWorkOrderOptionsUseCase } from "@builders/application"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validateWorkOrderOptionsSearchQuery } from "../../_validators"
 
 /**
@@ -12,23 +11,8 @@ import { validateWorkOrderOptionsSearchQuery } from "../../_validators"
  * status (completed included). An optional `productId` filter still narrows
  * to WOs carrying that product when supplied.
  */
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(
-    request,
-    access,
-    "/api/work-orders/options/search",
-  )
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validateWorkOrderOptionsSearchQuery(url.searchParams)
-    const result = await searchWorkOrderOptionsUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const GET = createQueryRoute({
+  route: "/api/work-orders/options/search",
+  parseInput: (searchParams) => validateWorkOrderOptionsSearchQuery(searchParams),
+  useCase: ({ input }) => searchWorkOrderOptionsUseCase(input),
+})

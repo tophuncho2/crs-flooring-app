@@ -1,24 +1,9 @@
 import { searchTemplateOptionsUseCase } from "@builders/application"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  enforceQueryRateLimit,
-} from "@/server/http/route-policy"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validateTemplateOptionsQuery } from "../_validators"
 
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/templates/options")
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validateTemplateOptionsQuery(url.searchParams)
-    const result = await searchTemplateOptionsUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const GET = createQueryRoute({
+  route: "/api/templates/options",
+  parseInput: (searchParams) => validateTemplateOptionsQuery(searchParams),
+  useCase: ({ input }) => searchTemplateOptionsUseCase(input),
+})

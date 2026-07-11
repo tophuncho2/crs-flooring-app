@@ -1,24 +1,9 @@
 import { searchPropertyOptionsUseCase } from "@builders/application"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import {
-  applyRoutePolicy,
-  enforceQueryRateLimit,
-} from "@/server/http/route-policy"
+import { createQueryRoute } from "@/server/http/run-query"
 import { validatePropertyOptionsQuery } from "../_validators"
 
-export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/properties/options")
-  if (rateLimited) return rateLimited
-
-  try {
-    const url = new URL(request.url)
-    const input = validatePropertyOptionsQuery(url.searchParams)
-    const result = await searchPropertyOptionsUseCase(input)
-    return routeJson(access, result)
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
+export const GET = createQueryRoute({
+  route: "/api/properties/options",
+  parseInput: (searchParams) => validatePropertyOptionsQuery(searchParams),
+  useCase: ({ input }) => searchPropertyOptionsUseCase(input),
+})
