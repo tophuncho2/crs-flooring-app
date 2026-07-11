@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../../shared/date-format.js"
 import type { WorkOrderMaterialItemRow } from "./types.js"
 
 type WorkOrderMaterialItemInput = {
@@ -27,7 +28,7 @@ export function normalizeWorkOrderMaterialItem(
     unitName: item.unit?.name ?? "",
     unitAbbrev: item.unit?.abbreviation ?? "",
     notes: item.notes ?? "",
-    createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
+    createdAt: toIsoTimestamp(item.createdAt),
     createdBy: item.createdBy ?? null,
     updatedBy: item.updatedBy ?? null,
   }

@@ -27,8 +27,6 @@ export type WorkOrderPrintPreset = "pickingTicket" | "slip" | "planFile"
  */
 export const WORK_ORDER_DOCUMENT_LABELS = ["Picking Ticket", "Work Order"] as const
 
-export type WorkOrderDocumentLabel = (typeof WORK_ORDER_DOCUMENT_LABELS)[number]
-
 function allTopFieldsVisible(): WorkOrderTopFieldVisibility {
   return Object.fromEntries(
     WORK_ORDER_TOP_FIELD_KEYS.map((key) => [key, true]),

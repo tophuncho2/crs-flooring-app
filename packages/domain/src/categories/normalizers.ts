@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import type { Category, CategoryListRow } from "./types.js"
 
 type CategoryListRowInput = {
@@ -24,8 +25,8 @@ export function normalizeCategoryDetail(category: CategoryDetailInput): Category
     id: category.id,
     name: category.name,
     createdAt:
-      category.createdAt instanceof Date ? category.createdAt.toISOString() : category.createdAt,
+      toIsoTimestamp(category.createdAt),
     updatedAt:
-      category.updatedAt instanceof Date ? category.updatedAt.toISOString() : category.updatedAt,
+      toIsoTimestamp(category.updatedAt),
   }
 }

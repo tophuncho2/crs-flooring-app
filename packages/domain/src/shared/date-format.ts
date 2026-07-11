@@ -84,3 +84,14 @@ export function toDateInputValue(value: string | Date | null | undefined): strin
   const day = String(date.getUTCDate()).padStart(2, "0")
   return `${year}-${month}-${day}`
 }
+
+/**
+ * Projects a stored timestamp/date value into an ISO-8601 string for a record
+ * DTO: a `Date` (Prisma column) is serialized via toISOString(); an already-ISO
+ * string passes through; null/undefined collapse to "". The single source of
+ * truth behind every normalizer's date→string projection.
+ */
+export function toIsoTimestamp(value: Date | string | null | undefined): string {
+  if (value == null) return ""
+  return value instanceof Date ? value.toISOString() : value
+}

@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import { normalizeMoneyAmount } from "../shared/money.js"
 import { normalizePhoneNumber } from "../shared/phone.js"
 import type { PaletteColor } from "../shared/palette.js"
@@ -31,11 +32,6 @@ type PaymentInput = {
   updatedBy: string | null
 }
 
-function toIso(value: Date | string | null): string {
-  if (value == null) return ""
-  return value instanceof Date ? value.toISOString() : value
-}
-
 export function normalizePayment(payment: PaymentInput): Payment {
   return {
     id: payment.id,
@@ -50,15 +46,15 @@ export function normalizePayment(payment: PaymentInput): Payment {
     storeAddress: payment.storeAddress ?? "",
     storeNumber: payment.storeNumber ?? "",
     internalNotes: payment.internalNotes ?? "",
-    paymentDate: toIso(payment.paymentDate),
+    paymentDate: toIsoTimestamp(payment.paymentDate),
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,
     entityName: payment.entityName ?? null,
     workOrderNumber: payment.workOrderNumber ?? null,
     workOrderLabel: payment.workOrderLabel ?? null,
     entityTypes: payment.entityTypes ?? [],
-    createdAt: toIso(payment.createdAt),
-    updatedAt: toIso(payment.updatedAt),
+    createdAt: toIsoTimestamp(payment.createdAt),
+    updatedAt: toIsoTimestamp(payment.updatedAt),
     createdBy: payment.createdBy,
     updatedBy: payment.updatedBy,
   }

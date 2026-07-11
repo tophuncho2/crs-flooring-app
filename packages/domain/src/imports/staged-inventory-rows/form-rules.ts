@@ -55,7 +55,7 @@ export function validateStagedInventoryForm(
   return issues
 }
 
-export function describeStagedInventoryValidationIssue(
+function describeStagedInventoryValidationIssue(
   issue: StagedInventoryValidationIssue,
 ): string {
   switch (issue.code) {

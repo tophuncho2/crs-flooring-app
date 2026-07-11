@@ -41,13 +41,6 @@ export function buildProductDeleteBlockedMessage(counts: ProductDeleteCounts): s
 }
 
 /**
- * True if two product names would collide under the case-insensitive uniqueness rule.
- */
-export function isProductNameConflict(a: string, b: string): boolean {
-  return a.trim().toLowerCase() === b.trim().toLowerCase()
-}
-
-/**
  * Client-side pre-submit validation of the primary section form.
  * Returns an empty string when valid, or a user-readable error message.
  *

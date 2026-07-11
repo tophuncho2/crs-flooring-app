@@ -4,12 +4,6 @@
 
 import type { IndicatorStockStatus } from "./status.js"
 
-export type IndicatorRowUnit = {
-  id: string
-  name: string
-  abbreviation: string
-}
-
 export type InventoryIndicatorRow = {
   id: string
   // Canonical human-facing record number ("IND-1"), sequence-backed + generated
@@ -58,8 +52,6 @@ export type InventoryIndicatorNeighbors = {
   nextIndicator: InventoryIndicatorNeighbor | null
 }
 
-export type InventoryIndicatorDetail = InventoryIndicatorRow & InventoryIndicatorNeighbors
-
 export type InventoryIndicatorPage = {
   rows: InventoryIndicatorRow[]
   hasMore: boolean
@@ -91,16 +83,6 @@ export const EMPTY_INDICATOR_CREATE_FORM: InventoryIndicatorCreateForm = {
   lowStockThreshold: "",
   internalNotes: "",
   isActive: true,
-}
-
-export function toInventoryIndicatorUpdateForm(
-  row: InventoryIndicatorRow,
-): InventoryIndicatorUpdateForm {
-  return {
-    lowStockThreshold: row.lowStockThreshold,
-    internalNotes: row.internalNotes,
-    isActive: row.isActive,
-  }
 }
 
 /**

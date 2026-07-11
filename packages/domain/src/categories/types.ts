@@ -1,8 +1,3 @@
-export type CategoryMeta = {
-  id: string
-  name: string
-}
-
 // Slim option shape consumed by the canonical CategoryPicker (server-side
 // search). Name-only — the picker renders no subtitle line.
 export type CategoryOption = {

@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../../shared/date-format.js"
 import { normalizeMoneyAmount } from "../../shared/money.js"
 import type { FlooringPaymentDirection } from "../../payments/types.js"
 import type { PaletteColor } from "../../shared/palette.js"
@@ -21,11 +22,6 @@ type TemplatePlannedPaymentInput = {
   updatedBy: string | null
 }
 
-function toIso(value: Date | string | null): string {
-  if (value == null) return ""
-  return value instanceof Date ? value.toISOString() : value
-}
-
 export function normalizeTemplatePlannedPayment(
   item: TemplatePlannedPaymentInput,
 ): TemplatePlannedPaymentRow {
@@ -43,8 +39,8 @@ export function normalizeTemplatePlannedPayment(
     // (mirrors the planned-product product/unit flatten).
     entityName: item.entity?.entity ?? null,
     entityTypes: (item.entity?.entityTypes ?? []).map((link) => link.entityType),
-    createdAt: toIso(item.createdAt),
-    updatedAt: toIso(item.updatedAt),
+    createdAt: toIsoTimestamp(item.createdAt),
+    updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,
     updatedBy: item.updatedBy ?? null,
   }

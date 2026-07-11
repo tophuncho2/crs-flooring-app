@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import type { EntityType, EntityTypeOption } from "./types.js"
 import type { PaletteColor } from "../shared/palette.js"
 
@@ -19,9 +20,9 @@ export function normalizeEntityType(entityType: EntityTypeInput): EntityType {
     type: entityType.type,
     color: entityType.color,
     createdAt:
-      entityType.createdAt instanceof Date ? entityType.createdAt.toISOString() : entityType.createdAt,
+      toIsoTimestamp(entityType.createdAt),
     updatedAt:
-      entityType.updatedAt instanceof Date ? entityType.updatedAt.toISOString() : entityType.updatedAt,
+      toIsoTimestamp(entityType.updatedAt),
     createdBy: entityType.createdBy,
     updatedBy: entityType.updatedBy,
   }

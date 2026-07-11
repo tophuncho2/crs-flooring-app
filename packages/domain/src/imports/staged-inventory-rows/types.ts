@@ -40,27 +40,3 @@ export type StagedInventoryForm = {
   freight: string
   note: string
 }
-
-export const EMPTY_STAGED_INVENTORY_FORM: StagedInventoryForm = {
-  unitId: "",
-  rollNumber: "",
-  dyeLot: "",
-  location: "",
-  startingStock: "",
-  cost: "",
-  freight: "",
-  note: "",
-}
-
-export function toStagedInventoryForm(row: StagedInventoryRow): StagedInventoryForm {
-  return {
-    unitId: row.unitId,
-    rollNumber: row.rollNumber,
-    dyeLot: row.dyeLot,
-    location: row.location,
-    startingStock: row.startingStock,
-    cost: row.cost,
-    freight: row.freight,
-    note: row.note,
-  }
-}

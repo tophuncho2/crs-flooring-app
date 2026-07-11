@@ -38,10 +38,3 @@ export type TemplatePlannedPaymentForm = {
   // entityName/entityTypes are read-only hydration and never enter the form.
   entityId: string | null
 }
-
-export const EMPTY_TEMPLATE_PLANNED_PAYMENT_FORM: TemplatePlannedPaymentForm = {
-  amount: "",
-  direction: "REVENUE",
-  notes: "",
-  entityId: null,
-}

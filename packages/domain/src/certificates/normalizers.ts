@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import { computeCertificateStatus } from "./status.js"
 import type {
   CertificateDetailRecord,
@@ -28,36 +29,27 @@ type CertificateInput = {
   files?: CertificateFileInput[]
 }
 
-function toExpirationString(value: Date | string | null): string {
-  if (value === null || value === "") return ""
-  return value instanceof Date ? value.toISOString() : value
-}
-
-function toIsoString(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value
-}
-
 export function normalizeCertificateFile(file: CertificateFileInput): CertificateFileRecord {
   return {
     id: file.id,
     fileName: file.fileName,
     contentType: file.contentType,
     sizeBytes: file.sizeBytes,
-    createdAt: toIsoString(file.createdAt),
+    createdAt: toIsoTimestamp(file.createdAt),
     createdBy: file.createdBy,
   }
 }
 
 export function normalizeCertificate(certificate: CertificateInput): CertificateDetailRecord {
-  const expirationDate = toExpirationString(certificate.expirationDate)
+  const expirationDate = toIsoTimestamp(certificate.expirationDate)
   return {
     id: certificate.id,
     name: certificate.name,
     expirationDate,
     internalNotes: certificate.internalNotes ?? "",
     status: computeCertificateStatus(expirationDate),
-    createdAt: toIsoString(certificate.createdAt),
-    updatedAt: toIsoString(certificate.updatedAt),
+    createdAt: toIsoTimestamp(certificate.createdAt),
+    updatedAt: toIsoTimestamp(certificate.updatedAt),
     createdBy: certificate.createdBy,
     updatedBy: certificate.updatedBy,
     entity: certificate.entity,

@@ -28,7 +28,7 @@ export function validateStagedInventoryFilterForm(
   return issues
 }
 
-export function describeStagedInventoryFilterValidationIssue(
+function describeStagedInventoryFilterValidationIssue(
   issue: StagedInventoryFilterValidationIssue,
 ): string {
   switch (issue.code) {

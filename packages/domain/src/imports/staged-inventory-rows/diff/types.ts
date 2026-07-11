@@ -43,7 +43,7 @@ export type StagedInventoryRowDiffValidationIssue =
       status: FlooringStagedRowStatus
     }
 
-export function describeStagedInventoryRowDiffIssue(
+function describeStagedInventoryRowDiffIssue(
   issue: StagedInventoryRowDiffValidationIssue,
 ): string {
   switch (issue.code) {

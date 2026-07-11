@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import { buildAddressLine } from "../shared/address/index.js"
 import { normalizePhoneNumber } from "../shared/phone.js"
 import type { PaletteColor } from "../shared/palette.js"
@@ -76,8 +77,8 @@ export function normalizeProperty(
   return {
     id: property.id,
     propertyNumber: property.propertyNumber,
-    createdAt: property.createdAt instanceof Date ? property.createdAt.toISOString() : property.createdAt,
-    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
+    createdAt: toIsoTimestamp(property.createdAt),
+    updatedAt: toIsoTimestamp(property.updatedAt),
     name: property.name,
     streetAddress: property.streetAddress ?? "",
     city: property.city ?? "",
@@ -100,8 +101,8 @@ export function normalizePropertyListRow(property: PropertyListRowInput): Proper
   return {
     id: property.id,
     propertyNumber: property.propertyNumber,
-    createdAt: property.createdAt instanceof Date ? property.createdAt.toISOString() : property.createdAt,
-    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
+    createdAt: toIsoTimestamp(property.createdAt),
+    updatedAt: toIsoTimestamp(property.updatedAt),
     name: property.name,
     streetAddress: property.streetAddress ?? "",
     city: property.city ?? "",

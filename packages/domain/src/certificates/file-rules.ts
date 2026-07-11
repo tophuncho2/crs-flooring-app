@@ -17,8 +17,6 @@ export const CERTIFICATE_FILE_ALLOWED_CONTENT_TYPES = [
   "image/webp",
 ] as const
 
-export type CertificateFileContentType = (typeof CERTIFICATE_FILE_ALLOWED_CONTENT_TYPES)[number]
-
 export function isAllowedCertificateFileContentType(contentType: string): boolean {
   return (CERTIFICATE_FILE_ALLOWED_CONTENT_TYPES as readonly string[]).includes(contentType)
 }

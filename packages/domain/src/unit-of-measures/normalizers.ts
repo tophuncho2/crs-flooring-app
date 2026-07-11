@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import type { UnitOfMeasure, UnitOfMeasureListRow } from "./types.js"
 
 type UnitOfMeasureListRowInput = {
@@ -14,7 +15,7 @@ export function normalizeUnitOfMeasureListRow(
     id: unit.id,
     name: unit.name,
     abbreviation: unit.abbreviation,
-    createdAt: unit.createdAt instanceof Date ? unit.createdAt.toISOString() : unit.createdAt,
+    createdAt: toIsoTimestamp(unit.createdAt),
   }
 }
 
@@ -31,7 +32,7 @@ export function normalizeUnitOfMeasureDetail(unit: UnitOfMeasureDetailInput): Un
     id: unit.id,
     name: unit.name,
     abbreviation: unit.abbreviation,
-    createdAt: unit.createdAt instanceof Date ? unit.createdAt.toISOString() : unit.createdAt,
-    updatedAt: unit.updatedAt instanceof Date ? unit.updatedAt.toISOString() : unit.updatedAt,
+    createdAt: toIsoTimestamp(unit.createdAt),
+    updatedAt: toIsoTimestamp(unit.updatedAt),
   }
 }

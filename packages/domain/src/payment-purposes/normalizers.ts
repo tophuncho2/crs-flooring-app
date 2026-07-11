@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import type { PaymentPurpose, PaymentPurposeOption } from "./types.js"
 import type { PaletteColor } from "../shared/palette.js"
 
@@ -18,14 +19,8 @@ export function normalizePaymentPurpose(paymentPurpose: PaymentPurposeInput): Pa
     paymentPurposeNumber: paymentPurpose.paymentPurposeNumber,
     name: paymentPurpose.name,
     color: paymentPurpose.color,
-    createdAt:
-      paymentPurpose.createdAt instanceof Date
-        ? paymentPurpose.createdAt.toISOString()
-        : paymentPurpose.createdAt,
-    updatedAt:
-      paymentPurpose.updatedAt instanceof Date
-        ? paymentPurpose.updatedAt.toISOString()
-        : paymentPurpose.updatedAt,
+    createdAt: toIsoTimestamp(paymentPurpose.createdAt),
+    updatedAt: toIsoTimestamp(paymentPurpose.updatedAt),
     createdBy: paymentPurpose.createdBy,
     updatedBy: paymentPurpose.updatedBy,
   }

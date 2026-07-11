@@ -14,10 +14,6 @@ export function calculateLineTotal(input: LineTotalInput) {
   return toNumber(input.quantity) * toNumber(input.unitPrice)
 }
 
-export function formatLineTotal(input: LineTotalInput) {
-  return `$${calculateLineTotal(input).toFixed(2)}`
-}
-
 export function formatCurrencyValue(value: string | number) {
   return formatMoney(value)
 }

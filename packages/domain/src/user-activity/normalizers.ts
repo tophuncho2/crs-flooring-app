@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import type { UserLoginActivityListRow } from "./types.js"
 
 type UserLoginActivityInput = {
@@ -12,6 +13,6 @@ export function normalizeUserLoginActivityListRow(
   return {
     id: row.id,
     userEmail: row.userEmail,
-    loggedInAt: row.loggedInAt instanceof Date ? row.loggedInAt.toISOString() : row.loggedInAt,
+    loggedInAt: toIsoTimestamp(row.loggedInAt),
   }
 }

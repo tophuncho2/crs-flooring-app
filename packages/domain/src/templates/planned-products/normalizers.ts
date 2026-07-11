@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../../shared/date-format.js"
 import { normalizeMoneyAmount } from "../../shared/money.js"
 import { computePlannedProductSubtotal, normalizeMarginPercent } from "./math.js"
 import type { TemplatePlannedProductRow } from "./types.js"
@@ -44,8 +45,8 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     estimatedGrossProfitMargin,
     // Derived from the live cost + margin — the single source of truth in math.ts.
     subtotal: computePlannedProductSubtotal({ quantity, cost: productCost, margin: estimatedGrossProfitMargin }),
-    createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
-    updatedAt: item.updatedAt instanceof Date ? item.updatedAt.toISOString() : item.updatedAt,
+    createdAt: toIsoTimestamp(item.createdAt),
+    updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,
     updatedBy: item.updatedBy ?? null,
   }

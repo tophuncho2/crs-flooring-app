@@ -43,11 +43,3 @@ export type TemplatePlannedProductForm = {
   // boundaries. The only new persisted field (cost + subtotal are not stored).
   estimatedGrossProfitMargin: string
 }
-
-export const EMPTY_TEMPLATE_PLANNED_PRODUCT_FORM: TemplatePlannedProductForm = {
-  productId: "",
-  unitId: "",
-  quantity: "",
-  notes: "",
-  estimatedGrossProfitMargin: "",
-}

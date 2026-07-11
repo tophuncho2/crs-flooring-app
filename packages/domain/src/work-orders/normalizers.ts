@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import type { PaletteColor } from "../shared/palette.js"
 import type {
   WorkOrderDetail,
@@ -56,12 +57,6 @@ type WorkOrderDetailInput = WorkOrderListInput & {
   } | null
 }
 
-function toIsoDate(value: Date | string | null): string {
-  if (value === null) return ""
-  if (value instanceof Date) return value.toISOString()
-  return value
-}
-
 export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOrderListRow {
   return {
     id: workOrder.id,
@@ -80,7 +75,7 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     unitType: workOrder.unitType ?? "",
     vacancy: workOrder.vacancy,
     timeOfDay: workOrder.timeOfDay,
-    scheduledFor: toIsoDate(workOrder.scheduledFor),
+    scheduledFor: toIsoTimestamp(workOrder.scheduledFor),
     customerName: workOrder.customerName ?? "",
     description: workOrder.description ?? "",
     installer: workOrder.installer ?? "",
@@ -89,8 +84,8 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     state: workOrder.state ?? "",
     zip: workOrder.postalCode ?? "",
     purchaseOrderNumber: workOrder.purchaseOrderNumber ?? "",
-    createdAt: toIsoDate(workOrder.createdAt),
-    updatedAt: toIsoDate(workOrder.updatedAt),
+    createdAt: toIsoTimestamp(workOrder.createdAt),
+    updatedAt: toIsoTimestamp(workOrder.updatedAt),
     createdBy: workOrder.createdBy ?? null,
     updatedBy: workOrder.updatedBy ?? null,
   }

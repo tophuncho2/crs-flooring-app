@@ -1,6 +1,6 @@
 import type { InventoryAdjustmentForm } from "../types.js"
 
-export type AdjustmentFormIssue =
+type AdjustmentFormIssue =
   | { code: "ADJUSTMENT_QUANTITY_REQUIRED" }
   | { code: "ADJUSTMENT_QUANTITY_INVALID"; value: string }
   | { code: "ADJUSTMENT_QUANTITY_NOT_POSITIVE"; value: string }
@@ -25,7 +25,7 @@ export function validateAdjustmentForm(
   return issues
 }
 
-export function describeAdjustmentFormIssue(issue: AdjustmentFormIssue): string {
+function describeAdjustmentFormIssue(issue: AdjustmentFormIssue): string {
   switch (issue.code) {
     case "ADJUSTMENT_QUANTITY_REQUIRED":
       return "Quantity is required."

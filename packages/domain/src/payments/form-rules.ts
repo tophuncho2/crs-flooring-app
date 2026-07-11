@@ -1,7 +1,7 @@
 import { isValidMoneyAmount } from "../shared/money.js"
 import type { PaymentForm } from "./types.js"
 
-export type PaymentFormIssue =
+type PaymentFormIssue =
   | { code: "PAYMENT_AMOUNT_REQUIRED" }
   | { code: "PAYMENT_AMOUNT_INVALID"; value: string }
   | { code: "PAYMENT_AMOUNT_NOT_POSITIVE"; value: string }
@@ -26,7 +26,7 @@ export function validatePaymentForm(input: PaymentForm): PaymentFormIssue[] {
   return issues
 }
 
-export function describePaymentFormIssue(issue: PaymentFormIssue): string {
+function describePaymentFormIssue(issue: PaymentFormIssue): string {
   switch (issue.code) {
     case "PAYMENT_AMOUNT_REQUIRED":
       return "Amount is required."

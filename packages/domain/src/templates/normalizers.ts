@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import type { PaletteColor } from "../shared/palette.js"
 import { normalizeTemplatePlannedProduct } from "./planned-products/normalizers.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
@@ -73,8 +74,8 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     warehouseId: template.warehouseId,
     warehouseName: template.warehouse?.name ?? "",
     plannedProductsCount: template._count.plannedProducts,
-    createdAt: template.createdAt instanceof Date ? template.createdAt.toISOString() : template.createdAt,
-    updatedAt: template.updatedAt instanceof Date ? template.updatedAt.toISOString() : template.updatedAt,
+    createdAt: toIsoTimestamp(template.createdAt),
+    updatedAt: toIsoTimestamp(template.updatedAt),
     createdBy: template.createdBy ?? null,
     updatedBy: template.updatedBy ?? null,
   }

@@ -38,10 +38,3 @@ export type WorkOrderPlannedPaymentForm = {
   // entityName/entityTypes are read-only hydration and never enter the form.
   entityId: string | null
 }
-
-export const EMPTY_WORK_ORDER_PLANNED_PAYMENT_FORM: WorkOrderPlannedPaymentForm = {
-  amount: "",
-  direction: "REVENUE",
-  notes: "",
-  entityId: null,
-}

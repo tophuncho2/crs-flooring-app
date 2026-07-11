@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from "../shared/date-format.js"
 import { buildAddressLine } from "../shared/address/index.js"
 import type { PaletteColor } from "../shared/palette.js"
 import { normalizePhoneNumber } from "../shared/phone.js"
@@ -79,8 +80,8 @@ export function normalizeEntity(
   return {
     id: entity.id,
     entityNumber: entity.entityNumber,
-    createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
-    updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
+    createdAt: toIsoTimestamp(entity.createdAt),
+    updatedAt: toIsoTimestamp(entity.updatedAt),
     createdBy: entity.createdBy,
     updatedBy: entity.updatedBy,
     entity: entity.entity,
@@ -103,8 +104,8 @@ export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRo
   return {
     id: entity.id,
     entityNumber: entity.entityNumber,
-    createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
-    updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
+    createdAt: toIsoTimestamp(entity.createdAt),
+    updatedAt: toIsoTimestamp(entity.updatedAt),
     createdBy: entity.createdBy,
     updatedBy: entity.updatedBy,
     entity: entity.entity,

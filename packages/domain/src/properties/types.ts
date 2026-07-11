@@ -86,9 +86,3 @@ export type PropertyPrimaryForm = {
   color: PaletteColor
   entityId: string
 }
-
-export type PropertyTemplateDraft = {
-  id: string
-  unitType: string
-  warehouseId: string
-}

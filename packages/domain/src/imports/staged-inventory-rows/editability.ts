@@ -74,16 +74,7 @@ export const STAGED_PARENT_OWNED_FIELDS = [
   "rollPrefix",
 ] as const
 
-export const STAGED_AUTO_FIELDS = [
-  "id",
-  "importEntryId",
-  "createdAt",
-  "updatedAt",
-] as const
-
 export type StagedUserEditableField = (typeof STAGED_USER_EDITABLE_FIELDS)[number]
-export type StagedParentOwnedField = (typeof STAGED_PARENT_OWNED_FIELDS)[number]
-export type StagedAutoField = (typeof STAGED_AUTO_FIELDS)[number]
 
 export function isStagedUserEditableField(field: string): field is StagedUserEditableField {
   return (STAGED_USER_EDITABLE_FIELDS as readonly string[]).includes(field)

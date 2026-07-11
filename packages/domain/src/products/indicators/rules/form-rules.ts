@@ -4,7 +4,7 @@ import type {
   InventoryIndicatorUpdateForm,
 } from "../types.js"
 
-export type IndicatorFormIssue =
+type IndicatorFormIssue =
   | { code: "INDICATOR_WAREHOUSE_REQUIRED" }
   | { code: "INDICATOR_UNIT_REQUIRED" }
   | { code: "INDICATOR_THRESHOLD_INVALID"; value: string }
@@ -41,7 +41,7 @@ export function validateIndicatorUpdateForm(
   return issues
 }
 
-export function describeIndicatorFormIssue(issue: IndicatorFormIssue): string {
+function describeIndicatorFormIssue(issue: IndicatorFormIssue): string {
   switch (issue.code) {
     case "INDICATOR_WAREHOUSE_REQUIRED":
       return "Warehouse is required."

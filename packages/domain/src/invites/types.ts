@@ -50,5 +50,3 @@ export const createInvitePayloadSchema = z.object({
   email: z.string().trim().email(),
   rank: z.enum(["DEVELOPER", "TIER_1", "TIER_2", "TIER_3"]),
 })
-
-export type CreateInvitePayload = z.infer<typeof createInvitePayloadSchema>

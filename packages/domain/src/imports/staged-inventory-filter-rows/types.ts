@@ -32,16 +32,6 @@ export const EMPTY_STAGED_INVENTORY_FILTER_FORM: StagedInventoryFilterForm = {
   stockOrdered: "",
 }
 
-export function toStagedInventoryFilterForm(
-  row: StagedInventoryFilterRow,
-): StagedInventoryFilterForm {
-  return {
-    productId: row.productId,
-    unitId: row.unitId,
-    stockOrdered: row.stockOrdered,
-  }
-}
-
 export function computeFilterRemainingStock(input: {
   stockOrdered: string
   childStartingStockSum: string
