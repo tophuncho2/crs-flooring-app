@@ -1,6 +1,16 @@
-import { canInviteRank, canManageUsers, USER_FORBIDDEN_RANK_MESSAGE, USER_NOT_AUTHORIZED_MESSAGE, USER_NOT_FOUND_MESSAGE, USER_SELF_DELETE_MESSAGE, } from "@builders/domain"
 import {
-  Prisma, deleteUserRecordById, getUserRecordById, withDatabaseTransaction } from "@builders/db"
+  canInviteRank,
+  canManageUsers,
+  USER_FORBIDDEN_RANK_MESSAGE,
+  USER_NOT_AUTHORIZED_MESSAGE,
+  USER_NOT_FOUND_MESSAGE,
+  USER_SELF_DELETE_MESSAGE,
+} from "@builders/domain"
+import {
+  deleteUserRecordById,
+  getUserRecordById,
+  withDatabaseTransaction,
+} from "@builders/db"
 import { isP2025 } from "../shared/prisma-errors.js"
 import { UserExecutionError } from "./errors.js"
 import type { UserActor } from "./types.js"
