@@ -14,9 +14,12 @@ This is an **editing** skill — it reads, plans tightly, then makes the change.
 A **client engine** is cross-module React orchestration + a view stack, packaged as **one self-contained top-level folder** at `apps/web/engines/<name>/`, imported everywhere as `@/engines/<name>` (the `@/* → ./*` alias in `apps/web/tsconfig.json` covers it — no tsconfig change to add one). Engines are **deployed primarily to `apps/web/modules/`** — a module's components/controllers consume the engine; the engine never reaches back.
 
 Current engines (verify against the tree each run — this list drifts):
-- **`record-view`** — record detail/create view stack: `adapters/ contracts/ client/ feedback/ forms/ panel/ sections/ shell/`.
-- **`list-view`** — list table + toolbar: `client/ table/ toolbar/ policies/`.
-- **`picker`** — dropdowns + cascade picker + hub picker chrome merged into one: `contracts/ controls/ client/ chrome/ cascade/`.
+- **`common`** — the shared base the other three sit on: `contracts/ controls/ badges/ headers/ feedback/ theme/` + `positioning/`, `popover-layer-stack`, and the shared cell/row atoms (`CellActionButton`, `RecordOpenButton`, `CellAddButton`, `RecordDeleteButton`). `picker`/`list-view`/`record-view` all depend inward on it.
+- **`picker`** — the selection surface (dropdowns + async-rich combos + entity cascade + filter chips): `contracts/ controls/ client/ async-option/ chrome/ combo/ filter/`.
+- **`list-view`** — list table + toolbar + server-list controllers: `client/ table/ toolbar/ shell/ policies/`.
+- **`record-view`** — record detail/create view stack (15 buckets): `adapters/ contracts/ client/ cells/ fields/ forms/ layout-grid/ grid/ panel/ sections/ shell/ feedback/ features/ dialogs/ composites/`.
+
+**Per-engine children.** A change scoped to ONE engine has its own child skill carrying that engine's detailed model + A–E playbook: **`/engine-picker`**, **`/engine-lv`** (list-view), **`/engine-rv`** (record-view). `/engine` owns the **cross-engine** concerns — migrating between engines, promoting/dissolving a sub-engine, moving an atom into or out of **`common`**, and any barrel discipline that spans engines. Reach for a child when the work lives inside one engine; reach for `/engine` when it crosses the boundary.
 
 ### Internal bucket convention
 
@@ -37,7 +40,8 @@ Every engine is organized into **buckets**, each re-exported from the engine's r
 
 The whole point of one folder per engine is that a problem triages instantly as **engine vs backend**. That only holds if the boundary holds:
 
-- **Depends outward only** on shared primitives: `@/components/*`, `@/types`, `@/transport`, `@/query-policies`, etc. Nothing those primitives own reaches back **into** the engine. (The one sanctioned inversion in the repo: `components/cells/dropdown-cell` composes `SelectDropdown` from `@/engines/picker`.)
+- **Depends outward only** on shared primitives: `@/components/*`, `@/engines/common`, `@/types`, `@/transport`, `@/query-policies`, etc. Nothing those primitives own reaches back **into** the engine. (The one sanctioned inversion in the repo: `components/cells/dropdown-cell` composes `SelectDropdown` from `@/engines/picker`.)
+- **Siblings never depend on each other.** `picker`/`list-view`/`record-view` may depend on `common` but not on one another. The two sanctioned shared seams: record-view child-grids reuse the list-view `DataTable`, and `useRecordSectionPagination` (`RECORD_VIEW_PAGE_SIZE=15`) physically lives in the `list-view` barrel but serves record-view sections. Treat both as shared seams, not cage breaks — and never duplicate them.
 - **Never imports from `apps/web/modules/*`.** When an engine needs module data, it's **data-injected** — the consumer supplies `pagedSearchFn` / `toOption` / `bucketKey` / etc. (cascade picker is the reference). This is what keeps an engine deployable to many modules.
 - **No re-export indirection.** Do NOT re-export engine symbols back out through `@/controllers` or `@/components`. That split-across-two-trees indirection is exactly the `modules/shared/engines` debt that was retired — one contained folder is the whole idea.
 - The boundary is **convention-only** today (no eslint `no-restricted-paths`). You are the enforcement.
@@ -73,7 +77,7 @@ State what you found in one tight block (engines present, target bucket layout, 
 
 ## Step 2 — Classify the intent and apply the playbook
 
-Match the user's ask to one of these. They compose — a migration often contains an extraction.
+Match the user's ask to one of these. They compose — a migration often contains an extraction. **If the whole intent lives inside one engine, hand it to that engine's child** (`/engine-picker`, `/engine-lv`, `/engine-rv`) — it carries the same A–E playbook with that engine's buckets, symbols, and seams already spelled out. Stay in `/engine` when the change crosses engines or touches `common`.
 
 ### A. Migrate a module onto an engine
 The module gets its detail/list view from the engine. Mirror the engine's canonical folder structure head-to-toe in the module, route to full pages, and build module-local pieces only where the engine genuinely falls short (per `record-view-migration-convention`). Repoint imports to `@/engines/<name>`; delete the bespoke view code the engine now owns.
@@ -132,7 +136,8 @@ Engines: <record-view, list-view, picker>   Target: <name> (<buckets>)   Consume
 
 - Act on the model in this file without re-reading the live `apps/web/engines/` tree first.
 - Leave a symbol split across `components/`/`controllers/` + the engine, or re-export engine code back out through `@/components`/`@/controllers`.
-- Let an engine import from `modules/*` (convert to data-injection) or let a consumer deep-import past the barrel.
+- Let an engine import from `modules/*` (convert to data-injection), let a consumer deep-import past the barrel, or let a sibling engine (`picker`/`list-view`/`record-view`) import another (they share only through `common`).
+- Re-derive a single engine's detailed model when the whole change lives inside it — hand to `/engine-picker`, `/engine-lv`, or `/engine-rv`; `/engine` keeps the cross-engine and `common` moves.
 - Add alignment tests or chase `modules/shared` doc leftovers mid-sweep (deferred polish).
 - Commit, or fold a schema change into a non-schema commit.
 - Multiple-choice the user through a change it can drive.

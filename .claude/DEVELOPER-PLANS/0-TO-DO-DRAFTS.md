@@ -4,6 +4,3 @@ This is a personal to-do list / scratchpad. It is **not** a file we reference ev
 
 ---
 
-- [ ] createdAt / updatedAt & createdBy / updatedBy / row# / color - for unswept modules
-- [ ] print view checkbox config
-- [ ] work orders new `address` column
