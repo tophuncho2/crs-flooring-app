@@ -27,7 +27,7 @@ Three checklists: every skill, every `CLAUDE.md`, and every other `.md` in the r
 - [ ] session-confirm
 - [ ] session-handoff
 - [ ] session-new
-- [ ] table-csv-export
+- [ ] export-csv-sync
 - [ ] whattests
 
 ## 2 · `CLAUDE.md` files

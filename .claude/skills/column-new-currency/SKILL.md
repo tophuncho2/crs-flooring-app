@@ -42,7 +42,7 @@ Decide all five in Step 1 — they each gate specific layers:
 
 1. **List-visible vs detail-only** — a field shown in the **list** OR exported to **CSV** must thread the **list** path (list select + list-input type + list normalizer + list-row type). A detail-only field (like `cost` on the planned-products section) touches only the **detail** select/type and stays out of the list select. Getting this wrong ships a blank column.
 2. **Exported in CSV** — if yes, add the manifest entry in `export-columns.ts` (and this forces list-visibility, per #1). Add a test — no existing test guards the manifest.
-3. **On the printed file / PDF** — usually **no** for internal cost fields; confirm and leave `file-generation/` untouched, stating the exclusion so it's intentional. If yes → **/wo-print-file**.
+3. **On the printed file / PDF** — usually **no** for internal cost fields; confirm and leave `file-generation/` untouched, stating the exclusion so it's intentional. If yes → **/export-pdf-sync**.
 4. **Editable** — almost always yes for a typed money field → it joins the `*Form` + `EMPTY_*_FORM`, the `validate*Form` money check, the record-view `MoneyCell`, **and** the client save-payload builders (see the trap). A read-only computed money value (a total) is a different animal — it's derived at read, has no form, and is out of this skill's "user types it" scope.
 5. **Downstream propagation** — **the money-specific call.** Does this amount flow into a mirror/sync/snapshot elsewhere (template→WO sync, an outbox payload, a printed total)? PART 1 deliberately **excluded** `cost` from `sync-template-to-work-order.ts` (that mapper enumerates fields explicitly and carries a `do not add cost here` comment). Decide propagation on purpose; a money value silently riding a spread into a downstream table is a bug waiting to happen.
 
@@ -170,7 +170,7 @@ Index + search bar for <field>: → /column-new-index
 - Store money as a float or use `toFixed` — the money standard is a fixed-scale-2 string via `normalizeMoneyAmount`; skip the normalize-on-read and every saved row reads falsely-dirty.
 - Add an `@@index`, a search bar, or a server-side filter for the new column — that's **/column-new-index**. Ships searchable-later.
 - Run migrations or `db:deploy` — it authors the SQL file; the user runs it.
-- Add a `createdBy`/`updatedBy` actor pair → **/column-actor**; a `createdAt`/`updatedAt` pair → **/column-timestamp**; a PaletteColor chip → **/column-color**; multi-column **sort** → **/column-sort**; a print-file column → **/wo-print-file**.
+- Add a `createdBy`/`updatedBy` actor pair → **/column-actor**; a `createdAt`/`updatedAt` pair → **/column-timestamp**; a PaletteColor chip → **/column-color**; multi-column **sort** → **/column-sort**; a print-file column → **/export-pdf-sync**.
 - Forget the client save-payload builders or the normalize-on-read line — the two traps this skill exists to prevent, both invisible to typecheck.
 - Carry the money value into a downstream sync/mirror without deciding it on purpose — the reference build deliberately excludes `cost` from the WO sync.
 - Add the field to the printed file/PDF unless the user asks.

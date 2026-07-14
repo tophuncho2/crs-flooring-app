@@ -317,7 +317,7 @@ Canonical gauntlet: `applyRoutePolicy` (auth+ratelimit), `enforceQueryRateLimit`
 - **S3 / file attachments** on certificates (the actual certificate PDFs).
 - **Sort UI** — the toolbar Sort tool. Plumbing is dormant-ready (allowlists + order-by builder);
   only the client Sort menu + `?sorts=` wiring remain. See `/column-sort`.
-- **CSV export** — no export manifest was built. See `/table-csv-export` if wanted.
+- **CSV export** — no export manifest was built. See `/export-csv-sync` if wanted.
 - **Row number / color** — no `CERT-` row# or palette color. See `/row-number`,
   `/column-color`.
 

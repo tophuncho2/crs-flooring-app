@@ -1,11 +1,11 @@
 ---
-name: wo-print-file
-description: Master of the work-order PRINT FILE — the browser-native print surface built from a pure domain HTML builder + a client checkbox configurator (NOT a server PDF). Owns the full stack across the file-generation domain dir → data read projection → configurator → print page → tests. Invoke to add or move a top-section field, add/adjust an adjustment or material column, tweak the print layout/CSS, extend the read projection, or audit an existing change for layer drift. Knows the config-driven single-source contract cold (one key list drives BOTH the checkbox AND the gated cell) and that print is client-side `window.print()` — the `@builders/pdf` package is orphaned, never wire into it. Editing skill, not read-only. Explicit-only — invoke on /wo-print-file.
+name: export-pdf-sync
+description: Master of the work-order PRINT FILE — the browser-native print surface built from a pure domain HTML builder + a client checkbox configurator (NOT a server PDF). Owns the full stack across the file-generation domain dir → data read projection → configurator → print page → tests. Invoke to add or move a top-section field, add/adjust an adjustment or material column, tweak the print layout/CSS, extend the read projection, or audit an existing change for layer drift. Knows the config-driven single-source contract cold (one key list drives BOTH the checkbox AND the gated cell) and that print is client-side `window.print()` — the `@builders/pdf` package is orphaned, never wire into it. Editing skill, not read-only. Explicit-only — invoke on /export-pdf-sync.
 ---
 
-# /wo-print-file
+# /export-pdf-sync
 
-`/wo-print-file <change>` makes you the owner of the **work-order print file** — the
+`/export-pdf-sync <change>` makes you the owner of the **work-order print file** — the
 on-demand document a user prints from the WO record panel or the list row ⋮ menu.
 Reach for it to add or move a top-section field (Date, Warehouse, Description, …),
 add/adjust an adjustments or requested-material column, retune the print layout, or
@@ -102,7 +102,7 @@ row must carry the SAME cell count as its data rows or the table shape breaks.
 - **Drive, don't multiple-choice.** Make the sound call and surface open questions in
   your response; only ask when the answer changes the work (e.g. a customer-facing
   sign convention).
-- **Explicit-only.** Trigger on the literal `/wo-print-file`. Not on "print the work
+- **Explicit-only.** Trigger on the literal `/export-pdf-sync`. Not on "print the work
   order", "fix the WO file", "work order pdf".
 
 ## Step 1 — Read the stack end-to-end
@@ -190,4 +190,4 @@ Tests     - <file> — <edit>
   - the **"Remaining" quantity** value (`wo-adjustments-remaining-value-pending`) —
     note that one lives on the on-screen record grid, NOT this print file.
 - Commit changes, or run migrations.
-- Trigger on anything but the literal `/wo-print-file` invocation.
+- Trigger on anything but the literal `/export-pdf-sync` invocation.
