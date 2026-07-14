@@ -43,6 +43,9 @@ const EMPTY_PRODUCT: ProductRecord = {
   cost: "",
   costUnitId: "",
   costUnit: null,
+  // No conversion formula until the user picks one.
+  conversionFormulaId: "",
+  conversionFormulaName: "",
   productNamingAddon: "",
   createdAt: "",
   updatedAt: "",

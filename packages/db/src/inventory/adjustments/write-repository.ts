@@ -52,6 +52,14 @@ export type InsertAdjustmentRowInput = {
   color?: PaletteColor
   unitSnapshot: AdjustmentUnitSnapshot
   /**
+   * Conversion trio stamped from the parent inventory at create (like the unit
+   * snapshot). Editable on the adjustment afterward; `null` when the parent has
+   * none set. convertedBalance stays derived on read.
+   */
+  coverageUnitId: string | null
+  coveragePerUnit: string | null
+  conversionFormulaId: string | null
+  /**
    * Identity snapshot from the parent inventory: the 5 underlying primitives
    * (`inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`, `inventoryNote`).
    * Stamped at insert and frozen — never re-stamped.
@@ -108,6 +116,9 @@ export async function insertAdjustmentRow(
       // Omitted → Prisma applies the column default (SLATE).
       ...(input.color !== undefined ? { color: input.color } : {}),
       unitId: input.unitSnapshot.unitId,
+      coverageUnitId: input.coverageUnitId,
+      coveragePerUnit: input.coveragePerUnit,
+      conversionFormulaId: input.conversionFormulaId,
       inventoryNumber: input.inventorySnapshot.inventoryNumber,
       rollPrefix: input.inventorySnapshot.rollPrefix,
       rollNumber: input.inventorySnapshot.rollNumber,
@@ -158,6 +169,13 @@ export type UpdateAdjustmentRowPatch = {
    */
   workOrderId?: string | null
   /**
+   * Conversion trio — editable on the adjustment. Written only when the patch
+   * carries the field; `null` clears it. convertedBalance stays derived on read.
+   */
+  coverageUnitId?: string | null
+  coveragePerUnit?: string | null
+  conversionFormulaId?: string | null
+  /**
    * Actor email of the editing user — stamped on every human edit, including a
    * metadata-only edit. Set unconditionally (the patch always carries it), so a
    * internalNotes/color/location-only save still records its editor.
@@ -205,6 +223,19 @@ export async function updateAdjustmentRow(
       input.patch.workOrderId === null
         ? { disconnect: true }
         : { connect: { id: input.patch.workOrderId } }
+  }
+  if (input.patch.coverageUnitId !== undefined) {
+    data.coverageUnit = input.patch.coverageUnitId
+      ? { connect: { id: input.patch.coverageUnitId } }
+      : { disconnect: true }
+  }
+  if (input.patch.coveragePerUnit !== undefined) {
+    data.coveragePerUnit = input.patch.coveragePerUnit
+  }
+  if (input.patch.conversionFormulaId !== undefined) {
+    data.conversionFormula = input.patch.conversionFormulaId
+      ? { connect: { id: input.patch.conversionFormulaId } }
+      : { disconnect: true }
   }
   // A human save always records its editor — set unconditionally so even a
   // metadata-only edit (internalNotes/color/location) stamps updatedBy. This also means

@@ -16,6 +16,10 @@ export type WriteStagedInventoryFilterRecordInput = {
   productId: string
   unitId: string | null
   stockOrdered: Prisma.Decimal | string | number | null
+  // Conversion trio — seeded from the product, re-seeded on product-change.
+  coverageUnitId: string | null
+  coveragePerUnit: Prisma.Decimal | string | number | null
+  conversionFormulaId: string | null
 }
 
 /**
@@ -40,6 +44,13 @@ export async function createStagedInventoryFilterRecord(
       importEntry: { connect: { id: importEntryId } },
       product: { connect: { id: input.productId } },
       ...(input.unitId ? { unit: { connect: { id: input.unitId } } } : {}),
+      ...(input.coverageUnitId
+        ? { coverageUnit: { connect: { id: input.coverageUnitId } } }
+        : {}),
+      coveragePerUnit: input.coveragePerUnit,
+      ...(input.conversionFormulaId
+        ? { conversionFormula: { connect: { id: input.conversionFormulaId } } }
+        : {}),
       stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
     },
     select: { id: true },
@@ -61,6 +72,15 @@ function buildUpdateData(
     unit:
       input.unitId && input.unitId.trim() !== ""
         ? { connect: { id: input.unitId } }
+        : { disconnect: true },
+    coverageUnit:
+      input.coverageUnitId && input.coverageUnitId.trim() !== ""
+        ? { connect: { id: input.coverageUnitId } }
+        : { disconnect: true },
+    coveragePerUnit: input.coveragePerUnit,
+    conversionFormula:
+      input.conversionFormulaId && input.conversionFormulaId.trim() !== ""
+        ? { connect: { id: input.conversionFormulaId } }
         : { disconnect: true },
     stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
   }

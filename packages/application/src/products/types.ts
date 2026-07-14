@@ -22,6 +22,9 @@ export type CreateProductInput = {
   // it's priced per. Optional and independent of each other and of `unitId`.
   cost: string | null
   costUnitId: string | null
+  // Conversion formula FK (UoM conversion feature). Optional — null clears it.
+  // Seeds inventory/adjustment/staged rows on product-select downstream.
+  conversionFormulaId: string | null
   productNamingAddon: string | null
 }
 

@@ -28,6 +28,18 @@ export type InventoryAdjustmentRow = {
   unitId?: string
   unitName: string | null
   unitAbbrev: string | null
+  // Conversion feature — stamped from the parent inventory at create, editable
+  // after. Optional to keep synthesized adjustment-row literals valid.
+  // `convertedBalance` (basis = `quantity`) + `conversionUnit*` derive on-read.
+  coverageUnitId?: string
+  coverageUnitName?: string
+  coverageUnitAbbrev?: string
+  coveragePerUnit?: string
+  conversionFormulaId?: string
+  conversionFormulaName?: string
+  convertedBalance?: string
+  conversionUnitName?: string
+  conversionUnitAbbrev?: string
   adjustmentType: FlooringInventoryAdjustmentType
   isWaste: boolean
   internalNotes: string
@@ -43,6 +55,13 @@ export type InventoryAdjustmentForm = {
   quantity: string
   isWaste: boolean
   internalNotes: string
+  // Conversion feature — editable on the adjustment edit form. Labels ride along
+  // for the picker triggers (display-only; ids + coveragePerUnit reach the server).
+  coverageUnitId: string
+  coverageUnitName: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
 }
 
 export type EnrichedInventoryAdjustmentRow = InventoryAdjustmentRow & {
@@ -106,6 +125,10 @@ export type InventoryAdjustmentParentContext = {
   unitId: string
   unitName: string | null
   unitAbbrev: string | null
+  // Parent inventory's conversion trio — stamped onto the adjustment at create.
+  coverageUnitId: string | null
+  coveragePerUnit: string | null
+  conversionFormulaId: string | null
   inventoryNumber: string | null
   rollPrefix: string | null
   rollNumber: string | null

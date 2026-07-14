@@ -125,10 +125,20 @@ export type ValidatedUpdateAdjustmentPatch = {
   location?: string | null
   area?: string | null
   link?: ValidatedUpdateAdjustmentLink
+  // Conversion trio — editable; "" clears the FK (use case → disconnect).
+  coverageUnitId?: string
+  coveragePerUnit?: string
+  conversionFormulaId?: string
 }
 
 export type ValidatedUpdateAdjustmentInput = {
   patch: ValidatedUpdateAdjustmentPatch
+}
+
+/** Coerce to a trimmed string, allowing "" (the FK-clear signal). */
+function requireAdjustmentStringAllowEmpty(value: unknown, field: string): string {
+  if (typeof value !== "string") failAdjustment(`${field} must be a string`, field)
+  return (value as string).trim()
 }
 
 function validateUpdateAdjustmentLink(value: unknown): ValidatedUpdateAdjustmentLink {
@@ -190,9 +200,23 @@ export function validateUpdateAdjustmentInput(
   if ("link" in patchBody) {
     patch.link = validateUpdateAdjustmentLink(patchBody.link)
   }
+  // Conversion trio — plain strings, "" allowed (clears the FK; the use case
+  // disconnects). requireString rejects "", so use the allow-empty coercion.
+  if ("coverageUnitId" in patchBody) {
+    patch.coverageUnitId = requireAdjustmentStringAllowEmpty(patchBody.coverageUnitId, "patch.coverageUnitId")
+  }
+  if ("coveragePerUnit" in patchBody) {
+    patch.coveragePerUnit = requireAdjustmentStringAllowEmpty(patchBody.coveragePerUnit, "patch.coveragePerUnit")
+  }
+  if ("conversionFormulaId" in patchBody) {
+    patch.conversionFormulaId = requireAdjustmentStringAllowEmpty(
+      patchBody.conversionFormulaId,
+      "patch.conversionFormulaId",
+    )
+  }
   if (Object.keys(patch).length === 0) {
     failAdjustment(
-      "Patch must contain at least one of quantity, adjustmentType, isWaste, internalNotes, color, location, area, or link",
+      "Patch must contain at least one of quantity, adjustmentType, isWaste, internalNotes, color, location, area, link, or a conversion field",
       "patch",
     )
   }

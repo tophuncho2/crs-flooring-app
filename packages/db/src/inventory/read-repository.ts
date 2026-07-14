@@ -19,6 +19,7 @@ import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
 import { normalizeEnrichedInventoryAdjustmentRow } from "./adjustments/read-repository.js"
+import { resolveConversion } from "./conversion.js"
 import {
   inventoryDetailSelect,
   inventoryRowSelect,
@@ -68,6 +69,16 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     startingStock: payload.startingStock.toString(),
     netDeducted: payload.netDeducted.toString(),
   })
+  const stockBalance = toInventoryFixedString(balanceNum)
+  const coveragePerUnit = toDecimalString(payload.coveragePerUnit)
+  // convertedStockBalance + the target-unit labels are DERIVED here (never
+  // stored) off the live stock balance and the linked formula.
+  const conversion = resolveConversion({
+    formula: payload.conversionFormula,
+    rowUnitId: payload.unitId,
+    coveragePerUnit,
+    balance: stockBalance,
+  })
 
   return {
     id: payload.id,
@@ -101,7 +112,16 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     cost: toDecimalString(payload.cost),
     freight: toDecimalString(payload.freight),
     netDeducted: toDecimalString(payload.netDeducted),
-    stockBalance: toInventoryFixedString(balanceNum),
+    stockBalance,
+    coverageUnitId: payload.coverageUnitId ?? "",
+    coverageUnitName: payload.coverageUnit?.name ?? "",
+    coverageUnitAbbrev: payload.coverageUnit?.abbreviation ?? "",
+    coveragePerUnit,
+    conversionFormulaId: payload.conversionFormulaId ?? "",
+    conversionFormulaName: conversion.conversionFormulaName,
+    convertedStockBalance: conversion.convertedBalance,
+    conversionUnitName: conversion.conversionUnitName,
+    conversionUnitAbbrev: conversion.conversionUnitAbbrev,
     isArchived: payload.isArchived,
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
@@ -719,6 +739,12 @@ export async function listInventoryOptions(
         // category's stock/send unit.
         unitId: true,
         unit: { select: { name: true, abbreviation: true } },
+        // Conversion seed source — copied onto the row on product-select.
+        coverageUnitId: true,
+        coverageUnit: { select: { name: true, abbreviation: true } },
+        coveragePerUnit: true,
+        conversionFormulaId: true,
+        conversionFormula: { select: { name: true } },
       },
       orderBy: { name: "asc" },
     }),
@@ -747,6 +773,12 @@ export async function listInventoryOptions(
       unitId: row.unitId,
       unitName: row.unit?.name ?? "",
       unitAbbrev: row.unit?.abbreviation ?? "",
+      coverageUnitId: row.coverageUnitId ?? "",
+      coverageUnitName: row.coverageUnit?.name ?? "",
+      coverageUnitAbbrev: row.coverageUnit?.abbreviation ?? "",
+      coveragePerUnit: toDecimalString(row.coveragePerUnit),
+      conversionFormulaId: row.conversionFormulaId ?? "",
+      conversionFormulaName: row.conversionFormula?.name ?? "",
     })),
     warehouses,
     categories,

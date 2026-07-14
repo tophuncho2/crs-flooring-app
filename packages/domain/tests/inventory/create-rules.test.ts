@@ -19,6 +19,9 @@ function edits(overrides: Partial<CreateInventoryEdits> = {}): CreateInventoryEd
     freight: "",
     location: "",
     internalNotes: "",
+    coverageUnitId: "",
+    coveragePerUnit: "",
+    conversionFormulaId: "",
     ...overrides,
   }
 }

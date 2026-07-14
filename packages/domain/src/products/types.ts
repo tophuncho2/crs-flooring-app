@@ -57,6 +57,12 @@ export type ProductRow = {
   // + resolved unit. Optional ("" / null until picked). Independent of `unitId`.
   costUnitId: string
   costUnit: ProductRowUnit | null
+  // Conversion feature: the formula this product converts stock with. Picked in
+  // the product form; seeded onto inventory/adjustment/staged rows on select.
+  // `conversionFormulaName` is the resolved label for the picker trigger ("" when
+  // unset). The converted balance itself is derived on the consuming rows.
+  conversionFormulaId: string
+  conversionFormulaName: string
   productNamingAddon: string
   createdAt: string
   updatedAt: string
@@ -94,6 +100,9 @@ export type ProductCreateForm = {
   // Editable on create AND update, independent of each other and of `unitId`.
   cost: string
   costUnitId: string
+  // Conversion formula FK (UoM conversion feature). Optional — "" clears it.
+  // Chosen via the formula picker; seeds inventory/adjustment/staged rows.
+  conversionFormulaId: string
   productNamingAddon: string
   // Non-semantic palette tag. Carried on the shared draft so the record-view
   // edit form can re-pick it; the create flow never renders a picker and the
@@ -129,6 +138,14 @@ export type ProductOption = {
   // row picker can seed a freshly-added (unsaved) row's live cost for pricing math
   // before the server re-resolves it off the product join on save.
   cost: string
+  // Conversion seed source — copied onto inventory/adjustment/staged rows on
+  // product-select (all editable there). Labels ride along for picker triggers.
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
 }
 
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
@@ -141,6 +158,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   coverageUnitId: "",
   cost: "",
   costUnitId: "",
+  conversionFormulaId: "",
   productNamingAddon: "",
   paletteColor: DEFAULT_PALETTE_COLOR,
 }
@@ -156,6 +174,7 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     coverageUnitId: row.coverageUnitId,
     cost: row.cost,
     costUnitId: row.costUnitId,
+    conversionFormulaId: row.conversionFormulaId,
     productNamingAddon: row.productNamingAddon,
     paletteColor: row.paletteColor,
   }

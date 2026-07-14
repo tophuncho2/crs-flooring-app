@@ -28,6 +28,10 @@ export type CreateStagedInventoryRecordInput = {
   cost: Prisma.Decimal | string | number | null
   freight: Prisma.Decimal | string | number | null
   note: string | null
+  // Conversion trio — seeded from the product, materialized forward by the worker.
+  coverageUnitId: string | null
+  coveragePerUnit: Prisma.Decimal | string | number | null
+  conversionFormulaId: string | null
 }
 
 /**
@@ -44,6 +48,10 @@ export type UpdateStagedInventoryRecordInput = {
   cost?: Prisma.Decimal | string | number | null
   freight?: Prisma.Decimal | string | number | null
   note?: string | null
+  // Conversion trio — editable in staging. "" / null disconnects the FKs.
+  coverageUnitId?: string | null
+  coveragePerUnit?: Prisma.Decimal | string | number | null
+  conversionFormulaId?: string | null
 }
 
 export async function createStagedInventoryRecord(
@@ -55,6 +63,13 @@ export async function createStagedInventoryRecord(
       importEntry: { connect: { id: input.importEntryId } },
       product: { connect: { id: input.productId } },
       ...(input.unitId ? { unit: { connect: { id: input.unitId } } } : {}),
+      ...(input.coverageUnitId
+        ? { coverageUnit: { connect: { id: input.coverageUnitId } } }
+        : {}),
+      coveragePerUnit: input.coveragePerUnit,
+      ...(input.conversionFormulaId
+        ? { conversionFormula: { connect: { id: input.conversionFormulaId } } }
+        : {}),
       rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
       location: input.location,
@@ -89,6 +104,19 @@ function buildUpdateData(
   if (input.cost !== undefined) data.cost = input.cost
   if (input.freight !== undefined) data.freight = input.freight
   if (input.note !== undefined) data.note = input.note
+  if (input.coverageUnitId !== undefined) {
+    data.coverageUnit =
+      input.coverageUnitId && input.coverageUnitId.trim() !== ""
+        ? { connect: { id: input.coverageUnitId } }
+        : { disconnect: true }
+  }
+  if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
+  if (input.conversionFormulaId !== undefined) {
+    data.conversionFormula =
+      input.conversionFormulaId && input.conversionFormulaId.trim() !== ""
+        ? { connect: { id: input.conversionFormulaId } }
+        : { disconnect: true }
+  }
   return data
 }
 

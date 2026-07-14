@@ -1,9 +1,17 @@
 "use client"
 
-import type { ProductOption, UnitOfMeasureOption, WarehouseOption } from "@builders/domain"
+import type {
+  ConversionFormulaOption,
+  ProductOption,
+  UnitOfMeasureOption,
+  WarehouseOption,
+} from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import type { InventoryCreateForm } from "@/modules/inventory/controllers/record/create/use-inventory-create-section"
 import {
+  ConversionFormulaPickerField,
+  CoveragePerUnitField,
+  CoverageUnitPickerField,
   DyeLotField,
   InternalNotesField,
   InventoryFieldGrid,
@@ -31,9 +39,13 @@ export function InventoryCreateFields({
   productLabel,
   warehouseLabel,
   unitLabel,
+  coverageUnitLabel,
+  conversionFormulaLabel,
   onProductSelected,
   onUnitSelected,
   onWarehouseSelected,
+  onCoverageUnitSelected,
+  onFormulaSelected,
 }: {
   form: InventoryCreateForm
   setField: <K extends keyof InventoryCreateForm>(
@@ -44,9 +56,13 @@ export function InventoryCreateFields({
   productLabel: string | null
   warehouseLabel: string | null
   unitLabel: string | null
+  coverageUnitLabel: string | null
+  conversionFormulaLabel: string | null
   onProductSelected: (option: ProductOption | null) => void
   onUnitSelected: (option: UnitOfMeasureOption | null) => void
   onWarehouseSelected: (option: WarehouseOption | null) => void
+  onCoverageUnitSelected: (option: UnitOfMeasureOption | null) => void
+  onFormulaSelected: (option: ConversionFormulaOption | null) => void
 }) {
   return (
     <InventoryFieldGrid>
@@ -126,6 +142,37 @@ export function InventoryCreateFields({
           editable={editable}
           value={form.internalNotes}
           onChange={(value) => setField("internalNotes", value)}
+        />
+      </CellAt>
+
+      {/* Conversion feature — Coverage / Unit + Coverage Unit paired, then the
+          formula picker and the read-only derived converted balance. */}
+      <CellAt col={1} row={9} colSpan={2}>
+        <CoveragePerUnitField
+          editable={editable}
+          value={form.coveragePerUnit}
+          onChange={(value) => setField("coveragePerUnit", value)}
+        />
+      </CellAt>
+      <CellAt col={3} row={9} colSpan={2}>
+        <CoverageUnitPickerField
+          value={form.coverageUnitId || null}
+          selectedLabel={coverageUnitLabel}
+          onChange={(id) => setField("coverageUnitId", id ?? "")}
+          onOptionSelected={onCoverageUnitSelected}
+          disabled={!editable}
+          placeholder="Select coverage unit"
+          ariaLabel="Select a coverage unit"
+        />
+      </CellAt>
+      <CellAt col={1} row={10} colSpan={4}>
+        <ConversionFormulaPickerField
+          value={form.conversionFormulaId || null}
+          selectedLabel={conversionFormulaLabel}
+          onChange={(id) => setField("conversionFormulaId", id ?? "")}
+          onOptionSelected={onFormulaSelected}
+          disabled={!editable}
+          ariaLabel="Select a conversion formula"
         />
       </CellAt>
     </InventoryFieldGrid>

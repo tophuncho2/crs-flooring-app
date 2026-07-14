@@ -345,6 +345,14 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
     input.internalNotes = optionalBoundedString(body.internalNotes, INVENTORY_INTERNAL_NOTES_MAX, "internalNotes")
   if (body.isArchived !== undefined) input.isArchived = requireBoolean(body.isArchived, "isArchived")
   if (body.color !== undefined) input.color = requireColor(body.color, "color", failInventory)
+  // Conversion trio — editable post-create (unlike the immutable unitId). Sent as
+  // strings; "" clears the FK. Existence is backstopped by the DB FK RESTRICT.
+  if (body.coverageUnitId !== undefined)
+    input.coverageUnitId = optionalString(body.coverageUnitId, "coverageUnitId")
+  if (body.coveragePerUnit !== undefined)
+    input.coveragePerUnit = optionalString(body.coveragePerUnit, "coveragePerUnit")
+  if (body.conversionFormulaId !== undefined)
+    input.conversionFormulaId = optionalString(body.conversionFormulaId, "conversionFormulaId")
   return input
 }
 
@@ -371,6 +379,11 @@ export function validateCreateInventoryInput(
     freight: optionalString(body.freight, "freight"),
     location: optionalString(body.location, "location"),
     internalNotes: optionalString(body.internalNotes, "internalNotes"),
+    // Conversion trio — seeded from the product on the form, editable. Coverage
+    // per unit is a plain decimal validated in the domain (COVERAGE_PER_UNIT_INVALID).
+    coverageUnitId: optionalString(body.coverageUnitId, "coverageUnitId"),
+    coveragePerUnit: optionalString(body.coveragePerUnit, "coveragePerUnit"),
+    conversionFormulaId: optionalString(body.conversionFormulaId, "conversionFormulaId"),
   }
 }
 

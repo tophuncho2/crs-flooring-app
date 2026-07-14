@@ -92,6 +92,10 @@ export async function updateAdjustmentRequest(args: {
     color?: PaletteColor
     location?: string | null
     area?: string | null
+    // Conversion trio (editable post-create). Empty string clears the FK.
+    coverageUnitId?: string
+    coveragePerUnit?: string
+    conversionFormulaId?: string
     link?: { workOrderId: string | null }
   }
 }) {

@@ -10,6 +10,7 @@ import { CellAddButton, StatusBadge, type BadgeTone } from "@/engines/common"
 import { NumberCell, TextCell, isLocalOnlyRecordRow } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
+import { ConversionFormulaPicker } from "@/modules/conversion-formulas/components/picker/conversion-formula-picker"
 import {
   resolveEffectiveStatus,
   type ImportFilterRowDraft,
@@ -32,6 +33,15 @@ type StagedGroup = {
   unitId: string
   unitName: string
   unitAbbrev: string
+  // Conversion trio (+ labels) — seeds a newly added staged row from whichever
+  // filter/staged row first established this group (they carry the product's
+  // seeded defaults; all editable thereafter).
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
   /**
    * The combined planned ordered quantity for this product — the SUM of
    * `stockOrdered` across every Planned Import (filter row) sharing the
@@ -63,6 +73,9 @@ const STAGED_COLUMNS: DataTableColumn<StagedGridRow>[] = [
   { key: "dyeLot", label: "Dye Lot", minWidth: 130, grow: 0.6 },
   { key: "location", label: "Location", minWidth: 140, grow: 0.6 },
   { key: "note", label: "Note", minWidth: 220, grow: 1.4 },
+  { key: "coveragePerUnit", label: "Coverage / Unit", width: 150, align: "end" },
+  { key: "coverageUnit", label: "Coverage Unit", minWidth: 150, grow: 0.7 },
+  { key: "conversionFormula", label: "Conversion Formula", minWidth: 200, grow: 1 },
 ]
 
 // Two row controls (duplicate + delete) share the gutter — wider than the
@@ -104,22 +117,24 @@ function buildGroups(
 ): StagedGroup[] {
   const groups: StagedGroup[] = []
   const byId = new Map<string, StagedGroup>()
-  const ensure = (
-    productId: string,
-    productName: string,
-    unitId: string,
-    unitName: string,
-    unitAbbrev: string,
-  ) => {
-    const key = groupKey(productId, unitId)
+  // Both draft shapes share the identity + unit + conversion field names, so one
+  // seed accessor covers filter rows and staged rows alike.
+  const ensure = (seed: ImportFilterRowDraft | ImportStagedRowDraft) => {
+    const key = groupKey(seed.productId, seed.unitId)
     let group = byId.get(key)
     if (!group) {
       group = {
-        productId,
-        productName,
-        unitId,
-        unitName,
-        unitAbbrev,
+        productId: seed.productId,
+        productName: seed.productName,
+        unitId: seed.unitId,
+        unitName: seed.unitName,
+        unitAbbrev: seed.unitAbbrev,
+        coverageUnitId: seed.coverageUnitId,
+        coverageUnitName: seed.coverageUnitName,
+        coverageUnitAbbrev: seed.coverageUnitAbbrev,
+        coveragePerUnit: seed.coveragePerUnit,
+        conversionFormulaId: seed.conversionFormulaId,
+        conversionFormulaName: seed.conversionFormulaName,
         stockOrdered: "",
         startingStockSum: 0,
         rows: [],
@@ -131,13 +146,7 @@ function buildGroups(
   }
   for (const filter of filters) {
     if (!filter.productId) continue
-    const group = ensure(
-      filter.productId,
-      filter.productName,
-      filter.unitId,
-      filter.unitName,
-      filter.unitAbbrev,
-    )
+    const group = ensure(filter)
     // Combine duplicate planned imports for the same product: SUM their ordered
     // quantities (skip blanks so an all-blank group stays "" → renders "—").
     const ordered = Number(filter.stockOrdered)
@@ -146,13 +155,7 @@ function buildGroups(
     }
   }
   for (const row of stagedRows) {
-    const group = ensure(
-      row.productId,
-      row.productName,
-      row.unitId,
-      row.unitName,
-      row.unitAbbrev,
-    )
+    const group = ensure(row)
     group.rows.push(row)
     // Fold startingStock into the group's live sum here — same in-place pattern
     // as `stockOrdered` above — so "Remaining" reads off the group it belongs to.
@@ -252,6 +255,38 @@ export function ImportStagedInventoryGrid({
             ariaLabel="Note"
           />
         )
+      case "coveragePerUnit":
+        return (
+          <NumberCell
+            editable={editable}
+            value={gridRow.coveragePerUnit}
+            onChange={(next) => section.setStagedRowField(gridRow.clientId, "coveragePerUnit", next)}
+            ariaLabel="Coverage per unit"
+          />
+        )
+      case "coverageUnit":
+        return (
+          <UnitOfMeasurePicker
+            value={gridRow.coverageUnitId || null}
+            selectedLabel={gridRow.coverageUnitName || null}
+            onChange={() => {}}
+            onOptionSelected={(option) => section.setStagedRowCoverageUnit(gridRow.clientId, option)}
+            disabled={!editable}
+            placeholder="Coverage unit"
+            ariaLabel="Select a coverage unit"
+          />
+        )
+      case "conversionFormula":
+        return (
+          <ConversionFormulaPicker
+            value={gridRow.conversionFormulaId || null}
+            selectedLabel={gridRow.conversionFormulaName || null}
+            onChange={() => {}}
+            onOptionSelected={(option) => section.setStagedRowFormula(gridRow.clientId, option)}
+            disabled={!editable}
+            ariaLabel="Select a conversion formula"
+          />
+        )
       default:
         return null
     }
@@ -288,6 +323,12 @@ export function ImportStagedInventoryGrid({
                       unitId: group.unitId,
                       unitName: group.unitName,
                       unitAbbrev: group.unitAbbrev,
+                      coverageUnitId: group.coverageUnitId,
+                      coverageUnitName: group.coverageUnitName,
+                      coverageUnitAbbrev: group.coverageUnitAbbrev,
+                      coveragePerUnit: group.coveragePerUnit,
+                      conversionFormulaId: group.conversionFormulaId,
+                      conversionFormulaName: group.conversionFormulaName,
                     })
                   }
                   ariaLabel={`Add staged row for ${group.productName}`}

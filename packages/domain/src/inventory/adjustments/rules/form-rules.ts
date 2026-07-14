@@ -5,8 +5,10 @@ type AdjustmentFormIssue =
   | { code: "ADJUSTMENT_QUANTITY_INVALID"; value: string }
   | { code: "ADJUSTMENT_QUANTITY_NOT_POSITIVE"; value: string }
 
+// Only the quantity is validated here; accept the narrow slice so create/update
+// use cases needn't assemble the full (conversion-carrying) form just to validate.
 export function validateAdjustmentForm(
-  input: InventoryAdjustmentForm,
+  input: Pick<InventoryAdjustmentForm, "quantity">,
 ): AdjustmentFormIssue[] {
   const issues: AdjustmentFormIssue[] = []
 

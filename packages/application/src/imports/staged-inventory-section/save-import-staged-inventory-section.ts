@@ -196,6 +196,10 @@ export async function saveImportStagedInventorySectionUseCase(
         cost: toStagedMoneyOrNull(draft.form.cost),
         freight: toStagedMoneyOrNull(draft.form.freight),
         note: draft.form.note || null,
+        // Conversion trio — the form's own values (seeded on product-select).
+        coverageUnitId: draft.form.coverageUnitId.trim() || null,
+        coveragePerUnit: draft.form.coveragePerUnit.trim() || null,
+        conversionFormulaId: draft.form.conversionFormulaId.trim() || null,
       },
     }
   })
@@ -227,6 +231,9 @@ export async function saveImportStagedInventorySectionUseCase(
               // Unit FK is the form's own value; never re-seeded from the product.
               unitId: draft.form.unitId.trim() || null,
               stockOrdered: draft.form.stockOrdered,
+              coverageUnitId: draft.form.coverageUnitId.trim() || null,
+              coveragePerUnit: draft.form.coveragePerUnit.trim() || null,
+              conversionFormulaId: draft.form.conversionFormulaId.trim() || null,
             },
           })),
           modified: input.diff.filters.modified.map((update) => ({
@@ -239,6 +246,9 @@ export async function saveImportStagedInventorySectionUseCase(
               // (mirrors the staged-row modified path below).
               unitId: update.form.unitId.trim() || null,
               stockOrdered: update.form.stockOrdered,
+              coverageUnitId: update.form.coverageUnitId.trim() || null,
+              coveragePerUnit: update.form.coveragePerUnit.trim() || null,
+              conversionFormulaId: update.form.conversionFormulaId.trim() || null,
             },
           })),
           deleted: input.diff.filters.deleted.map((d) => ({ id: d.id })),
@@ -262,6 +272,9 @@ export async function saveImportStagedInventorySectionUseCase(
               cost: toStagedMoneyOrNull(update.form.cost),
               freight: toStagedMoneyOrNull(update.form.freight),
               note: update.form.note || null,
+              coverageUnitId: update.form.coverageUnitId.trim() || null,
+              coveragePerUnit: update.form.coveragePerUnit.trim() || null,
+              conversionFormulaId: update.form.conversionFormulaId.trim() || null,
             },
           })),
           deleted: input.diff.rows.deleted.map((d) => ({ id: d.id })),

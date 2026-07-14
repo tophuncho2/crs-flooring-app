@@ -2,7 +2,27 @@ import { describe, expect, it } from "vitest"
 import {
   computeAdjustmentMoneyShare,
   computeInventoryBalance,
+  convertQuantity,
+  type ConversionFormulaInput,
 } from "../../src/inventory/computed.js"
+
+const SQFT = "unit-sqft"
+const LINFT = "unit-linft"
+
+// Planks: sq ft → boxes, DIVIDE by the row's own coveragePerUnit (20 sq ft/box).
+const PLANK_FORMULA: ConversionFormulaInput = {
+  fromUnitId: SQFT,
+  operator: "DIVIDE",
+  factorMode: "USE_COVERAGE_PER_UNIT",
+  constantFactor: null,
+}
+// Carpet: linear ft → sq yd, MULTIPLY by a constant 1.333 (never reads coverage).
+const CARPET_FORMULA: ConversionFormulaInput = {
+  fromUnitId: LINFT,
+  operator: "MULTIPLY",
+  factorMode: "CONSTANT",
+  constantFactor: "1.333",
+}
 
 describe("computeInventoryBalance", () => {
   it("subtracts netDeducted from startingStock", () => {
@@ -55,5 +75,74 @@ describe("computeAdjustmentMoneyShare", () => {
     expect(computeAdjustmentMoneyShare("100.00", "6", "1")).toBe("16.667")
     // whole result still pads to 3dp
     expect(computeAdjustmentMoneyShare("90.00", "9", "1")).toBe("10.000")
+  })
+})
+
+describe("convertQuantity", () => {
+  it("divides by the row's coveragePerUnit (planks: 100 sq ft ÷ 20 = 5 boxes)", () => {
+    expect(
+      convertQuantity({
+        balance: "100",
+        rowUnitId: SQFT,
+        coveragePerUnit: "20",
+        formula: PLANK_FORMULA,
+      }),
+    ).toBe("5.00")
+  })
+
+  it("multiplies by the constant factor, ignoring coveragePerUnit (carpet ×1.333)", () => {
+    expect(
+      convertQuantity({
+        balance: "100",
+        rowUnitId: LINFT,
+        // A stray coveragePerUnit must NOT be read in CONSTANT mode.
+        coveragePerUnit: "999",
+        formula: CARPET_FORMULA,
+      }),
+    ).toBe("133.30")
+  })
+
+  it("returns '' when there is no formula", () => {
+    expect(
+      convertQuantity({ balance: "100", rowUnitId: SQFT, coveragePerUnit: "20", formula: null }),
+    ).toBe("")
+  })
+
+  it("returns '' when the row's own unit does not match the formula's source unit", () => {
+    // The row is in linear ft but points at the sq-ft plank formula — source guard.
+    expect(
+      convertQuantity({
+        balance: "100",
+        rowUnitId: LINFT,
+        coveragePerUnit: "20",
+        formula: PLANK_FORMULA,
+      }),
+    ).toBe("")
+  })
+
+  it("returns '' when the rowUnitId is missing", () => {
+    expect(
+      convertQuantity({ balance: "100", rowUnitId: null, coveragePerUnit: "20", formula: PLANK_FORMULA }),
+    ).toBe("")
+  })
+
+  it("returns '' on a blank or zero coveragePerUnit in USE_COVERAGE_PER_UNIT mode (no divide-by-zero)", () => {
+    expect(
+      convertQuantity({ balance: "100", rowUnitId: SQFT, coveragePerUnit: "", formula: PLANK_FORMULA }),
+    ).toBe("")
+    expect(
+      convertQuantity({ balance: "100", rowUnitId: SQFT, coveragePerUnit: "0", formula: PLANK_FORMULA }),
+    ).toBe("")
+  })
+
+  it("returns '' when a CONSTANT formula has a blank constant factor", () => {
+    expect(
+      convertQuantity({
+        balance: "100",
+        rowUnitId: LINFT,
+        coveragePerUnit: null,
+        formula: { ...CARPET_FORMULA, constantFactor: null },
+      }),
+    ).toBe("")
   })
 })

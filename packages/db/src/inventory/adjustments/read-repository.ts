@@ -12,6 +12,7 @@ import {
 import { db } from "../../client.js"
 import { exactNumberIntEquals } from "../../shared/exact-number-search.js"
 import { sliceHasMore } from "../../shared/paginate.js"
+import { resolveConversion } from "../conversion.js"
 import { buildAdjustmentsListViewOrderBy } from "./order-by.js"
 import {
   adjustmentRowSelect,
@@ -60,6 +61,14 @@ export function normalizeAdjustmentRow(
   row: InventoryAdjustmentRowPayload,
 ): InventoryAdjustmentRecord {
   const adjustmentType: FlooringInventoryAdjustmentType = row.adjustmentType
+  const coveragePerUnit = toDecimalStringOrNull(row.coveragePerUnit)
+  // convertedBalance for an adjustment uses its own `quantity` as the basis.
+  const conversion = resolveConversion({
+    formula: row.conversionFormula,
+    rowUnitId: row.unitId,
+    coveragePerUnit,
+    balance: toDecimalString(row.quantity),
+  })
   return {
     id: row.id,
     adjustmentNumber: row.adjustmentNumber,
@@ -92,6 +101,15 @@ export function normalizeAdjustmentRow(
     // columns fully de-referenced (2D drops them).
     unitName: row.unit?.name ?? null,
     unitAbbrev: row.unit?.abbreviation ?? null,
+    coverageUnitId: row.coverageUnitId ?? "",
+    coverageUnitName: row.coverageUnit?.name ?? "",
+    coverageUnitAbbrev: row.coverageUnit?.abbreviation ?? "",
+    coveragePerUnit: coveragePerUnit ?? "",
+    conversionFormulaId: row.conversionFormulaId ?? "",
+    conversionFormulaName: conversion.conversionFormulaName,
+    convertedBalance: conversion.convertedBalance,
+    conversionUnitName: conversion.conversionUnitName,
+    conversionUnitAbbrev: conversion.conversionUnitAbbrev,
     adjustmentType,
     isWaste: row.isWaste,
     internalNotes: row.internalNotes ?? "",
@@ -190,6 +208,10 @@ export async function getInventoryParentContextForAdjustments(
       // Unit display for mutation error messages derives from the FK join (UoM
       // epic 2B); snapshot columns fully de-referenced (2D drops them).
       unit: { select: { name: true, abbreviation: true } },
+      // Conversion trio — stamped onto the child adjustment at create.
+      coverageUnitId: true,
+      coveragePerUnit: true,
+      conversionFormulaId: true,
       productId: true,
       warehouseId: true,
     },
@@ -204,6 +226,9 @@ export async function getInventoryParentContextForAdjustments(
     unitId: row.unitId,
     unitName: row.unit?.name ?? null,
     unitAbbrev: row.unit?.abbreviation ?? null,
+    coverageUnitId: row.coverageUnitId ?? null,
+    coveragePerUnit: toDecimalStringOrNull(row.coveragePerUnit),
+    conversionFormulaId: row.conversionFormulaId ?? null,
     inventoryNumber: row.inventoryNumber,
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? null,
@@ -597,6 +622,10 @@ export async function getAdjustmentWithInventoryForMutation(
           // Unit display derives from the FK join (UoM epic 2B); snapshot
           // columns fully de-referenced (2D drops them).
           unit: { select: { name: true, abbreviation: true } },
+          // Conversion trio — stamped onto the child adjustment at create.
+          coverageUnitId: true,
+          coveragePerUnit: true,
+          conversionFormulaId: true,
           productId: true,
           warehouseId: true,
         },
@@ -616,6 +645,9 @@ export async function getAdjustmentWithInventoryForMutation(
       unitId: inv.unitId,
       unitName: inv.unit?.name ?? null,
       unitAbbrev: inv.unit?.abbreviation ?? null,
+      coverageUnitId: inv.coverageUnitId ?? null,
+      coveragePerUnit: toDecimalStringOrNull(inv.coveragePerUnit),
+      conversionFormulaId: inv.conversionFormulaId ?? null,
       inventoryNumber: inv.inventoryNumber,
       rollPrefix: inv.rollPrefix,
       rollNumber: inv.rollNumber ?? null,

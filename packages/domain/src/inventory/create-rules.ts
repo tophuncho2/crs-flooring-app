@@ -28,6 +28,11 @@ export type CreateInventoryEdits = {
   freight: string
   location: string
   internalNotes: string
+  // Conversion feature — seeded from the picked product, user-overridable,
+  // editable after create. FKs are unguarded (DB RESTRICT is the backstop).
+  coverageUnitId: string
+  coveragePerUnit: string
+  conversionFormulaId: string
 }
 
 export type CreatedInventoryInsertFields = {
@@ -44,6 +49,9 @@ export type CreatedInventoryInsertFields = {
   startingStock: string
   cost: string | null
   freight: string | null
+  coverageUnitId: string | null
+  coveragePerUnit: string | null
+  conversionFormulaId: string | null
   netDeducted: "0"
   isArchived: false
 }
@@ -57,6 +65,7 @@ export type InventoryCreateIssueCode =
   | "STARTING_STOCK_NOT_POSITIVE"
   | "COST_INVALID"
   | "FREIGHT_INVALID"
+  | "COVERAGE_PER_UNIT_INVALID"
   | "ROLL_NUMBER_TOO_LONG"
   | "DYE_LOT_TOO_LONG"
   | "NOTE_TOO_LONG"
@@ -107,6 +116,12 @@ export function validateCreateInventoryEdits(
     issues.push({ code: "FREIGHT_INVALID" })
   }
 
+  // coveragePerUnit is a plain decimal (not money) — only validated when present.
+  const coveragePerUnit = edits.coveragePerUnit.trim()
+  if (coveragePerUnit.length > 0 && !Number.isFinite(Number(coveragePerUnit))) {
+    issues.push({ code: "COVERAGE_PER_UNIT_INVALID" })
+  }
+
   if (edits.rollNumber.trim().length > INVENTORY_ROLL_NUMBER_MAX) {
     issues.push({ code: "ROLL_NUMBER_TOO_LONG" })
   }
@@ -135,6 +150,7 @@ const INVENTORY_CREATE_ISSUE_COPY: Record<InventoryCreateIssueCode, string> = {
   STARTING_STOCK_NOT_POSITIVE: "Starting stock must be greater than zero.",
   COST_INVALID: "Cost must be a valid dollar amount.",
   FREIGHT_INVALID: "Freight must be a valid dollar amount.",
+  COVERAGE_PER_UNIT_INVALID: "Coverage per unit must be a number.",
   ROLL_NUMBER_TOO_LONG: `Roll number must be ${INVENTORY_ROLL_NUMBER_MAX} characters or fewer.`,
   DYE_LOT_TOO_LONG: `Dye lot must be ${INVENTORY_DYE_LOT_MAX} characters or fewer.`,
   NOTE_TOO_LONG: `Note must be ${INVENTORY_NOTE_MAX} characters or fewer.`,
@@ -163,6 +179,11 @@ export function buildCreatedInventoryInsert(
     startingStock: edits.startingStock.trim(),
     cost: edits.cost.trim() === "" ? null : normalizeMoneyAmount(edits.cost),
     freight: edits.freight.trim() === "" ? null : normalizeMoneyAmount(edits.freight),
+    // Raw-trimmed decimal (not money-normalized) to avoid trailing-zero dirty
+    // flips; FKs pass through untouched (DB RESTRICT backstops existence).
+    coverageUnitId: emptyToNull(edits.coverageUnitId),
+    coveragePerUnit: emptyToNull(edits.coveragePerUnit),
+    conversionFormulaId: emptyToNull(edits.conversionFormulaId),
     netDeducted: "0",
     isArchived: false,
   }

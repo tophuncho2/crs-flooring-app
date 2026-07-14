@@ -52,11 +52,16 @@ function runSave(input: SaveImportStagedInventorySectionInput) {
   return saveSectionUseCase(input, ACTOR_EMAIL)
 }
 
+type ConversionFields = {
+  coverageUnitId: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+}
 type FilterForm = {
   productId: string
   unitId: string
   stockOrdered: string
-}
+} & ConversionFields
 type RowForm = {
   unitId: string
   rollNumber: string
@@ -66,6 +71,12 @@ type RowForm = {
   cost: string
   freight: string
   note: string
+} & ConversionFields
+
+const EMPTY_CONVERSION: ConversionFields = {
+  coverageUnitId: "",
+  coveragePerUnit: "",
+  conversionFormulaId: "",
 }
 
 function filterForm(overrides: Partial<FilterForm> = {}): FilterForm {
@@ -73,6 +84,7 @@ function filterForm(overrides: Partial<FilterForm> = {}): FilterForm {
     productId: "product-1",
     unitId: "unit-1",
     stockOrdered: "10",
+    ...EMPTY_CONVERSION,
     ...overrides,
   }
 }
@@ -86,6 +98,7 @@ function rowForm(overrides: Partial<RowForm> = {}): RowForm {
     cost: "",
     freight: "",
     note: "",
+    ...EMPTY_CONVERSION,
     ...overrides,
   }
 }

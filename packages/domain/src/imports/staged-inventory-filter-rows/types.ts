@@ -14,6 +14,14 @@ export type StagedInventoryFilterRow = {
   unitId: string
   unitName: string
   unitAbbrev: string
+  // Conversion feature — seeded from the product, re-seeded on product-change.
+  // Filter rows never materialize; these are edit/seed-only.
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
   startingStockSum: string
   remainingStock: string
   createdAt: string
@@ -24,12 +32,19 @@ export type StagedInventoryFilterForm = {
   productId: string
   unitId: string
   stockOrdered: string
+  // Conversion feature — seeded from the product on product-change.
+  coverageUnitId: string
+  coveragePerUnit: string
+  conversionFormulaId: string
 }
 
 export const EMPTY_STAGED_INVENTORY_FILTER_FORM: StagedInventoryFilterForm = {
   productId: "",
   unitId: "",
   stockOrdered: "",
+  coverageUnitId: "",
+  coveragePerUnit: "",
+  conversionFormulaId: "",
 }
 
 export function computeFilterRemainingStock(input: {

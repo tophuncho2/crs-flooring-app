@@ -27,6 +27,24 @@ export const inventoryRowSelect = {
   // de-referenced (2D drops them).
   unitId: true,
   unit: { select: { id: true, name: true, abbreviation: true } },
+  // Conversion feature — coverage basis + the linked formula. convertedBalance +
+  // the target unit are DERIVED in the normalizer via `convertQuantity`; the
+  // formula's operator/factorMode/constantFactor + toUnit feed that compute.
+  coverageUnitId: true,
+  coverageUnit: { select: { id: true, name: true, abbreviation: true } },
+  coveragePerUnit: true,
+  conversionFormulaId: true,
+  conversionFormula: {
+    select: {
+      id: true,
+      name: true,
+      fromUnitId: true,
+      operator: true,
+      factorMode: true,
+      constantFactor: true,
+      toUnit: { select: { id: true, name: true, abbreviation: true } },
+    },
+  },
   rollPrefix: true,
   rollNumber: true,
   dyeLot: true,

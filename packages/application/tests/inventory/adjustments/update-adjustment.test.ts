@@ -199,17 +199,17 @@ describe("updateAdjustmentUseCase", () => {
   })
 
   describe("always editable", () => {
-    it("flips direction: writes adjustmentType and validates against the merged type", async () => {
+    it("flips direction: writes adjustmentType and validates the merged quantity", async () => {
       await updateAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }), ACTOR)
 
       expect(updateAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
         { id: ADJUSTMENT_ID, patch: { adjustmentType: "INCREASE", updatedBy: ACTOR } },
       )
-      // Form validation runs against the new (merged) direction, not the stale row.
-      expect(validateAdjustmentFormMock).toHaveBeenCalledWith(
-        expect.objectContaining({ adjustmentType: "INCREASE" }),
-      )
+      // Form validation only checks quantity (direction is never validated), so
+      // the use case passes the narrow merged-quantity slice — here the unchanged
+      // row quantity, since this patch flips direction only.
+      expect(validateAdjustmentFormMock).toHaveBeenCalledWith({ quantity: "5" })
     })
   })
 

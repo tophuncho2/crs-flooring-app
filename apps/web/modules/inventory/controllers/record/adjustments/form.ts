@@ -44,6 +44,11 @@ export const EMPTY_FORM: AdjustmentEditForm = {
   location: "",
   area: "",
   workOrderId: null,
+  coverageUnitId: "",
+  coverageUnitName: "",
+  coveragePerUnit: "",
+  conversionFormulaId: "",
+  conversionFormulaName: "",
 }
 
 export const EMPTY_LOCAL: AdjustmentEditLocal = {
@@ -69,6 +74,11 @@ export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEdi
     location: adjustment.location ?? "",
     area: adjustment.area ?? "",
     workOrderId: adjustment.workOrderId,
+    coverageUnitId: adjustment.coverageUnitId ?? "",
+    coverageUnitName: adjustment.coverageUnitName ?? "",
+    coveragePerUnit: adjustment.coveragePerUnit ?? "",
+    conversionFormulaId: adjustment.conversionFormulaId ?? "",
+    conversionFormulaName: adjustment.conversionFormulaName ?? "",
   }
 }
 
@@ -134,7 +144,10 @@ export function formIsDirty(current: AdjustmentEditForm, baseline: AdjustmentEdi
     current.color !== baseline.color ||
     current.location !== baseline.location ||
     current.area !== baseline.area ||
-    current.workOrderId !== baseline.workOrderId
+    current.workOrderId !== baseline.workOrderId ||
+    current.coverageUnitId !== baseline.coverageUnitId ||
+    current.coveragePerUnit !== baseline.coveragePerUnit ||
+    current.conversionFormulaId !== baseline.conversionFormulaId
   )
 }
 

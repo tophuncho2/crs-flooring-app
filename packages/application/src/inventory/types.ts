@@ -7,6 +7,10 @@ export type UpdateInventoryInput = {
   isArchived?: boolean
   /** Non-semantic palette tag. Metadata only — never triggers a recompute. */
   color?: PaletteColor
+  // Conversion trio — editable post-create (unlike the immutable unitId).
+  coverageUnitId?: string
+  coveragePerUnit?: string
+  conversionFormulaId?: string
 }
 
 export type CreateInventoryInput = {
@@ -22,6 +26,10 @@ export type CreateInventoryInput = {
   freight: string
   location: string
   internalNotes: string
+  // Conversion trio — seeded from the product on the form, editable.
+  coverageUnitId: string
+  coveragePerUnit: string
+  conversionFormulaId: string
 }
 
 export type InventoryResult = InventoryRecord

@@ -5,6 +5,7 @@ import { NumberCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
+import { ConversionFormulaPicker } from "@/modules/conversion-formulas/components/picker/conversion-formula-picker"
 import type { StagedInventoryFilterRow } from "@builders/domain"
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import type { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
@@ -19,6 +20,9 @@ const PLANNED_IMPORT_COLUMNS: DataTableColumn<PlannedImportGridRow>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 1 },
   { key: "stockOrdered", label: "Stock Ordered", width: 170, align: "end" },
   { key: "unit", label: "Unit", width: 185 },
+  { key: "coveragePerUnit", label: "Coverage / Unit", width: 150, align: "end" },
+  { key: "coverageUnit", label: "Coverage Unit", width: 170 },
+  { key: "conversionFormula", label: "Conversion Formula", minWidth: 200, grow: 0.8 },
 ]
 
 /**
@@ -85,6 +89,39 @@ export function ImportPlannedImportsGrid({
             onChange={(next) => section.setFilterField(draft.clientId, "stockOrdered", next)}
             placeholder="—"
             ariaLabel="Stock ordered"
+          />
+        )
+      case "coveragePerUnit":
+        return (
+          <NumberCell
+            editable={editable}
+            value={draft.coveragePerUnit}
+            onChange={(next) => section.setFilterField(draft.clientId, "coveragePerUnit", next)}
+            placeholder="—"
+            ariaLabel="Coverage per unit"
+          />
+        )
+      case "coverageUnit":
+        return (
+          <UnitOfMeasurePicker
+            value={draft.coverageUnitId || null}
+            selectedLabel={draft.coverageUnitName || null}
+            onChange={() => {}}
+            onOptionSelected={(option) => section.setFilterCoverageUnit(draft.clientId, option)}
+            disabled={!editable}
+            placeholder="Coverage unit"
+            ariaLabel="Coverage unit"
+          />
+        )
+      case "conversionFormula":
+        return (
+          <ConversionFormulaPicker
+            value={draft.conversionFormulaId || null}
+            selectedLabel={draft.conversionFormulaName || null}
+            onChange={() => {}}
+            onOptionSelected={(option) => section.setFilterFormula(draft.clientId, option)}
+            disabled={!editable}
+            ariaLabel="Conversion formula"
           />
         )
       default:

@@ -71,6 +71,12 @@ export function normalizeStagedInventoryFilterRow(
     // snapshot columns fully de-referenced (2D drops them).
     unitName: row.unit?.name ?? "",
     unitAbbrev: row.unit?.abbreviation ?? "",
+    coverageUnitId: row.coverageUnitId ?? "",
+    coverageUnitName: row.coverageUnit?.name ?? "",
+    coverageUnitAbbrev: row.coverageUnit?.abbreviation ?? "",
+    coveragePerUnit: toDecimalString(row.coveragePerUnit),
+    conversionFormulaId: row.conversionFormulaId ?? "",
+    conversionFormulaName: row.conversionFormula?.name ?? "",
     startingStockSum,
     remainingStock,
     createdAt: row.createdAt.toISOString(),

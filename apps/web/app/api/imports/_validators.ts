@@ -130,6 +130,11 @@ function shapeStagedForm(raw: unknown, path: string): StagedInventoryForm {
     cost: optionalStagedString(form.cost, `${path}.cost`),
     freight: optionalStagedString(form.freight, `${path}.freight`),
     note: optionalStagedString(form.note, `${path}.note`),
+    // Conversion trio — seeded from the product on select; the server persists
+    // the form's own values (blank stays blank).
+    coverageUnitId: optionalStagedString(form.coverageUnitId, `${path}.coverageUnitId`),
+    coveragePerUnit: optionalStagedString(form.coveragePerUnit, `${path}.coveragePerUnit`),
+    conversionFormulaId: optionalStagedString(form.conversionFormulaId, `${path}.conversionFormulaId`),
   }
 }
 
@@ -204,6 +209,10 @@ function shapeFilterForm(raw: unknown, path: string): StagedInventoryFilterForm 
     // Stock ordered is optional — accept missing/blank; "" carries "unset"
     // through the domain form type (which is a plain string).
     stockOrdered: nullableFilterString(form.stockOrdered, `${path}.stockOrdered`) ?? "",
+    // Conversion trio — seeded from the product, re-seeded on product-change.
+    coverageUnitId: nullableFilterString(form.coverageUnitId, `${path}.coverageUnitId`) ?? "",
+    coveragePerUnit: nullableFilterString(form.coveragePerUnit, `${path}.coveragePerUnit`) ?? "",
+    conversionFormulaId: nullableFilterString(form.conversionFormulaId, `${path}.conversionFormulaId`) ?? "",
   }
 }
 

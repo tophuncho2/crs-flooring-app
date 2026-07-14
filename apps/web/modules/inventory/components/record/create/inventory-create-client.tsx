@@ -30,6 +30,8 @@ export type InventoryCreateSeed = {
   productLabel: string | null
   warehouseLabel: string | null
   unitLabel: string | null
+  coverageUnitLabel?: string | null
+  conversionFormulaLabel?: string | null
 }
 
 /**
@@ -60,6 +62,12 @@ function InventoryCreatePanel({
   const [productLabel, setProductLabel] = useState<string | null>(seed?.productLabel ?? null)
   const [warehouseLabel, setWarehouseLabel] = useState<string | null>(seed?.warehouseLabel ?? null)
   const [unitLabel, setUnitLabel] = useState<string | null>(seed?.unitLabel ?? null)
+  const [coverageUnitLabel, setCoverageUnitLabel] = useState<string | null>(
+    seed?.coverageUnitLabel ?? null,
+  )
+  const [conversionFormulaLabel, setConversionFormulaLabel] = useState<string | null>(
+    seed?.conversionFormulaLabel ?? null,
+  )
 
   // Register dirtiness with the page so the scaffold's leave-guard fires when
   // navigating away with unsaved edits.
@@ -72,11 +80,27 @@ function InventoryCreatePanel({
     // Seed the unit from the picked product (overridable via the unit picker).
     setField("unitId", option?.unitId ?? "")
     setUnitLabel(option?.unitName || null)
+    // Seed the conversion trio from the picked product (all overridable).
+    setField("coverageUnitId", option?.coverageUnitId ?? "")
+    setCoverageUnitLabel(option?.coverageUnitName || null)
+    setField("coveragePerUnit", option?.coveragePerUnit ?? "")
+    setField("conversionFormulaId", option?.conversionFormulaId ?? "")
+    setConversionFormulaLabel(option?.conversionFormulaName || null)
   }
 
   const handleUnitSelected = (option: UnitOfMeasureOption | null) => {
     setField("unitId", option?.id ?? "")
     setUnitLabel(option?.name ?? null)
+  }
+
+  const handleCoverageUnitSelected = (option: UnitOfMeasureOption | null) => {
+    setField("coverageUnitId", option?.id ?? "")
+    setCoverageUnitLabel(option?.name ?? null)
+  }
+
+  const handleFormulaSelected = (option: { id: string; name: string } | null) => {
+    setField("conversionFormulaId", option?.id ?? "")
+    setConversionFormulaLabel(option?.name ?? null)
   }
 
   const handleWarehouseSelected = (option: WarehouseOption | null) => {
@@ -142,9 +166,13 @@ function InventoryCreatePanel({
         productLabel={productLabel}
         warehouseLabel={warehouseLabel}
         unitLabel={unitLabel}
+        coverageUnitLabel={coverageUnitLabel}
+        conversionFormulaLabel={conversionFormulaLabel}
         onProductSelected={handleProductSelected}
         onUnitSelected={handleUnitSelected}
         onWarehouseSelected={handleWarehouseSelected}
+        onCoverageUnitSelected={handleCoverageUnitSelected}
+        onFormulaSelected={handleFormulaSelected}
       />
     </RecordFieldSection>
   )

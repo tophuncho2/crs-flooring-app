@@ -94,6 +94,8 @@ export async function updateProductUseCase(
     // neither affects the stored-name recompute below.
     if ("cost" in input) patch.cost = input.cost
     if ("costUnitId" in input) patch.costUnitId = input.costUnitId
+    // Conversion formula FK — independent; does not affect the stored-name recompute.
+    if ("conversionFormulaId" in input) patch.conversionFormulaId = input.conversionFormulaId
     if ("productNamingAddon" in input) patch.productNamingAddon = input.productNamingAddon
     // Non-semantic palette tag — metadata-only passthrough. Never read here: it
     // does not affect the stored name, coverage, or any recompute.

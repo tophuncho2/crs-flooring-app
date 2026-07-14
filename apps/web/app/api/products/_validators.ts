@@ -84,6 +84,9 @@ function parseSharedFields(body: Record<string, unknown>) {
     // the existence backstop for costUnitId.
     cost: parseCost(body.cost),
     costUnitId: parseOptionalString(body.costUnitId),
+    // Conversion formula FK (UoM conversion feature). Optional — blank clears it.
+    // Structural parse only; the DB FK's RESTRICT is the existence backstop.
+    conversionFormulaId: parseOptionalString(body.conversionFormulaId),
     productNamingAddon: parseOptionalString(body.productNamingAddon),
   }
 }

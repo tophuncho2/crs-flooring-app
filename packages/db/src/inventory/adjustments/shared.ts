@@ -30,6 +30,23 @@ export const adjustmentRowSelect = {
   // (2D drops them).
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
+  // Conversion feature — coverage basis + linked formula. convertedBalance (basis
+  // = `quantity`) + the target unit derive in the normalizer via convertQuantity.
+  coverageUnitId: true,
+  coverageUnit: { select: { id: true, name: true, abbreviation: true } },
+  coveragePerUnit: true,
+  conversionFormulaId: true,
+  conversionFormula: {
+    select: {
+      id: true,
+      name: true,
+      fromUnitId: true,
+      operator: true,
+      factorMode: true,
+      constantFactor: true,
+      toUnit: { select: { id: true, name: true, abbreviation: true } },
+    },
+  },
   adjustmentType: true,
   isWaste: true,
   internalNotes: true,

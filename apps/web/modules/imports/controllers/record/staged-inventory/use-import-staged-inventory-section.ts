@@ -61,11 +61,15 @@ export function useImportStagedInventorySection({
     setFilterUnit: filters.setFilterUnit,
     setFilterCategoryFilter: filters.setFilterCategoryFilter,
     setFilterProductSnapshot: filters.setFilterProductSnapshot,
+    setFilterCoverageUnit: filters.setFilterCoverageUnit,
+    setFilterFormula: filters.setFilterFormula,
     addStagedRowDraft: filters.addStagedRowDraft,
     duplicateStagedRowDraft: filters.duplicateStagedRowDraft,
     removeStagedRowDraft: filters.removeStagedRowDraft,
     setStagedRowField: filters.setStagedRowField,
     setStagedRowUnit: filters.setStagedRowUnit,
+    setStagedRowCoverageUnit: filters.setStagedRowCoverageUnit,
+    setStagedRowFormula: filters.setStagedRowFormula,
     ...selection,
   }
 }

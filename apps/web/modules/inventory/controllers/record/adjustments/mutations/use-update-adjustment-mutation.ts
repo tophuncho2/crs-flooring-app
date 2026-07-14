@@ -64,6 +64,9 @@ export function useUpdateAdjustmentMutation({
           color: input.form.color,
           location: input.form.location,
           area: input.form.area,
+          coverageUnitId: input.form.coverageUnitId,
+          coveragePerUnit: input.form.coveragePerUnit,
+          conversionFormulaId: input.form.conversionFormulaId,
           ...(linkChanged ? { link: { workOrderId: input.form.workOrderId } } : {}),
         },
       })

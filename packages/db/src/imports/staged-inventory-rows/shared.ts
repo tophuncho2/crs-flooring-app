@@ -39,6 +39,13 @@ export const stagedInventoryRowSelect = {
   // importability gate requires it. `unit` resolves the display abbrev/name.
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
+  // The staged row's OWN conversion trio — editable in staging, materialized
+  // forward by the worker. `conversionFormula` resolves the picker label.
+  coverageUnitId: true,
+  coverageUnit: { select: { name: true, abbreviation: true } },
+  coveragePerUnit: true,
+  conversionFormulaId: true,
+  conversionFormula: { select: { name: true } },
   rollPrefix: true,
   rollNumber: true,
   dyeLot: true,

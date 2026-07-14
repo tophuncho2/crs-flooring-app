@@ -13,6 +13,14 @@ export type StagedInventoryRow = {
   unitId: string
   unitName: string
   unitAbbrev: string
+  // Conversion feature — seeded from the product, editable in staging, and
+  // materialized forward onto the inventory row by the worker.
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
   rollPrefix: string
   rollNumber: string
   dyeLot: string
@@ -39,4 +47,8 @@ export type StagedInventoryForm = {
   cost: string
   freight: string
   note: string
+  // Conversion feature — editable in staging (seeded from the product).
+  coverageUnitId: string
+  coveragePerUnit: string
+  conversionFormulaId: string
 }

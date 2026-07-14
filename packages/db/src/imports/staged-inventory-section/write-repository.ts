@@ -84,6 +84,15 @@ function buildFilterUpdateData(
       input.unitId && input.unitId.trim() !== ""
         ? { connect: { id: input.unitId } }
         : { disconnect: true },
+    coverageUnit:
+      input.coverageUnitId && input.coverageUnitId.trim() !== ""
+        ? { connect: { id: input.coverageUnitId } }
+        : { disconnect: true },
+    coveragePerUnit: input.coveragePerUnit,
+    conversionFormula:
+      input.conversionFormulaId && input.conversionFormulaId.trim() !== ""
+        ? { connect: { id: input.conversionFormulaId } }
+        : { disconnect: true },
     stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
   }
 }
@@ -105,6 +114,19 @@ function buildStagedRowUpdateData(
   if (input.cost !== undefined) data.cost = input.cost
   if (input.freight !== undefined) data.freight = input.freight
   if (input.note !== undefined) data.note = input.note
+  if (input.coverageUnitId !== undefined) {
+    data.coverageUnit =
+      input.coverageUnitId && input.coverageUnitId.trim() !== ""
+        ? { connect: { id: input.coverageUnitId } }
+        : { disconnect: true }
+  }
+  if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
+  if (input.conversionFormulaId !== undefined) {
+    data.conversionFormula =
+      input.conversionFormulaId && input.conversionFormulaId.trim() !== ""
+        ? { connect: { id: input.conversionFormulaId } }
+        : { disconnect: true }
+  }
   return data
 }
 
@@ -139,6 +161,9 @@ export async function applyImportStagedInventorySectionDiff(
         importEntryId: input.importEntryId,
         productId: draft.input.productId,
         unitId: draft.input.unitId,
+        coverageUnitId: draft.input.coverageUnitId,
+        coveragePerUnit: draft.input.coveragePerUnit,
+        conversionFormulaId: draft.input.conversionFormulaId,
         stockOrdered: emptyToNullStockOrdered(draft.input.stockOrdered),
       })),
     })
@@ -166,6 +191,9 @@ export async function applyImportStagedInventorySectionDiff(
         importEntryId: input.importEntryId,
         productId: draft.input.productId,
         unitId: draft.input.unitId,
+        coverageUnitId: draft.input.coverageUnitId,
+        coveragePerUnit: draft.input.coveragePerUnit,
+        conversionFormulaId: draft.input.conversionFormulaId,
         rollNumber: draft.input.rollNumber,
         dyeLot: draft.input.dyeLot,
         location: draft.input.location,

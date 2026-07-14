@@ -51,6 +51,9 @@ export const productRowSelect = {
       abbreviation: true,
     },
   },
+  // Conversion feature: the picked formula (record-view picker label).
+  conversionFormulaId: true,
+  conversionFormula: { select: { id: true, name: true } },
   productNamingAddon: true,
   createdAt: true,
   updatedAt: true,
@@ -96,6 +99,12 @@ export const productOptionSelect = {
   cost: true,
   style: true,
   color: true,
+  // Conversion seed source — copied onto inventory/adjustment/staged rows.
+  coverageUnitId: true,
+  coverageUnit: { select: { name: true, abbreviation: true } },
+  coveragePerUnit: true,
+  conversionFormulaId: true,
+  conversionFormula: { select: { name: true } },
 } as const
 
 export type ProductRowPayload = Prisma.FlooringProductGetPayload<{ select: typeof productRowSelect }>

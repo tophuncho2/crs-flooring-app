@@ -26,6 +26,10 @@ import {
   UnitOfMeasurePicker,
   type UnitOfMeasurePickerProps,
 } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
+import {
+  ConversionFormulaPicker,
+  type ConversionFormulaPickerProps,
+} from "@/modules/conversion-formulas/components/picker/conversion-formula-picker"
 import { WarehousePicker, type WarehousePickerProps } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { InventoryArchiveChip } from "../primary/controls/inventory-archive-chip"
 
@@ -207,6 +211,59 @@ export function WarehousePickerField({
   return (
     <FormField label="Warehouse" required={required}>
       <WarehousePicker {...props} />
+    </FormField>
+  )
+}
+
+// --- Conversion feature: editable coverage/formula cells + read-only output ---
+
+export function CoverageUnitPickerField(props: UnitOfMeasurePickerProps) {
+  return (
+    <FormField label="Coverage Unit">
+      <UnitOfMeasurePicker {...props} />
+    </FormField>
+  )
+}
+
+export function CoveragePerUnitField({ editable, value, onChange }: TextFieldProps) {
+  return (
+    <FormField label="Coverage / Unit">
+      <NumberCell
+        editable={editable}
+        value={value}
+        onChange={onChange}
+        align="start"
+        placeholder="0"
+        ariaLabel="Coverage per unit"
+      />
+    </FormField>
+  )
+}
+
+export function ConversionFormulaPickerField(props: ConversionFormulaPickerProps) {
+  return (
+    <FormField label="Conversion Formula">
+      <ConversionFormulaPicker {...props} />
+    </FormField>
+  )
+}
+
+/**
+ * Read-only derived converted balance (e.g. "5 boxes"). Blank when the formula/
+ * coverage inputs don't resolve — never a misleading number. Display-only.
+ */
+export function ConvertedBalanceField({
+  value,
+  unitAbbrev,
+}: {
+  value: string
+  unitAbbrev: string
+}) {
+  return (
+    <FormField label="Converted">
+      <StaticFieldValue>
+        {value ? formatInventoryQuantity(value, unitAbbrev) : "—"}
+      </StaticFieldValue>
     </FormField>
   )
 }

@@ -34,6 +34,9 @@ export type CreateProductInput = {
   // The unit it's priced per (independent FK; DB FK RESTRICT is the backstop).
   cost: string | null
   costUnitId: string | null
+  // Conversion formula FK (UoM conversion feature). Optional — null clears it.
+  // DB FK RESTRICT is the existence backstop.
+  conversionFormulaId: string | null
   productNamingAddon: string | null
   // Actor-email snapshots — server-assigned from the authenticated user, not off
   // the wire. Both stamped on create; `updatedBy` flips on every update.
@@ -69,6 +72,7 @@ export async function createProduct(
       coverageUnitId: input.coverageUnitId,
       cost: input.cost ? normalizeMoneyAmount(input.cost) : null,
       costUnitId: input.costUnitId || null,
+      conversionFormulaId: input.conversionFormulaId || null,
       productNamingAddon: input.productNamingAddon,
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
@@ -94,6 +98,9 @@ export async function updateProduct(
   if (input.coverageUnitId !== undefined) data.coverageUnitId = input.coverageUnitId
   if (input.cost !== undefined) data.cost = input.cost ? normalizeMoneyAmount(input.cost) : null
   if (input.costUnitId !== undefined) data.costUnitId = input.costUnitId || null
+  if (input.conversionFormulaId !== undefined) {
+    data.conversionFormulaId = input.conversionFormulaId || null
+  }
   if (input.productNamingAddon !== undefined) data.productNamingAddon = input.productNamingAddon
   if (input.paletteColor !== undefined) data.paletteColor = input.paletteColor
 

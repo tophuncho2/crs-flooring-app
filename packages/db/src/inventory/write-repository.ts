@@ -37,6 +37,10 @@ export type MaterializeInventoryRowFields = {
   // Unit FK (UoM epic 2B) — copied forward from the staged row's own unitId.
   // Replaces the four frozen unit snapshot strings.
   unitId: string
+  // Conversion trio — copied forward verbatim from the staged row.
+  coverageUnitId: string | null
+  coveragePerUnit: Prisma.Decimal | string | number | null
+  conversionFormulaId: string | null
   /**
    * Display prefix for the roll number (column default `'ROLL#'`). Worker
    * materialize copies it verbatim from the source staged row so the
@@ -70,6 +74,11 @@ export type UpdateInventoryRecordInput = {
   isArchived?: boolean
   /** Non-semantic palette tag. Metadata only — never triggers a recompute. */
   color?: PaletteColor
+  // Conversion trio — editable post-create (unlike the immutable unitId). Each is
+  // patched only when the caller supplies it; `null` clears the column.
+  coverageUnitId?: string | null
+  coveragePerUnit?: Prisma.Decimal | string | number | null
+  conversionFormulaId?: string | null
   /** Actor email of the editing user — stamped on every human edit. */
   updatedBy: string
 }
@@ -82,6 +91,17 @@ function buildUpdateData(
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
   if (input.isArchived !== undefined) data.isArchived = input.isArchived
   if (input.color !== undefined) data.color = input.color
+  if (input.coverageUnitId !== undefined) {
+    data.coverageUnit = input.coverageUnitId
+      ? { connect: { id: input.coverageUnitId } }
+      : { disconnect: true }
+  }
+  if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
+  if (input.conversionFormulaId !== undefined) {
+    data.conversionFormula = input.conversionFormulaId
+      ? { connect: { id: input.conversionFormulaId } }
+      : { disconnect: true }
+  }
   // A human save always records its editor (mirrors the warehouse actor pattern).
   data.updatedBy = input.updatedBy
   return data
@@ -128,6 +148,10 @@ export type InsertInventoryRowInput = {
   productId: string
   // Unit FK (UoM epic 2B) — replaces the four frozen unit snapshot strings.
   unitId: string
+  // Conversion trio — seeded from the product on manual create, editable after.
+  coverageUnitId: string | null
+  coveragePerUnit: Prisma.Decimal | string | number | null
+  conversionFormulaId: string | null
   rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
@@ -159,6 +183,9 @@ export async function insertInventoryRow(
       importEntryId: input.importEntryId,
       productId: input.productId,
       unitId: input.unitId,
+      coverageUnitId: input.coverageUnitId,
+      coveragePerUnit: input.coveragePerUnit,
+      conversionFormulaId: input.conversionFormulaId,
       rollPrefix: input.rollPrefix,
       rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
@@ -241,6 +268,9 @@ export async function materializeStagedRowsToInventory(
       importEntryId: row.importEntryId,
       productId: row.productId,
       unitId: row.unitId,
+      coverageUnitId: row.coverageUnitId,
+      coveragePerUnit: row.coveragePerUnit,
+      conversionFormulaId: row.conversionFormulaId,
       rollPrefix: row.rollPrefix,
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,

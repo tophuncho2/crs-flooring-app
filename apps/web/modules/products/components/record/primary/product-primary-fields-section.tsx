@@ -16,6 +16,7 @@ import {
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
+import { ConversionFormulaPicker } from "@/modules/conversion-formulas/components/picker/conversion-formula-picker"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import {
@@ -124,6 +125,18 @@ export function ProductPrimaryFieldsSection({
   if (seenCostUnitName !== savedCostUnitName) {
     setSeenCostUnitName(savedCostUnitName)
     setPickedCostUnitLabel(null)
+  }
+
+  // Conversion formula picker (UoM conversion feature) — the product's chosen
+  // formula, seeded onto inventory/adjustment/staged rows on product-select.
+  // Same async label-binding contract: hold the in-flight pick label, reset on
+  // save / record swap.
+  const savedFormulaName = product.conversionFormulaName || null
+  const [pickedFormulaLabel, setPickedFormulaLabel] = useState<string | null>(null)
+  const [seenFormulaName, setSeenFormulaName] = useState(savedFormulaName)
+  if (seenFormulaName !== savedFormulaName) {
+    setSeenFormulaName(savedFormulaName)
+    setPickedFormulaLabel(null)
   }
 
   // All spec fields, shared by both flows. Detail puts these in the left flank;
@@ -255,6 +268,25 @@ export function ProductPrimaryFieldsSection({
               disabled={disabled}
               placeholder="Select a unit"
               ariaLabel="Cost unit"
+            />
+          )}
+        </FormField>
+      </CellAt>
+      {/* Conversion formula — full width under the Cost pairing. Picked directly
+          on the product (no category coupling); seeds the row conversion trio. */}
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Conversion Formula">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{savedFormulaName || "—"}</StaticFieldValue>
+          ) : (
+            <ConversionFormulaPicker
+              value={draft.conversionFormulaId || null}
+              onChange={(id) => onFieldChange("conversionFormulaId", id ?? "")}
+              onOptionSelected={(opt) => setPickedFormulaLabel(opt?.name ?? null)}
+              selectedLabel={draft.conversionFormulaId ? pickedFormulaLabel ?? savedFormulaName : null}
+              disabled={disabled}
+              placeholder="Select a formula"
+              ariaLabel="Conversion formula"
             />
           )}
         </FormField>

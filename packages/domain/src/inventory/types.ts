@@ -33,6 +33,19 @@ export type InventoryRow = {
   freight: string
   netDeducted: string
   stockBalance: string
+  // Conversion feature (editable, seeded from the product). All optional so the
+  // sacred WO-adjustment synthesized row literal still satisfies the type; the
+  // normalizer populates them for real rows. `convertedStockBalance` +
+  // `conversionUnit*` are DERIVED on-read (via `convertQuantity`), never stored.
+  coverageUnitId?: string
+  coverageUnitName?: string
+  coverageUnitAbbrev?: string
+  coveragePerUnit?: string
+  conversionFormulaId?: string
+  conversionFormulaName?: string
+  convertedStockBalance?: string
+  conversionUnitName?: string
+  conversionUnitAbbrev?: string
   isArchived: boolean
   note: string
   internalNotes: string
@@ -70,6 +83,14 @@ export type InventoryForm = {
   internalNotes: string
   isArchived: boolean
   color: PaletteColor
+  // Conversion feature — editable post-create. Labels ride along so the record-
+  // view picker triggers resolve without a re-fetch (display-only; only the ids +
+  // coveragePerUnit reach the server).
+  coverageUnitId: string
+  coverageUnitName: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
 }
 
 export function toInventoryForm(row: InventoryRow): InventoryForm {
@@ -78,6 +99,11 @@ export function toInventoryForm(row: InventoryRow): InventoryForm {
     internalNotes: row.internalNotes,
     isArchived: row.isArchived,
     color: row.color,
+    coverageUnitId: row.coverageUnitId ?? "",
+    coverageUnitName: row.coverageUnitName ?? "",
+    coveragePerUnit: row.coveragePerUnit ?? "",
+    conversionFormulaId: row.conversionFormulaId ?? "",
+    conversionFormulaName: row.conversionFormulaName ?? "",
   }
 }
 
@@ -92,6 +118,13 @@ export type InventoryProductOption = {
   unitId: string
   unitName: string
   unitAbbrev: string
+  // Conversion seed source — copied onto the row on product-select (editable).
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
 }
 
 export type InventoryWarehouseOption = {

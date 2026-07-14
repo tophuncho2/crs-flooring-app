@@ -25,6 +25,11 @@ export type InventoryCreateForm = {
   freight: string
   location: string
   internalNotes: string
+  // Conversion trio — seeded from the picked product, editable. Wire fields only
+  // (the picker display labels are tracked as component state, like unitLabel).
+  coverageUnitId: string
+  coveragePerUnit: string
+  conversionFormulaId: string
 }
 
 const EMPTY_CREATE_FORM: InventoryCreateForm = {
@@ -39,6 +44,9 @@ const EMPTY_CREATE_FORM: InventoryCreateForm = {
   freight: "",
   location: "",
   internalNotes: "",
+  coverageUnitId: "",
+  coveragePerUnit: "",
+  conversionFormulaId: "",
 }
 
 export type CommitInventoryCreateCallbacks = {
@@ -114,7 +122,10 @@ export function useInventoryCreateSection({
       form.cost !== seed.cost ||
       form.freight !== seed.freight ||
       form.location !== seed.location ||
-      form.internalNotes !== seed.internalNotes,
+      form.internalNotes !== seed.internalNotes ||
+      form.coverageUnitId !== seed.coverageUnitId ||
+      form.coveragePerUnit !== seed.coveragePerUnit ||
+      form.conversionFormulaId !== seed.conversionFormulaId,
     [form, seed],
   )
 

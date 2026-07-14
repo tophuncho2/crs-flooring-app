@@ -24,6 +24,12 @@ export const stagedInventoryFilterRowSelect = {
   // The filter row's OWN unit FK + resolved unit (UoM epic 2B).
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
+  // Conversion trio — seeded from the product; edit/seed-only (never materializes).
+  coverageUnitId: true,
+  coverageUnit: { select: { name: true, abbreviation: true } },
+  coveragePerUnit: true,
+  conversionFormulaId: true,
+  conversionFormula: { select: { name: true } },
   createdAt: true,
   updatedAt: true,
 } as const satisfies Prisma.FlooringImportStagedInventoryFilterRowSelect

@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react"
 import {
   applyUnitSeed,
+  buildConversionSeed,
   buildRowDiff,
   createLocalRecordRowId,
   createRecordSectionError,
@@ -10,6 +11,7 @@ import {
   useRecordScopedSectionController,
 } from "@/engines/record-view"
 import type {
+  ConversionFormulaOption,
   FlooringStagedRowStatus,
   ImportDetail,
   ImportStagedInventorySectionDiff,
@@ -44,6 +46,9 @@ function toFilterDiffForm(draft: ImportFilterRowDraft) {
     productId: draft.productId,
     unitId: draft.unitId,
     stockOrdered: draft.stockOrdered,
+    coverageUnitId: draft.coverageUnitId,
+    coveragePerUnit: draft.coveragePerUnit,
+    conversionFormulaId: draft.conversionFormulaId,
   }
 }
 
@@ -57,6 +62,9 @@ function toRowDiffForm(draft: ImportStagedRowDraft) {
     dyeLot: draft.dyeLot,
     location: draft.location,
     note: draft.note,
+    coverageUnitId: draft.coverageUnitId,
+    coveragePerUnit: draft.coveragePerUnit,
+    conversionFormulaId: draft.conversionFormulaId,
   }
 }
 
@@ -67,7 +75,10 @@ function filterFormIsDirty(
   return (
     draft.productId !== server.productId ||
     draft.unitId !== server.unitId ||
-    draft.stockOrdered !== server.stockOrdered
+    draft.stockOrdered !== server.stockOrdered ||
+    draft.coverageUnitId !== server.coverageUnitId ||
+    draft.coveragePerUnit !== server.coveragePerUnit ||
+    draft.conversionFormulaId !== server.conversionFormulaId
   )
 }
 
@@ -83,7 +94,10 @@ function rowFormIsDirty(
     draft.freight !== server.freight ||
     draft.dyeLot !== server.dyeLot ||
     draft.location !== server.location ||
-    draft.note !== server.note
+    draft.note !== server.note ||
+    draft.coverageUnitId !== server.coverageUnitId ||
+    draft.coveragePerUnit !== server.coveragePerUnit ||
+    draft.conversionFormulaId !== server.conversionFormulaId
   )
 }
 
@@ -278,7 +292,7 @@ export function useImportFilterRows({
   )
 
   const setFilterField = useCallback(
-    <K extends keyof Pick<ImportFilterRowDraft, "productId" | "unitId" | "stockOrdered">>(
+    <K extends keyof Pick<ImportFilterRowDraft, "productId" | "unitId" | "stockOrdered" | "coveragePerUnit">>(
       clientId: string,
       field: K,
       value: ImportFilterRowDraft[K],
@@ -338,7 +352,7 @@ export function useImportFilterRows({
           if (row.clientId !== clientId) return row
           // Re-seed the unit FK from the picked product (UoM epic 2B) — mirrors
           // the material-item product-change re-snapshot.
-          const seeded = applyUnitSeed(
+          const unitSeeded = applyUnitSeed(
             row,
             option && {
               unitId: option.unitId,
@@ -347,9 +361,51 @@ export function useImportFilterRows({
             },
             { nameKey: "unitName", abbrevKey: "unitAbbrev" },
           )
+          // Also re-seed the conversion trio from the picked product (all three
+          // stay editable). Cleared to "" when the product is deselected.
+          const seeded = buildConversionSeed(unitSeeded, option)
           return { ...seeded, productName: option?.name ?? "" }
         }),
       }))
+    },
+    [section],
+  )
+
+  const setFilterCoverageUnit = useCallback(
+    (clientId: string, option: UnitOfMeasureOption | null) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        filters: prev.filters.map((row) =>
+          row.clientId === clientId
+            ? {
+                ...row,
+                coverageUnitId: option?.id ?? "",
+                coverageUnitName: option?.name ?? "",
+                coverageUnitAbbrev: option?.abbreviation ?? "",
+              }
+            : row,
+        ),
+      }))
+      if (section.error) section.setError(null)
+    },
+    [section],
+  )
+
+  const setFilterFormula = useCallback(
+    (clientId: string, option: ConversionFormulaOption | null) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        filters: prev.filters.map((row) =>
+          row.clientId === clientId
+            ? {
+                ...row,
+                conversionFormulaId: option?.id ?? "",
+                conversionFormulaName: option?.name ?? "",
+              }
+            : row,
+        ),
+      }))
+      if (section.error) section.setError(null)
     },
     [section],
   )
@@ -398,7 +454,15 @@ export function useImportFilterRows({
   const setStagedRowField = useCallback(
     <K extends keyof Pick<
       ImportStagedRowDraft,
-      "unitId" | "rollNumber" | "startingStock" | "cost" | "freight" | "dyeLot" | "location" | "note"
+      | "unitId"
+      | "rollNumber"
+      | "startingStock"
+      | "cost"
+      | "freight"
+      | "dyeLot"
+      | "location"
+      | "note"
+      | "coveragePerUnit"
     >>(
       clientId: string,
       field: K,
@@ -408,6 +472,45 @@ export function useImportFilterRows({
         ...prev,
         stagedRows: prev.stagedRows.map((s) =>
           s.clientId === clientId ? { ...s, [field]: value } : s,
+        ),
+      }))
+      if (section.error) section.setError(null)
+    },
+    [section],
+  )
+
+  const setStagedRowCoverageUnit = useCallback(
+    (clientId: string, option: UnitOfMeasureOption | null) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        stagedRows: prev.stagedRows.map((s) =>
+          s.clientId === clientId
+            ? {
+                ...s,
+                coverageUnitId: option?.id ?? "",
+                coverageUnitName: option?.name ?? "",
+                coverageUnitAbbrev: option?.abbreviation ?? "",
+              }
+            : s,
+        ),
+      }))
+      if (section.error) section.setError(null)
+    },
+    [section],
+  )
+
+  const setStagedRowFormula = useCallback(
+    (clientId: string, option: ConversionFormulaOption | null) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        stagedRows: prev.stagedRows.map((s) =>
+          s.clientId === clientId
+            ? {
+                ...s,
+                conversionFormulaId: option?.id ?? "",
+                conversionFormulaName: option?.name ?? "",
+              }
+            : s,
         ),
       }))
       if (section.error) section.setError(null)
@@ -449,10 +552,14 @@ export function useImportFilterRows({
     setFilterUnit,
     setFilterCategoryFilter,
     setFilterProductSnapshot,
+    setFilterCoverageUnit,
+    setFilterFormula,
     addStagedRowDraft,
     duplicateStagedRowDraft,
     removeStagedRowDraft,
     setStagedRowField,
     setStagedRowUnit,
+    setStagedRowCoverageUnit,
+    setStagedRowFormula,
   }
 }

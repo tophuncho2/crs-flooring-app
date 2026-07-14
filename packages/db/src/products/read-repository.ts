@@ -59,6 +59,9 @@ export type ProductRecord = {
   cost: string
   costUnitId: string
   costUnit: ProductRecordUnit | null
+  // Conversion feature: the picked formula FK + its resolved name ("" when unset).
+  conversionFormulaId: string
+  conversionFormulaName: string
   productNamingAddon: string
   createdAt: string
   updatedAt: string
@@ -97,6 +100,13 @@ export type ProductOptionRecord = {
   // Live product cost (canonical money string; "" when unset). Seeds a row
   // picker's pricing math for freshly-added rows.
   cost: string
+  // Conversion seed source — copied onto inventory/adjustment/staged rows.
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
 }
 
 export type ProductFormOptions = {
@@ -158,6 +168,8 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
           abbreviation: product.costUnit.abbreviation,
         }
       : null,
+    conversionFormulaId: product.conversionFormulaId ?? "",
+    conversionFormulaName: product.conversionFormula?.name ?? "",
     productNamingAddon: product.productNamingAddon ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
@@ -218,6 +230,14 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     unitName: product.unit?.name ?? "",
     unitAbbrev: product.unit?.abbreviation ?? "",
     cost: product.cost ? normalizeMoneyAmount(product.cost.toString()) : "",
+    // Raw-trimmed decimal (not money-normalized) — matches normalizeProductRow so
+    // the seeded row's coveragePerUnit doesn't falsely diverge.
+    coverageUnitId: product.coverageUnitId ?? "",
+    coverageUnitName: product.coverageUnit?.name ?? "",
+    coverageUnitAbbrev: product.coverageUnit?.abbreviation ?? "",
+    coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
+    conversionFormulaId: product.conversionFormulaId ?? "",
+    conversionFormulaName: product.conversionFormula?.name ?? "",
   }
 }
 

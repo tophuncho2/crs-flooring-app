@@ -96,6 +96,13 @@ export type StagedRowProductSeed = {
   unitId: string
   unitName: string
   unitAbbrev: string
+  // Conversion trio (+ picker labels) — seeded from the product onto the new row.
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
 }
 
 /**
@@ -121,6 +128,13 @@ export type ImportStagedRowDraft = {
   dyeLot: string
   location: string
   note: string
+  // Conversion trio — sent in the diff; labels are display-only picker triggers.
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
   // Carried snapshots — productId is sent on create; the rest are display-only.
   productId: string
   status: FlooringStagedRowStatus
@@ -141,6 +155,12 @@ export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRow
     dyeLot: row.dyeLot,
     location: row.location,
     note: row.note,
+    coverageUnitId: row.coverageUnitId,
+    coverageUnitName: row.coverageUnitName,
+    coverageUnitAbbrev: row.coverageUnitAbbrev,
+    coveragePerUnit: row.coveragePerUnit,
+    conversionFormulaId: row.conversionFormulaId,
+    conversionFormulaName: row.conversionFormulaName,
     productId: row.productId,
     status: row.status,
     productName: row.productName,
@@ -163,6 +183,12 @@ export function createImportStagedRowDraft(
     dyeLot: "",
     location: "",
     note: "",
+    coverageUnitId: seed.coverageUnitId,
+    coverageUnitName: seed.coverageUnitName,
+    coverageUnitAbbrev: seed.coverageUnitAbbrev,
+    coveragePerUnit: seed.coveragePerUnit,
+    conversionFormulaId: seed.conversionFormulaId,
+    conversionFormulaName: seed.conversionFormulaName,
     productId: seed.productId,
     status: "DRAFT",
     productName: seed.productName,
@@ -185,6 +211,12 @@ export function duplicateImportStagedRowDraft(
     dyeLot: source.dyeLot,
     location: source.location,
     note: source.note,
+    coverageUnitId: source.coverageUnitId,
+    coverageUnitName: source.coverageUnitName,
+    coverageUnitAbbrev: source.coverageUnitAbbrev,
+    coveragePerUnit: source.coveragePerUnit,
+    conversionFormulaId: source.conversionFormulaId,
+    conversionFormulaName: source.conversionFormulaName,
     productId: source.productId,
     status: "DRAFT",
     productName: source.productName,
@@ -216,6 +248,9 @@ export function validateImportStagedRowDrafts(
       dyeLot: draft.dyeLot,
       location: draft.location,
       note: draft.note,
+      coverageUnitId: draft.coverageUnitId,
+      coveragePerUnit: draft.coveragePerUnit,
+      conversionFormulaId: draft.conversionFormulaId,
     })
     if (issues.length > 0) {
       return `${draft.productName || "Staged"} — row ${index + 1}: ${describeStagedInventoryValidationIssues(issues)}`
@@ -254,6 +289,13 @@ export type ImportFilterRowDraft = {
   unitName: string
   unitAbbrev: string
   stockOrdered: string
+  // Conversion trio — sent in the diff; labels are display-only picker triggers.
+  coverageUnitId: string
+  coverageUnitName: string
+  coverageUnitAbbrev: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
   /**
    * Server-snapshot read-only fields carried so the grid can render the
    * remaining-stock column. Never sent in the diff.
@@ -287,6 +329,12 @@ export function toImportFilterRowDraft(
     unitName: row.unitName,
     unitAbbrev: row.unitAbbrev,
     stockOrdered: row.stockOrdered,
+    coverageUnitId: row.coverageUnitId,
+    coverageUnitName: row.coverageUnitName,
+    coverageUnitAbbrev: row.coverageUnitAbbrev,
+    coveragePerUnit: row.coveragePerUnit,
+    conversionFormulaId: row.conversionFormulaId,
+    conversionFormulaName: row.conversionFormulaName,
     startingStockSum: row.startingStockSum,
     remainingStock: row.remainingStock,
   }
@@ -312,6 +360,12 @@ export function createImportFilterRowDraft(clientId: string): ImportFilterRowDra
     unitName: "",
     unitAbbrev: "",
     stockOrdered: "",
+    coverageUnitId: "",
+    coverageUnitName: "",
+    coverageUnitAbbrev: "",
+    coveragePerUnit: "",
+    conversionFormulaId: "",
+    conversionFormulaName: "",
     startingStockSum: "0.00",
     remainingStock: "",
   }
@@ -323,6 +377,9 @@ export function validateImportSection(state: ImportSectionLocalState): string {
       productId: draft.productId,
       unitId: draft.unitId,
       stockOrdered: draft.stockOrdered,
+      coverageUnitId: draft.coverageUnitId,
+      coveragePerUnit: draft.coveragePerUnit,
+      conversionFormulaId: draft.conversionFormulaId,
     })
     if (filterIssues.length > 0) {
       return `Planned import ${index + 1}: ${describeStagedInventoryFilterValidationIssues(filterIssues)}`

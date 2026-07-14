@@ -58,6 +58,11 @@ export type UpdateAdjustmentPatch = {
   color?: PaletteColor
   /** WO link, editable on either direction (any product). `null` unlinks. */
   link?: { workOrderId: string | null }
+  // Conversion trio — editable on the adjustment. Metadata only (convertedBalance
+  // derives on read); empty clears the FK. No ledger recompute.
+  coverageUnitId?: string
+  coveragePerUnit?: string
+  conversionFormulaId?: string
 }
 
 export type UpdateAdjustmentInput = {

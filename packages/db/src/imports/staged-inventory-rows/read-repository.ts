@@ -34,6 +34,12 @@ export function normalizeStagedInventoryRow(
     // snapshot columns fully de-referenced (2D drops them).
     unitName: row.unit?.name ?? "",
     unitAbbrev: row.unit?.abbreviation ?? "",
+    coverageUnitId: row.coverageUnitId ?? "",
+    coverageUnitName: row.coverageUnit?.name ?? "",
+    coverageUnitAbbrev: row.coverageUnit?.abbreviation ?? "",
+    coveragePerUnit: toDecimalString(row.coveragePerUnit),
+    conversionFormulaId: row.conversionFormulaId ?? "",
+    conversionFormulaName: row.conversionFormula?.name ?? "",
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? "",
     dyeLot: row.dyeLot ?? "",

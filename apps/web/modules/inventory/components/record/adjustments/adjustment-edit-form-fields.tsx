@@ -23,7 +23,14 @@ import { SegmentedDropdown } from "@/engines/picker"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
 import { AdjustmentPickerStack } from "./adjustment-picker-stack"
-import { InventoryFieldGrid, WarehouseStaticField } from "../fields"
+import {
+  ConversionFormulaPickerField,
+  ConvertedBalanceField,
+  CoveragePerUnitField,
+  CoverageUnitPickerField,
+  InventoryFieldGrid,
+  WarehouseStaticField,
+} from "../fields"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 import type { AdjustmentEditRow } from "../../../controllers/record/adjustments/types"
 
@@ -169,6 +176,40 @@ export function AdjustmentEditFormFields({
     </FormField>
   )
 
+  // Conversion cluster (edit only) — all editable; the FK ids + coveragePerUnit
+  // reach the server, the labels stay in the form for the picker triggers. The
+  // derived converted balance (basis = quantity) reflects the last-saved row.
+  const coveragePerUnitField = (
+    <CoveragePerUnitField
+      editable={editable}
+      value={form.coveragePerUnit}
+      onChange={(next) => controller.setField("coveragePerUnit", next)}
+    />
+  )
+
+  const coverageUnitField = (
+    <CoverageUnitPickerField
+      value={form.coverageUnitId || null}
+      selectedLabel={form.coverageUnitName || null}
+      onChange={(id) => controller.setField("coverageUnitId", id ?? "")}
+      onOptionSelected={(option) => controller.setField("coverageUnitName", option?.name ?? "")}
+      disabled={!editable}
+      placeholder="Select coverage unit"
+      ariaLabel="Select a coverage unit"
+    />
+  )
+
+  const formulaField = (
+    <ConversionFormulaPickerField
+      value={form.conversionFormulaId || null}
+      selectedLabel={form.conversionFormulaName || null}
+      onChange={(id) => controller.setField("conversionFormulaId", id ?? "")}
+      onOptionSelected={(option) => controller.setField("conversionFormulaName", option?.name ?? "")}
+      disabled={!editable}
+      ariaLabel="Select a conversion formula"
+    />
+  )
+
   if (mode === "create" || !adjustment) {
     return (
       <>
@@ -247,6 +288,17 @@ export function AdjustmentEditFormFields({
               <WarehouseStaticField warehouseName={adjustment.warehouseName ?? null} />
             </CellAt>
             <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
+            {/* Conversion cluster: Coverage/Unit | Coverage Unit paired, then the
+                formula picker and the read-only derived Converted balance. */}
+            <CellAt col={1} colSpan={4}>{coveragePerUnitField}</CellAt>
+            <CellAt col={5} colSpan={4}>{coverageUnitField}</CellAt>
+            <CellAt col={1} colSpan={8}>{formulaField}</CellAt>
+            <CellAt col={1} colSpan={8}>
+              <ConvertedBalanceField
+                value={adjustment.convertedBalance ?? ""}
+                unitAbbrev={adjustment.conversionUnitAbbrev ?? ""}
+              />
+            </CellAt>
           </InventoryFieldGrid>
         }
       />

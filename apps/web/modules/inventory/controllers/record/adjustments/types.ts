@@ -41,6 +41,16 @@ export type AdjustmentEditForm = {
   /** User-owned free-text area label. Freely editable in create + edit (not seeded). */
   area: string
   workOrderId: string | null
+  /**
+   * Conversion feature — stamped from the parent inventory at create (server-
+   * side), freely editable on the saved row. Labels ride along for the picker
+   * triggers (display-only; only the ids + `coveragePerUnit` reach the server).
+   */
+  coverageUnitId: string
+  coverageUnitName: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  conversionFormulaName: string
 }
 
 /**

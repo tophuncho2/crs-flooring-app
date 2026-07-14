@@ -56,6 +56,17 @@ export async function updateInventoryUseCase(
     if (input.isArchived !== undefined) dbInput.isArchived = input.isArchived
     // Non-semantic palette tag — metadata only, leaves stock/netDeducted untouched.
     if (input.color !== undefined) dbInput.color = input.color
+    // Conversion trio — editable post-create; empty clears (FK disconnect). The
+    // converted balance is derived on read, so no recompute is triggered here.
+    if (input.coverageUnitId !== undefined) {
+      dbInput.coverageUnitId = emptyToNull(input.coverageUnitId)
+    }
+    if (input.coveragePerUnit !== undefined) {
+      dbInput.coveragePerUnit = emptyToNull(input.coveragePerUnit)
+    }
+    if (input.conversionFormulaId !== undefined) {
+      dbInput.conversionFormulaId = emptyToNull(input.conversionFormulaId)
+    }
 
     return updateInventoryRecord(id, dbInput, c)
   })

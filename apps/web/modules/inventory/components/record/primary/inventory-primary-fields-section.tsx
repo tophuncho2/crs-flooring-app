@@ -1,9 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import type { InventoryForm, InventoryRow, PaletteColor } from "@builders/domain"
 import { CellAt, RecordColumnBreak, RecordSectionDivider } from "@/engines/record-view"
 import {
   ColorField,
+  ConversionFormulaPickerField,
+  ConvertedBalanceField,
+  CoveragePerUnitField,
+  CoverageUnitPickerField,
   CreatedAtField,
   CreatedByField,
   DyeLotReadOnlyField,
@@ -49,6 +54,26 @@ export function InventoryPrimaryFieldsSection({
   editable: boolean
   onFieldChange: (field: keyof InventoryForm, value: string | boolean | PaletteColor) => void
 }) {
+  // Coverage-unit + formula pickers are async/paginated — the trigger label
+  // derives only from `selectedLabel`. Hold the in-flight pick label locally and
+  // reset it when the saved value changes (a save commits the pick; a record
+  // swap loads the neighbour's values). Only the FK reaches the form/server.
+  const savedCoverageUnitName = record.coverageUnitName ?? null
+  const [pickedCoverageUnitLabel, setPickedCoverageUnitLabel] = useState<string | null>(null)
+  const [seenCoverageUnitName, setSeenCoverageUnitName] = useState(savedCoverageUnitName)
+  if (seenCoverageUnitName !== savedCoverageUnitName) {
+    setSeenCoverageUnitName(savedCoverageUnitName)
+    setPickedCoverageUnitLabel(null)
+  }
+
+  const savedFormulaName = record.conversionFormulaName ?? null
+  const [pickedFormulaLabel, setPickedFormulaLabel] = useState<string | null>(null)
+  const [seenFormulaName, setSeenFormulaName] = useState(savedFormulaName)
+  if (seenFormulaName !== savedFormulaName) {
+    setSeenFormulaName(savedFormulaName)
+    setPickedFormulaLabel(null)
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <RecordColumnBreak
@@ -102,6 +127,40 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(value) => onFieldChange("internalNotes", value)}
               />
             </CellAt>
+            {/* Conversion cluster — editable Coverage/Unit + Coverage Unit paired,
+                then the formula picker (all seeded from the product, editable). */}
+            <CellAt col={1} row={6} colSpan={4}>
+              <CoveragePerUnitField
+                editable={editable}
+                value={draft.coveragePerUnit}
+                onChange={(value) => onFieldChange("coveragePerUnit", value)}
+              />
+            </CellAt>
+            <CellAt col={5} row={6} colSpan={4}>
+              <CoverageUnitPickerField
+                value={draft.coverageUnitId || null}
+                selectedLabel={
+                  draft.coverageUnitId ? pickedCoverageUnitLabel ?? savedCoverageUnitName : null
+                }
+                onChange={(id) => onFieldChange("coverageUnitId", id ?? "")}
+                onOptionSelected={(option) => setPickedCoverageUnitLabel(option?.name ?? null)}
+                disabled={!editable}
+                placeholder="Select coverage unit"
+                ariaLabel="Select a coverage unit"
+              />
+            </CellAt>
+            <CellAt col={1} row={7} colSpan={8}>
+              <ConversionFormulaPickerField
+                value={draft.conversionFormulaId || null}
+                selectedLabel={
+                  draft.conversionFormulaId ? pickedFormulaLabel ?? savedFormulaName : null
+                }
+                onChange={(id) => onFieldChange("conversionFormulaId", id ?? "")}
+                onOptionSelected={(option) => setPickedFormulaLabel(option?.name ?? null)}
+                disabled={!editable}
+                ariaLabel="Select a conversion formula"
+              />
+            </CellAt>
           </InventoryFieldGrid>
         }
         right={
@@ -128,6 +187,14 @@ export function InventoryPrimaryFieldsSection({
             {/* PO # */}
             <CellAt col={1} row={4} colSpan={8}>
               <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
+            </CellAt>
+            {/* Derived converted balance (on-read; blanks when the formula/coverage
+                inputs don't resolve or the source unit mismatches). */}
+            <CellAt col={1} row={5} colSpan={8}>
+              <ConvertedBalanceField
+                value={record.convertedStockBalance ?? ""}
+                unitAbbrev={record.conversionUnitAbbrev ?? ""}
+              />
             </CellAt>
           </InventoryFieldGrid>
         }

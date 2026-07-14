@@ -23,6 +23,11 @@ import type {
   UpdateAdjustmentInput,
 } from "./types.js"
 
+function emptyToNull(value: string): string | null {
+  const trimmed = value.trim()
+  return trimmed.length === 0 ? null : trimmed
+}
+
 export async function updateAdjustmentUseCase(
   input: UpdateAdjustmentInput,
   actorEmail: string,
@@ -52,11 +57,6 @@ export async function updateAdjustmentUseCase(
     // editable for the whole lifecycle of the row; there is no finalize/freeze.
     // The WO link is a plain `workOrderId` (any product, any direction), so no
     // linkage/product invariant applies.
-    const mergedAdjustmentType =
-      input.patch.adjustmentType !== undefined
-        ? input.patch.adjustmentType
-        : existing.adjustmentType
-
     try {
       assertAdjustmentExpectedUpdatedAtMatches({
         rowUpdatedAt: existing.updatedAt,
@@ -81,16 +81,7 @@ export async function updateAdjustmentUseCase(
 
     const mergedQuantity =
       input.patch.quantity !== undefined ? input.patch.quantity : existing.quantity
-    const mergedIsWaste =
-      input.patch.isWaste !== undefined ? input.patch.isWaste : existing.isWaste
-    const mergedInternalNotes =
-      input.patch.internalNotes !== undefined ? input.patch.internalNotes : existing.internalNotes
-    const formIssues = validateAdjustmentForm({
-      adjustmentType: mergedAdjustmentType,
-      quantity: mergedQuantity,
-      isWaste: mergedIsWaste,
-      internalNotes: mergedInternalNotes,
-    })
+    const formIssues = validateAdjustmentForm({ quantity: mergedQuantity })
     if (formIssues.length > 0) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
@@ -123,6 +114,17 @@ export async function updateAdjustmentUseCase(
     if (input.patch.area !== undefined) patch.area = input.patch.area
     if (input.patch.link !== undefined) {
       patch.workOrderId = input.patch.link.workOrderId
+    }
+    // Conversion trio — metadata only (convertedBalance derives on read); empty
+    // clears the FK. Never moves the ledger chain.
+    if (input.patch.coverageUnitId !== undefined) {
+      patch.coverageUnitId = emptyToNull(input.patch.coverageUnitId)
+    }
+    if (input.patch.coveragePerUnit !== undefined) {
+      patch.coveragePerUnit = emptyToNull(input.patch.coveragePerUnit)
+    }
+    if (input.patch.conversionFormulaId !== undefined) {
+      patch.conversionFormulaId = emptyToNull(input.patch.conversionFormulaId)
     }
 
     const written = await updateAdjustmentRow(c, { id: existing.id, patch })

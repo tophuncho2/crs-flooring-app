@@ -75,6 +75,7 @@ export async function createProductUseCase(
           coverageUnitId: input.coverageUnitId,
           cost: input.cost,
           costUnitId: input.costUnitId,
+          conversionFormulaId: input.conversionFormulaId,
           productNamingAddon: input.productNamingAddon,
           createdBy: actorEmail,
           updatedBy: actorEmail,

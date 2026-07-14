@@ -88,6 +88,10 @@ export async function materializeImportedStagedRowsUseCase(
       productId: row.productId,
       // Non-null: the `rowsMissingUnit` guard above rejects the batch otherwise.
       unitId: row.unitId as string,
+      // Conversion trio — materialized forward verbatim from the staged row.
+      coverageUnitId: row.coverageUnitId,
+      coveragePerUnit: row.coveragePerUnit,
+      conversionFormulaId: row.conversionFormulaId,
       rollPrefix: row.rollPrefix,
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,

@@ -49,12 +49,7 @@ export async function createAdjustmentUseCase(
     const workOrderId = input.workOrderId ?? null
     const isWaste = input.isWaste
 
-    const formIssues = validateAdjustmentForm({
-      adjustmentType,
-      quantity,
-      isWaste,
-      internalNotes,
-    })
+    const formIssues = validateAdjustmentForm({ quantity })
     if (formIssues.length > 0) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
@@ -122,6 +117,11 @@ export async function createAdjustmentUseCase(
       unitSnapshot: {
         unitId: inventory.unitId,
       },
+      // Stamp the parent inventory's conversion trio (editable on the adjustment
+      // afterward; convertedBalance derives on read off the adjustment quantity).
+      coverageUnitId: inventory.coverageUnitId,
+      coveragePerUnit: inventory.coveragePerUnit,
+      conversionFormulaId: inventory.conversionFormulaId,
       inventorySnapshot: buildAdjustmentInventorySnapshot({
         inventoryNumber: inventory.inventoryNumber,
         rollPrefix: inventory.rollPrefix,
