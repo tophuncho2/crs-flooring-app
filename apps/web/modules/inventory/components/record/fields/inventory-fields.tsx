@@ -255,15 +255,24 @@ export function ConversionFormulaPickerField(props: ConversionFormulaPickerProps
 export function ConvertedBalanceField({
   value,
   unitAbbrev,
+  // Opt-in prominence: when true the value wears the big/bold record-view
+  // `StatCell` (matching Stock/Deducted/Starting on the inventory record view).
+  // Default stays the plain read-only cell so the adjustment edit form is
+  // unchanged.
+  prominent = false,
 }: {
   value: string
   unitAbbrev: string
+  prominent?: boolean
 }) {
+  const display = value ? formatInventoryQuantity(value, unitAbbrev) : "—"
   return (
     <FormField label="Converted">
-      <StaticFieldValue>
-        {value ? formatInventoryQuantity(value, unitAbbrev) : "—"}
-      </StaticFieldValue>
+      {prominent ? (
+        <StatCell display={display} ariaLabel="Converted balance" />
+      ) : (
+        <StaticFieldValue>{display}</StaticFieldValue>
+      )}
     </FormField>
   )
 }
@@ -305,8 +314,14 @@ export function NetDeductedField({ value, unitAbbrev }: { value: string; unitAbb
   )
 }
 
+// Starting joins Stock/Deducted as a prominent StatCell figure on the inventory
+// record view (its sole consumer).
 export function StartingStockReadonlyField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyField label="Starting" value={formatInventoryQuantity(value, unitAbbrev)} />
+  return (
+    <FormField label="Starting">
+      <StatCell display={formatInventoryQuantity(value, unitAbbrev)} ariaLabel="Starting stock" />
+    </FormField>
+  )
 }
 
 export function CostReadonlyField({ value }: { value: string }) {

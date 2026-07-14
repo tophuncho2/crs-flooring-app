@@ -119,16 +119,20 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(next) => onFieldChange("isArchived", next)}
               />
             </CellAt>
-            {/* Internal Notes — full width beneath the Note | Status pair above */}
+            {/* Conversion cluster — the formula picker leads, above the editable
+                Coverage/Unit + Coverage Unit pair (all seeded from the product). */}
             <CellAt col={1} row={5} colSpan={8}>
-              <InternalNotesField
-                editable={editable}
-                value={draft.internalNotes}
-                onChange={(value) => onFieldChange("internalNotes", value)}
+              <ConversionFormulaPickerField
+                value={draft.conversionFormulaId || null}
+                selectedLabel={
+                  draft.conversionFormulaId ? pickedFormulaLabel ?? savedFormulaName : null
+                }
+                onChange={(id) => onFieldChange("conversionFormulaId", id ?? "")}
+                onOptionSelected={(option) => setPickedFormulaLabel(option?.name ?? null)}
+                disabled={!editable}
+                ariaLabel="Select a conversion formula"
               />
             </CellAt>
-            {/* Conversion cluster — editable Coverage/Unit + Coverage Unit paired,
-                then the formula picker (all seeded from the product, editable). */}
             <CellAt col={1} row={6} colSpan={4}>
               <CoveragePerUnitField
                 editable={editable}
@@ -149,52 +153,50 @@ export function InventoryPrimaryFieldsSection({
                 ariaLabel="Select a coverage unit"
               />
             </CellAt>
+            {/* Internal Notes — full width, closing the left flank beneath the
+                conversion cluster */}
             <CellAt col={1} row={7} colSpan={8}>
-              <ConversionFormulaPickerField
-                value={draft.conversionFormulaId || null}
-                selectedLabel={
-                  draft.conversionFormulaId ? pickedFormulaLabel ?? savedFormulaName : null
-                }
-                onChange={(id) => onFieldChange("conversionFormulaId", id ?? "")}
-                onOptionSelected={(option) => setPickedFormulaLabel(option?.name ?? null)}
-                disabled={!editable}
-                ariaLabel="Select a conversion formula"
+              <InternalNotesField
+                editable={editable}
+                value={draft.internalNotes}
+                onChange={(value) => onFieldChange("internalNotes", value)}
               />
             </CellAt>
           </InventoryFieldGrid>
         }
         right={
           <InventoryFieldGrid>
-            {/* Stock + Deducted lead the flank as prominent stat cells, above the
-                product headline */}
+            {/* Prominent stat block: Stock leads with the derived Converted balance
+                to its right; Deducted + Starting stack beneath Stock. */}
             <CellAt col={1} row={1} colSpan={4}>
               <StockBalanceField value={record.stockBalance} unitAbbrev={record.unitAbbrev} />
             </CellAt>
+            {/* Derived converted balance (on-read; blanks to "—" when the formula/
+                coverage inputs don't resolve or the source unit mismatches). */}
             <CellAt col={5} row={1} colSpan={4}>
+              <ConvertedBalanceField
+                value={record.convertedStockBalance ?? ""}
+                unitAbbrev={record.conversionUnitAbbrev ?? ""}
+                prominent
+              />
+            </CellAt>
+            {/* Deducted under Stock | Import # */}
+            <CellAt col={1} row={2} colSpan={4}>
               <NetDeductedField value={record.netDeducted} unitAbbrev={record.unitAbbrev} />
             </CellAt>
-            {/* Identity headline */}
-            <CellAt col={1} row={2} colSpan={8}>
-              <ProductNameField value={record.productName} />
+            <CellAt col={5} row={2} colSpan={4}>
+              <ImportNumberField value={record.importNumber} />
             </CellAt>
-            {/* Starting | Import # */}
+            {/* Starting under Deducted | PO # */}
             <CellAt col={1} row={3} colSpan={4}>
               <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.unitAbbrev} />
             </CellAt>
             <CellAt col={5} row={3} colSpan={4}>
-              <ImportNumberField value={record.importNumber} />
-            </CellAt>
-            {/* PO # */}
-            <CellAt col={1} row={4} colSpan={8}>
               <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
             </CellAt>
-            {/* Derived converted balance (on-read; blanks when the formula/coverage
-                inputs don't resolve or the source unit mismatches). */}
-            <CellAt col={1} row={5} colSpan={8}>
-              <ConvertedBalanceField
-                value={record.convertedStockBalance ?? ""}
-                unitAbbrev={record.conversionUnitAbbrev ?? ""}
-              />
+            {/* Product identity headline — full width, closing the flank */}
+            <CellAt col={1} row={4} colSpan={8}>
+              <ProductNameField value={record.productName} />
             </CellAt>
           </InventoryFieldGrid>
         }
