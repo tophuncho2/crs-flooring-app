@@ -10,7 +10,7 @@ Three checklists: every skill, every `CLAUDE.md`, and every other `.md` in the r
 - [ ] column-color
 - [ ] column-new-index
 - [ ] column-new-string
-- [ ] column-rownumber
+- [ ] row-number
 - [ ] column-sort
 - [ ] column-timestamp
 - [ ] dev-sync

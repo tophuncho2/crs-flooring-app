@@ -16,7 +16,7 @@ This skill owns **making one existing column searchable** and nothing else:
 - **The column already exists.** Every non-search layer (schema field, domain type, data select, validator presence, list/record/CSV display) is already shipped. If the column itself does not exist, add it first with **/column-new-string** (string) or the sibling **/column-new-*** skill, then return here.
 - **Search + index only.** The `@@index`, the migration, the `where`/ILIKE clause, the filter allowlists, and the list search bar. Nothing about display, persistence, or the save path.
 - **Not sort.** A sort-by-column (the menu Sort tool + its `(col, id)` btree) is **/column-sort**. Search ≠ sort; they have different indexes and different UI.
-- **Not the generated record number.** The exact-int `*NumberInt` search + stepper is **/column-rownumber** (it owns the special-case exact-int path; this skill defers to it).
+- **Not the generated record number.** The exact-int `*NumberInt` search + stepper is **/row-number** (it owns the special-case exact-int path; this skill defers to it).
 
 ## The model (what making a column searchable IS)
 
@@ -24,7 +24,7 @@ A new search filter is **one slice repeated across the search layers**, walking 
 
 `schema index (+ migration) → data FilterMap + buildWhere clause → application Filters type → request FILTERABLE_FIELDS → api TEXT_FILTER_KEYS → list-view search control → tests`
 
-The single best technique: **pick an existing searchable field of the same shape and trace it through every layer first.** On work-orders, `unitType` / `unitNumber` / `description` are the canonical **trgm-ILIKE** analogs (the trace this skill was built from — `purchaseOrderNumber` mirrored them edit-for-edit); `workOrderNumber` is the **exact-int** outlier (its `workOrderNumberInt` parseInt path belongs to `/column-rownumber`, do not copy it for a string). Match the analog's shape exactly.
+The single best technique: **pick an existing searchable field of the same shape and trace it through every layer first.** On work-orders, `unitType` / `unitNumber` / `description` are the canonical **trgm-ILIKE** analogs (the trace this skill was built from — `purchaseOrderNumber` mirrored them edit-for-edit); `workOrderNumber` is the **exact-int** outlier (its `workOrderNumberInt` parseInt path belongs to `/row-number`, do not copy it for a string). Match the analog's shape exactly.
 
 ### Classify the search shape before touching (this decides the index + the where-clause)
 
@@ -32,7 +32,7 @@ Decide this in Step 1 — it gates the index type and the `buildWhere` clause:
 
 1. **trgm GIN (substring ILIKE)** — **the default** for free-text and codes (PO #, reference, description, unit type). Index: `@@index([<field>(ops: raw("gin_trgm_ops"))], type: Gin, map: "<table>_<field>_trgm_idx")`. Where-clause: `{ <field>: { contains: value, mode: "insensitive" } }`. Requires the `pg_trgm` extension (already enabled repo-wide via `20260521044911_enable_pg_trgm`). This is the `purchaseOrderNumber` case.
 2. **btree (exact / equality / prefix)** — a low-cardinality code matched exactly, or a column also used for range/sort. Index: plain `@@index([<field>])`. Where-clause: `{ <field>: { equals: value } }` (or a range). Reach for this only when substring search is genuinely wrong.
-3. **exact-int (generated record #)** — the `*NumberInt` "land the one row" path (strip non-digits → parseInt → `{ equals }`, sentinel `-1` for non-numeric). This is **out of scope** → **/column-rownumber**. Never bolt the parseInt special-case onto a plain string column; a PO # like "PO-48" is substring (#1), not numeric.
+3. **exact-int (generated record #)** — the `*NumberInt` "land the one row" path (strip non-digits → parseInt → `{ equals }`, sentinel `-1` for non-numeric). This is **out of scope** → **/row-number**. Never bolt the parseInt special-case onto a plain string column; a PO # like "PO-48" is substring (#1), not numeric.
 
 Default to **trgm GIN + ILIKE** unless the field is clearly equality/numeric. Btree is **not** needed for a searched-not-sorted field — only add a btree when the column is also sorted (and that btree is `/column-sort`'s job).
 
@@ -45,7 +45,7 @@ The work-orders filter plumbing is **data-driven**: the request parser/URL-build
 - **Column must already exist — or hand off.** This skill wires search onto a shipped column. If the field isn't in the schema/domain/data/display yet, that's **/column-new-string** (or a sibling) first.
 - **Deep-dig before you touch.** Do the Step 1 read every time: trace one existing **searchable** field of the same shape across every search layer. The analog is the template; never write from this skill's spine alone. The code is the source of truth — memory and prior sessions drift.
 - **Classify the search shape first.** trgm-ILIKE (default) vs btree vs exact-int. The shape decides the index AND the where-clause; guessing wrong ships a broken or absent filter.
-- **Mirror trgm-ILIKE, not the exact-int special case.** For a free-text/code string the clause is `{ contains, mode: "insensitive" }` + a GIN-trgm index. Do **not** copy the `workOrderNumberInt` parseInt/`equals`/sentinel path — that's `/column-rownumber`'s.
+- **Mirror trgm-ILIKE, not the exact-int special case.** For a free-text/code string the clause is `{ contains, mode: "insensitive" }` + a GIN-trgm index. Do **not** copy the `workOrderNumberInt` parseInt/`equals`/sentinel path — that's `/row-number`'s.
 - **The four allowlists must all agree.** The key goes in the db `FilterMap`, the application `Filters` type, the request `FILTERABLE_FIELDS`, and the api `TEXT_FILTER_KEYS`. A key missing from any one silently drops the filter on that boundary (parse, validate, or query) with no typecheck error.
 - **Btree is for sort, not search.** A GIN-trgm index serves ILIKE; do not add a btree `(col, id)` for a searched-only column — that index belongs to `/column-sort`.
 - **The user runs migrations — never the skill.** Author the SQL migration file alongside the schema edit (`CREATE INDEX "<table>_<field>_trgm_idx" ON "<table>" USING GIN ("<field>" gin_trgm_ops);`, double-quoted identifiers, a `<ts>` later than the newest existing migration) per `author-migration-with-schema-edit`; `db:deploy` only applies pre-written files. Never run it.
@@ -60,7 +60,7 @@ The work-orders filter plumbing is **data-driven**: the request parser/URL-build
 Before proposing anything, read the current reality (a focused `/session-new`-style read):
 
 1. **Confirm scope.** The column already exists across the layers (schema field, domain type, data select). If not, hand off to **/column-new-string** / sibling first.
-2. **Pick the analog.** Choose the closest existing **searchable** field of the same shape — free text/code → `unitType` / `description` (trgm-ILIKE); a generated number → defer to `/column-rownumber`. It is your edit-for-edit template.
+2. **Pick the analog.** Choose the closest existing **searchable** field of the same shape — free text/code → `unitType` / `description` (trgm-ILIKE); a generated number → defer to `/row-number`. It is your edit-for-edit template.
 3. **Trace the analog across every search layer** — schema `@@index` block + the migration that created it, data `WorkOrdersListFilterMap` + the clause in `buildWorkOrdersWhere`, application `WorkOrdersListFilters`, request `WORK_ORDERS_LIST_FILTERABLE_FIELDS` (+ the parser/URL-builder loops), api `TEXT_FILTER_KEYS` (+ the validation loop), and the list client's value read + `handleTextFilterChange` union + `hasActiveSearchTool` + the `DebouncedSearchControl` in the Search `ToolbarMenuButton`. Fan out with `Explore` agents when the module is large.
 4. **Classify the search shape** (trgm-ILIKE / btree / exact-int) and confirm `pg_trgm` is enabled.
 5. **Memory** — read `author-migration-with-schema-edit` (author the SQL file with the schema edit). Treat as context; verify against code.
@@ -130,7 +130,7 @@ Filter path reasoned end-to-end (value reaches where + index): <yes>
 
 - Skip the deep-dig and write from the spine alone — it traces a real searchable analog across the live code every run.
 - Add the column itself — the schema field, domain type, data select, validator presence, and list/record/CSV display are **/column-new-string** (string) or the sibling **/column-new-*** skills. This skill assumes the column already ships.
-- Bolt the exact-int parseInt/`equals`/sentinel search onto a plain string — that "land the one row" generated-number path is **/column-rownumber**.
+- Bolt the exact-int parseInt/`equals`/sentinel search onto a plain string — that "land the one row" generated-number path is **/row-number**.
 - Add a btree `(col, id)` sort index or the menu Sort tool — multi-column **sort** wiring is **/column-sort**. A searched-only column needs only its GIN-trgm index.
 - Add a `createdBy`/`updatedBy` actor pair → **/column-actor**; a `createdAt`/`updatedAt` pair or its display → **/column-timestamp**; a PaletteColor chip → **/column-color**.
 - Run migrations or `db:deploy` — it authors the SQL file; the user runs it.

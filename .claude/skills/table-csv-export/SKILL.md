@@ -165,7 +165,7 @@ where reused · filters.id honored · cap 5000 · BOM · EXPORT bucket · ListEx
 - Import `@builders/db` from a web test (dist trap) — keep the db mock in the application use-case test.
 - Add a schema **column** to make something exportable — a missing field is a `/session-new` job (adding `id?` to the filters TYPE for the ticked-rows scope is in scope).
 - Redesign `ListExportButton`, `useListSelection`, or the `DataTable` selection seam — that's **/engine**.
-- Touch the multi-column Sort tool → **/column-sort**; `createdBy`/`updatedBy` columns → **/column-actor**; the PaletteColor chip → **/column-color**; the record-# sequence → **/column-rownumber**.
+- Touch the multi-column Sort tool → **/column-sort**; `createdBy`/`updatedBy` columns → **/column-actor**; the PaletteColor chip → **/column-color**; the record-# sequence → **/row-number**.
 - Plan or execute whole-module work, or author another skill → **/session-new** / **/newskill**.
 - Commit, run migrations, or multiple-choice the user through a change it can drive.
 - Trigger on anything but the literal `/table-csv-export` invocation.

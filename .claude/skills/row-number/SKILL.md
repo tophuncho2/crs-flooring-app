@@ -1,11 +1,11 @@
 ---
-name: column-rownumber
-description: Master of the record-number row# setup across the schema → domain → data → application → api → module-UI → tests stack — the Postgres sequence + generated *NumberInt column, the exact-int search bar, the record-view stepper, and the editable PaletteColor chip that wraps the number cell. Invoke to install the setup onto a candidate module, audit an existing install for layer drift, or consolidate divergent ones. Always classifies the stepper shape first — global int-sequence vs per-parent keyset — because the neighbor query differs. Knows the number is DB-generated and refuses to app-stamp it. Editing skill, not read-only. Explicit-only — invoke on /column-rownumber.
+name: row-number
+description: Master of the record-number row# setup across the schema → domain → data → application → api → module-UI → tests stack — the Postgres sequence + generated *NumberInt column, the exact-int search bar, the record-view stepper, and the editable PaletteColor chip that wraps the number cell. Invoke to install the setup onto a candidate module, audit an existing install for layer drift, or consolidate divergent ones. Always classifies the stepper shape first — global int-sequence vs per-parent keyset — because the neighbor query differs. Knows the number is DB-generated and refuses to app-stamp it. Editing skill, not read-only. Explicit-only — invoke on /row-number.
 ---
 
-# /column-rownumber
+# /row-number
 
-`/column-rownumber` makes you the owner of the record-number **row# setup** — the sequential `PREFIX-N` number, its exact-int search bar, its record-view stepper, and the editable color chip that wraps the number cell. The user invokes it with a free-form intent — "install the number + stepper on categories", "audit the payments row# install for drift", "fold the per-module palette fork back onto the shared chip". Your job: ground in the live row# map, classify the **stepper shape**, and drive the change through every layer the setup touches.
+`/row-number` makes you the owner of the record-number **row# setup** — the sequential `PREFIX-N` number, its exact-int search bar, its record-view stepper, and the editable color chip that wraps the number cell. The user invokes it with a free-form intent — "install the number + stepper on categories", "audit the payments row# install for drift", "fold the per-module palette fork back onto the shared chip". Your job: ground in the live row# map, classify the **stepper shape**, and drive the change through every layer the setup touches.
 
 This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/session-new`).
 
@@ -86,7 +86,7 @@ Reference: **work-orders** (`work-orders-row-cell.tsx` wraps `workOrderNumber` i
 - **dist-rebuild order before typecheck.** `@builders/domain` + `@builders/db` are consumed via built `dist/`. After editing their types run `npm run db:generate` (schema changed) then build domain → db → application **before** `npm run typecheck` sees the new fields.
 - **DO NOT COMMIT.** The user commits. Provide a commit message ≤17 words; schema changes are their own commit. The user runs migrations.
 - **Drive, don't multiple-choice.** Surface genuine open questions (stepper shape, whether a candidate also wants the chip, a missed select copy) in the response, then execute.
-- **Explicit-only.** Trigger on the literal `/column-rownumber`. Not on "add a record number", "make it steppable", "give it a color".
+- **Explicit-only.** Trigger on the literal `/row-number`. Not on "add a record number", "make it steppable", "give it a color".
 
 ## Step 1 — Ground in the live row# map
 
@@ -170,4 +170,4 @@ exact-search · stepper-order · palette-no-recompute: <ok | …>
 - Touch `createdBy`/`updatedBy` actor columns → **/column-actor**; `createdAt`/`updatedAt` or their Eastern-time display → **/column-timestamp**.
 - Plan or execute whole-module work, or any other column sweep → **/session-new**.
 - Commit, fold the schema change into a non-schema commit, or multiple-choice the user through a change it can drive.
-- Trigger on anything but the literal `/column-rownumber` invocation.
+- Trigger on anything but the literal `/row-number` invocation.

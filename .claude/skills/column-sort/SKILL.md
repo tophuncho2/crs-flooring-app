@@ -165,7 +165,7 @@ four sets agree · order-by case · tiebreak invariants · menu shows field · h
 - Import `@builders/db` from a web test (dist trap), or import `apps/` from `order-by.ts` (it's pure, type-only Prisma).
 - Add a schema **column** to make something sortable — the sort *wiring* uses existing fields only; a missing field is a `/session-new` job. (Adding a backing **index** for an already-sortable column is in scope — but it ships as its own migration + commit, never folded into the wiring.)
 - Redesign the shared `SortMenuBody`, the `?sorts=` codec, or the toolbar chrome — that's **/engine**.
-- Touch `createdBy`/`updatedBy` → **/column-actor**; `createdAt`/`updatedAt` display → **/column-timestamp**; the PaletteColor chip → **/column-color**; the record-# sequence/stepper → **/column-rownumber**.
+- Touch `createdBy`/`updatedBy` → **/column-actor**; `createdAt`/`updatedAt` display → **/column-timestamp**; the PaletteColor chip → **/column-color**; the record-# sequence/stepper → **/row-number**.
 - Plan or execute whole-module work, or author another skill → **/session-new** / **/newskill**.
 - Commit, run migrations, or multiple-choice the user through a change it can drive.
 - Trigger on anything but the literal `/column-sort` invocation.

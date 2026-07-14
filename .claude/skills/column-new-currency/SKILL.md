@@ -17,7 +17,7 @@ This skill owns **one new money column** and nothing else:
 
 - **Money only.** `Decimal? @db.Decimal(12,2)` (nullable). Always `(12,2)` — the money standard's `MONEY_PRECISION`/`MONEY_SCALE` (`packages/domain/src/shared/money.ts`). Other types (string, int, bool, enum, phone, date) are **out of scope** → the sibling `column-new-*` skills (string is **/column-new-string**).
 - **Not a foreign key.** No relation field, no `@relation`, no `*Id` join, no picker. A field that references another model is a relation/picker job, not this skill.
-- **Not DB-generated.** No `@default(dbgenerated(...))`, no sequence, no `@updatedAt` — a value the user types, not one Postgres computes. A generated/sequence number is **/column-rownumber**.
+- **Not DB-generated.** No `@default(dbgenerated(...))`, no sequence, no `@updatedAt` — a value the user types, not one Postgres computes. A generated/sequence number is **/row-number**.
 - **The column only.** No index, no search bar, no server-side filter query. Adding those is **/column-new-index**. This skill ships the column searchable-later, not searchable-now.
 
 ## The model (what adding a money column IS)
@@ -166,7 +166,7 @@ Index + search bar for <field>: → /column-new-index
 - Skip the deep-dig and write from the spine alone — it traces a real analog money field across the live code every run.
 - Add a non-money column — string is **/column-new-string**; int/bool/enum/phone/date are the other sibling **/column-new-*** skills.
 - Add a foreign-key / relation field or a picker — that's a relation job, not this skill.
-- Add a DB-generated / sequence column — that's **/column-rownumber**.
+- Add a DB-generated / sequence column — that's **/row-number**.
 - Store money as a float or use `toFixed` — the money standard is a fixed-scale-2 string via `normalizeMoneyAmount`; skip the normalize-on-read and every saved row reads falsely-dirty.
 - Add an `@@index`, a search bar, or a server-side filter for the new column — that's **/column-new-index**. Ships searchable-later.
 - Run migrations or `db:deploy` — it authors the SQL file; the user runs it.

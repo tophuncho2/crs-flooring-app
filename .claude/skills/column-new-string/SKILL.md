@@ -15,7 +15,7 @@ This skill owns **one new plain string column** and nothing else:
 
 - **String only.** `String? @db.VarChar(N)` (nullable). Pick `N` — ~50 for codes/PO#s, mirror a sibling for free text. Other types (int, bool, enum, money, phone, date) are **out of scope** → the sibling `column-new-*` skills.
 - **Not a foreign key.** No relation field, no `@relation`, no `*Id` join, no picker. A field that references another model is a relation/picker job, not this skill.
-- **Not DB-generated.** No `@default(dbgenerated(...))`, no sequence, no `@updatedAt` — a value the user types, not one Postgres computes. A generated/sequence number is **/column-rownumber**.
+- **Not DB-generated.** No `@default(dbgenerated(...))`, no sequence, no `@updatedAt` — a value the user types, not one Postgres computes. A generated/sequence number is **/row-number**.
 - **The column only.** No index, no search bar, no server-side filter query. Adding those for the new column is **/column-new-index** (the planned follow-on). This skill leaves the column searchable-later, not searchable-now.
 
 ## The model (what adding a string column IS)
@@ -137,7 +137,7 @@ Index + search bar for <field>: → /column-new-index
 - Skip the deep-dig and write from the spine alone — it traces a real analog field across the live code every run.
 - Add a non-string column — int/bool/enum/money/phone/date are the sibling **/column-new-*** skills (string is this skill).
 - Add a foreign-key / relation field or a picker — that's a relation job, not this skill.
-- Add a DB-generated / sequence column — that's **/column-rownumber**.
+- Add a DB-generated / sequence column — that's **/row-number**.
 - Add an `@@index`, a GIN-trgm index, a list search bar, or a server-side filter/ILIKE query for the new column — that's **/column-new-index**. This skill ships the column searchable-later, not searchable-now.
 - Run migrations or `db:deploy` — it authors the SQL file; the user runs it.
 - Add a `createdBy`/`updatedBy` actor pair → **/column-actor**; a `createdAt`/`updatedAt` pair or its display → **/column-timestamp**; a PaletteColor chip → **/column-color**; multi-column **sort** wiring → **/column-sort**.
