@@ -7,10 +7,10 @@ import type { CertificateListRow } from "@builders/domain"
  * default `expirationDate ASC`), so headers are static labels.
  */
 export const CERTIFICATES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<CertificateListRow>> = [
+  { key: "status", label: "Status" },
   { key: "name", label: "Certificate" },
   { key: "entity", label: "Entity" },
   { key: "expirationDate", label: "Expires" },
-  { key: "status", label: "Status" },
   { key: "internalNotes", label: "Notes" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
