@@ -27,6 +27,13 @@ export function renderPaymentRowCell(
       )
     case "direction":
       return <span>{row.direction === "REVENUE" ? "Revenue" : "Expense"}</span>
+    case "paymentPurpose":
+      // Mirrors the record view's colored purpose chip (same PaletteColor tag).
+      return row.paymentPurposeName ? (
+        <CellChip paletteColor={row.paymentPurposeColor ?? undefined}>{row.paymentPurposeName}</CellChip>
+      ) : (
+        "—"
+      )
     case "entity":
       return <span>{row.entityName ?? "—"}</span>
     case "types":

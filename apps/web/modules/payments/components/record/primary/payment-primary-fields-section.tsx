@@ -226,6 +226,29 @@ export function PaymentPrimaryFieldsSection({
               </CellAt>
             )}
             <CellAt col={1} colSpan={8}>
+              <FormField label="Purpose">
+                <PaymentPurposePicker
+                  value={draft.paymentPurposeId}
+                  selectedLabel={purposeSelectedLabel}
+                  selectedColor={purposeSelectedColor}
+                  onChange={(id) => {
+                    onFieldChange("paymentPurposeId", id)
+                    if (id === null) setPurposePick({ id: null, label: null, color: null })
+                  }}
+                  onOptionSelected={(option: PaymentPurposeOption | null) =>
+                    setPurposePick({
+                      id: option?.id ?? null,
+                      label: option?.name ?? null,
+                      color: option?.color ?? null,
+                    })
+                  }
+                  placeholder="Select purpose"
+                  disabled={!editable}
+                  ariaLabel="Payment purpose"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
               <FormField label="Entity">
                 <EntityTypePicker
                   value={draft.entityId}
@@ -258,29 +281,6 @@ export function PaymentPrimaryFieldsSection({
                 </FormField>
               </CellAt>
             ) : null}
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Purpose">
-                <PaymentPurposePicker
-                  value={draft.paymentPurposeId}
-                  selectedLabel={purposeSelectedLabel}
-                  selectedColor={purposeSelectedColor}
-                  onChange={(id) => {
-                    onFieldChange("paymentPurposeId", id)
-                    if (id === null) setPurposePick({ id: null, label: null, color: null })
-                  }}
-                  onOptionSelected={(option: PaymentPurposeOption | null) =>
-                    setPurposePick({
-                      id: option?.id ?? null,
-                      label: option?.name ?? null,
-                      color: option?.color ?? null,
-                    })
-                  }
-                  placeholder="Select purpose"
-                  disabled={!editable}
-                  ariaLabel="Payment purpose"
-                />
-              </FormField>
-            </CellAt>
             <CellAt col={1} colSpan={8}>
               <FormField label="Date">
                 <DateCell
