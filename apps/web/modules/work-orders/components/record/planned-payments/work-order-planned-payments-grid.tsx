@@ -3,8 +3,13 @@
 import { ChoiceChipCell, type ChoiceChipOption, MoneyCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { CellChip, RecordDeleteButton } from "@/engines/common"
-import { WORK_ORDER_PLANNED_PAYMENT_NOTES_MAX, type EntityOption } from "@builders/domain"
+import {
+  WORK_ORDER_PLANNED_PAYMENT_NOTES_MAX,
+  type EntityOption,
+  type PaymentPurposeOption,
+} from "@builders/domain"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
+import { PaymentPurposePicker } from "@/modules/payment-purposes/components/picker/payment-purpose-picker"
 import type { WorkOrderPlannedPaymentLocal } from "@/modules/work-orders/controllers/record/planned-payments/use-work-order-planned-payments-section"
 
 // Direction options for the toned dropdown chip: Revenue = green (success),
@@ -19,6 +24,7 @@ const WORK_ORDER_PLANNED_PAYMENTS_COLUMNS: DataTableColumn<WorkOrderPlannedPayme
   // Entity link leads; Type(s) is a read-only lookup off the picked entity.
   { key: "entity", label: "Entity", width: 220 },
   { key: "types", label: "Type(s)", width: 200 },
+  { key: "purpose", label: "Purpose", width: 200 },
   { key: "amount", label: "Amount", width: 160, align: "end" },
   // Direction sits to the RIGHT of amount and carries the tone chip/badge.
   { key: "direction", label: "Direction", width: 160 },
@@ -33,12 +39,14 @@ export function WorkOrderPlannedPaymentsGrid({
   editable,
   onChangeField,
   onSelectEntity,
+  onSelectPaymentPurpose,
   onRemoveItem,
 }: {
   items: WorkOrderPlannedPaymentLocal[]
   editable: boolean
   onChangeField: (itemId: string, field: keyof WorkOrderPlannedPaymentLocal, value: string) => void
   onSelectEntity: (itemId: string, option: EntityOption | null) => void
+  onSelectPaymentPurpose: (itemId: string, option: PaymentPurposeOption | null) => void
   onRemoveItem: (itemId: string) => void
 }) {
   return (
@@ -86,6 +94,24 @@ export function WorkOrderPlannedPaymentsGrid({
               </span>
             ) : (
               "—"
+            )
+          case "purpose":
+            return (
+              <PaymentPurposePicker
+                value={item.paymentPurposeId}
+                selectedLabel={item.paymentPurposeName}
+                selectedColor={item.paymentPurposeColor}
+                disabled={!editable}
+                onChange={(id) => {
+                  // Only the clear path needs handling — a real pick fires
+                  // onOptionSelected with the full option. Snapshotting id+name+
+                  // color together keeps the chip from ever desyncing.
+                  if (id === null) onSelectPaymentPurpose(item.id, null)
+                }}
+                onOptionSelected={(option) => onSelectPaymentPurpose(item.id, option)}
+                placeholder="Select purpose"
+                ariaLabel="Planned payment purpose"
+              />
             )
           case "amount":
             return (

@@ -88,6 +88,8 @@ const templateDetailSelect = {
       notes: true,
       entityId: true,
       entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
+      paymentPurposeId: true,
+      paymentPurpose: { select: { id: true, name: true, color: true } },
       createdAt: true,
       updatedAt: true,
       createdBy: true,

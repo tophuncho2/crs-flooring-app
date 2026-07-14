@@ -16,6 +16,10 @@ type TemplatePlannedPaymentInput = {
     entity: string
     entityTypes: { entityType: { id: string; type: string; color: PaletteColor } }[]
   } | null
+  paymentPurposeId: string | null
+  // Nested payment-purpose relation; flattened here to name + color. Absent/null
+  // on unlinked rows.
+  paymentPurpose?: { name: string; color: PaletteColor } | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -39,6 +43,9 @@ export function normalizeTemplatePlannedPayment(
     // (mirrors the planned-product product/unit flatten).
     entityName: item.entity?.entity ?? null,
     entityTypes: (item.entity?.entityTypes ?? []).map((link) => link.entityType),
+    paymentPurposeId: item.paymentPurposeId ?? null,
+    paymentPurposeName: item.paymentPurpose?.name ?? null,
+    paymentPurposeColor: item.paymentPurpose?.color ?? null,
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

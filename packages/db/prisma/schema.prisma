@@ -747,6 +747,8 @@ model TemplatePlannedPayment {
   notes        String?                  @db.VarChar(30)
   entityId     String?
   entity       Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  paymentPurposeId String?
+  paymentPurpose   FlooringPaymentPurpose? @relation(fields: [paymentPurposeId], references: [id], onDelete: SetNull)
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
   createdBy    String?
@@ -755,6 +757,7 @@ model TemplatePlannedPayment {
   @@index([templateId])
   @@index([templateId, createdAt])
   @@index([entityId])
+  @@index([paymentPurposeId])
   @@map("template_planned_payment")
 }
 
@@ -895,6 +898,8 @@ model FlooringWorkOrderPlannedPayment {
   notes        String?                  @db.VarChar(30)
   entityId     String?
   entity       Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  paymentPurposeId String?
+  paymentPurpose   FlooringPaymentPurpose? @relation(fields: [paymentPurposeId], references: [id], onDelete: SetNull)
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
   createdBy    String?
@@ -903,6 +908,7 @@ model FlooringWorkOrderPlannedPayment {
   @@index([workOrderId])
   @@index([workOrderId, createdAt])
   @@index([entityId])
+  @@index([paymentPurposeId])
   @@map("flooring_work_order_planned_payment")
 }
 
@@ -1006,6 +1012,9 @@ model FlooringPaymentPurpose {
   updatedAt               DateTime     @updatedAt
   createdBy               String?
   updatedBy               String?
+
+  templatePlannedPayments  TemplatePlannedPayment[]
+  workOrderPlannedPayments FlooringWorkOrderPlannedPayment[]
 
   @@index([name])
   @@index([paymentPurposeNumber])

@@ -361,6 +361,8 @@ function validatePlannedPaymentForm(value: unknown, path: string): WorkOrderPlan
         failPlannedPayment,
       ) ?? "",
     entityId: optionalPlannedPaymentEntityId(obj.entityId, `${path}.entityId`),
+    // Nullable payment-purpose link — same tri-state fold; FK is the backstop.
+    paymentPurposeId: optionalPlannedPaymentEntityId(obj.paymentPurposeId, `${path}.paymentPurposeId`),
   }
 }
 

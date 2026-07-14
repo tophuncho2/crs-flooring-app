@@ -7,8 +7,8 @@ import { WorkOrderPlannedPaymentsGrid } from "./work-order-planned-payments-grid
 type PlannedPaymentsController = ReturnType<typeof useWorkOrderPlannedPaymentsSection>
 
 /**
- * The work order's Planned Payments section — a standalone editable grid (amount ·
- * direction · notes · entity link), mirroring the templates planned-payments
+ * The work order's Planned Payments section — a standalone editable grid (entity ·
+ * purpose · amount · direction · notes), mirroring the templates planned-payments
  * section but with no toggle. (A later pass pairs it with a payments-module-linked
  * section behind a toggle.) Managed save/discard + add-row chrome lives in the
  * shared RecordItemSection subHeader.
@@ -58,6 +58,7 @@ export function WorkOrderPlannedPaymentsSection({
         editable={editable}
         onChangeField={section.changeField}
         onSelectEntity={section.selectEntity}
+        onSelectPaymentPurpose={section.selectPaymentPurpose}
         onRemoveItem={section.removeItem}
       />
     </RecordItemSection>

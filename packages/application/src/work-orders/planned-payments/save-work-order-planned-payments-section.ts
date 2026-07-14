@@ -9,7 +9,7 @@ import {
   validateWorkOrderPlannedPaymentForm,
 } from "@builders/domain"
 import { assertActorEmail } from "../../shared/assert-actor-email.js"
-import { isP2003 } from "../../shared/prisma-errors.js"
+import { isP2003, p2003FieldName } from "../../shared/prisma-errors.js"
 import { WorkOrderPlannedPaymentExecutionError } from "./errors.js"
 import type {
   SaveWorkOrderPlannedPaymentsSectionUseCaseInput,
@@ -68,14 +68,18 @@ export async function saveWorkOrderPlannedPaymentsSectionUseCase(
         deleted: input.diff.deleted.map((d) => ({ id: d.id })),
       })
     } catch (error) {
-      // A linked entity id that points at no row trips the FK (P2003). Optional
-      // link, no pre-guard — the FK is the backstop.
+      // A linked id (entity or payment purpose) that points at no row trips the
+      // FK (P2003). Optional links, no pre-guard — the FK is the backstop.
+      // Attribute the failure to the right field via the P2003 field_name.
       if (isP2003(error)) {
+        const isPurpose = p2003FieldName(error)?.includes("paymentpurpose") ?? false
         throw new WorkOrderPlannedPaymentExecutionError({
           code: "WORK_ORDER_PLANNED_PAYMENT_LINK_INVALID",
-          message: "Linked entity could not be found.",
+          message: isPurpose
+            ? "Linked payment purpose could not be found."
+            : "Linked entity could not be found.",
           status: 400,
-          field: "entityId",
+          field: isPurpose ? "paymentPurposeId" : "entityId",
         })
       }
       throw error

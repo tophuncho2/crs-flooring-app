@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
+import type { PaletteColor } from "@/engines/common"
 import {
   AsyncRichDropdown,
   type AsyncRichDropdownOption,
@@ -39,6 +40,12 @@ export type AsyncOptionPickerProps<TOption> = {
    * selected record's label even when it isn't in the latest server result.
    */
   selectedLabel?: string | null
+  /**
+   * Optional palette color for the selected value. Threaded to the trigger so
+   * the selected label renders inside its palette chip (opt-in colored-chip
+   * trigger). Omit for the plain-text trigger.
+   */
+  selectedColor?: PaletteColor | null
   /** Stable cache-key prefix (scope-folded by the wrapper where needed). */
   bucketKey: ReadonlyArray<unknown>
   /** Single-page fetch. Mutually exclusive with `pagedSearchFn`. */
@@ -83,6 +90,7 @@ export function AsyncOptionPicker<TOption>({
   onChange,
   onOptionSelected,
   selectedLabel = null,
+  selectedColor = null,
   bucketKey,
   searchFn,
   pagedSearchFn,
@@ -150,6 +158,7 @@ export function AsyncOptionPicker<TOption>({
       onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
+      selectedColor={selectedColor}
       query={controller.query}
       onQueryChange={controller.onQueryChange}
       isLoading={controller.isLoading}

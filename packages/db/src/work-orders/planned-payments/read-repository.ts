@@ -14,6 +14,10 @@ const workOrderPlannedPaymentSelect = {
   // Linked entity name + type chips — read-only hydration flattened by the
   // domain normalizer (reuses the canonical entityTypesSelect fragment).
   entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
+  paymentPurposeId: true,
+  // Linked purpose name + palette color — read-only hydration flattened by the
+  // domain normalizer for the colored chip.
+  paymentPurpose: { select: { id: true, name: true, color: true } },
   createdAt: true,
   updatedAt: true,
   createdBy: true,

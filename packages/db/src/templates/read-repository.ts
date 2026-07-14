@@ -111,7 +111,7 @@ const templateDetailSelect = {
     orderBy: { createdAt: "asc" as const },
   },
   // Planned payments — the §3 payment plan (own table). Detail-only; the record
-  // view reads the array directly. Entity link arrives in a later pass.
+  // view reads the array directly. Entity + payment-purpose links hydrate here.
   plannedPayments: {
     select: {
       id: true,
@@ -120,6 +120,8 @@ const templateDetailSelect = {
       notes: true,
       entityId: true,
       entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
+      paymentPurposeId: true,
+      paymentPurpose: { select: { id: true, name: true, color: true } },
       createdAt: true,
       updatedAt: true,
       createdBy: true,

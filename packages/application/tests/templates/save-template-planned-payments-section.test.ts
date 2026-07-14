@@ -12,9 +12,11 @@ vi.mock("@builders/db", () => {
   // Prisma.PrismaClientKnownRequestError` FK-mapping branch is exercisable.
   class PrismaClientKnownRequestError extends Error {
     code: string
-    constructor(message: string, options: { code: string }) {
+    meta?: Record<string, unknown>
+    constructor(message: string, options: { code: string; meta?: Record<string, unknown> }) {
       super(message)
       this.code = options.code
+      this.meta = options.meta
     }
   }
   return {
@@ -70,6 +72,7 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
                 direction: "REVENUE",
                 notes: "deposit",
                 entityId: "ent-1",
+                paymentPurposeId: "pp-1",
               },
             },
           ],
@@ -87,6 +90,7 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
       direction: "REVENUE",
       notes: "deposit",
       entityId: "ent-1",
+      paymentPurposeId: "pp-1",
     })
   })
 
@@ -137,6 +141,45 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
       code: "TEMPLATE_PLANNED_PAYMENT_LINK_INVALID",
       status: 400,
       field: "entityId",
+    })
+  })
+
+  it("attributes a P2003 to paymentPurposeId when the failing FK names it", async () => {
+    applyTemplatePlannedPaymentsDiffMock.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("FK", {
+        code: "P2003",
+        // Prisma 7's real P2003 shape: meta.constraint is an object naming the
+        // failing FK's column(s). (Legacy `field_name` no longer exists.)
+        meta: { constraint: { fields: ["paymentPurposeId"] } },
+      }),
+    )
+    await expect(
+      saveTemplatePlannedPaymentsSectionUseCase(
+        {
+          templateId: "tpl-1",
+          diff: {
+            added: [
+              {
+                tempId: "t1",
+                form: {
+                  amount: "10.00",
+                  direction: "REVENUE",
+                  notes: "",
+                  entityId: null,
+                  paymentPurposeId: "missing-purpose",
+                },
+              },
+            ],
+            modified: [],
+            deleted: [],
+          },
+        } as never,
+        ACTOR,
+      ),
+    ).rejects.toMatchObject({
+      code: "TEMPLATE_PLANNED_PAYMENT_LINK_INVALID",
+      status: 400,
+      field: "paymentPurposeId",
     })
   })
 })

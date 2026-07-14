@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import {
+  CellChip,
   computePopoverPlacement,
   registerPopoverLayer,
   isPointerInsideLayerOrDeeper,
+  type PaletteColor,
 } from "@/engines/common"
 import type { AsyncRichDropdownOption } from "./contracts/async-rich-dropdown-option"
 
@@ -35,6 +37,13 @@ export type AsyncRichDropdownProps = {
   isLoading?: boolean
   errorMessage?: string | null
   selectedOption?: AsyncRichDropdownOption | null
+  /**
+   * Optional palette color for the selected value. When set AND a value is
+   * selected, the trigger renders the selected label inside a `CellChip` tinted
+   * by this color (a colored-chip trigger). Opt-in — omit for the plain-text
+   * trigger every other picker uses.
+   */
+  selectedColor?: PaletteColor | null
   placeholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
@@ -90,6 +99,7 @@ export function AsyncRichDropdown({
   isLoading = false,
   errorMessage = null,
   selectedOption = null,
+  selectedColor = null,
   placeholder = "Select…",
   searchPlaceholder = "Search…",
   emptyMessage = "No matches",
@@ -310,14 +320,23 @@ export function AsyncRichDropdown({
           invalid ? TRIGGER_INVALID_CLASS_NAME : undefined,
         )}
       >
-        <span
-          className={joinClassNames(
-            "min-w-0 truncate",
-            !visibleSelected ? "text-[var(--foreground)]/60" : undefined,
-          )}
-        >
-          {triggerLabel}
-        </span>
+        {visibleSelected && selectedColor ? (
+          // Colored-chip trigger (opt-in via `selectedColor`): the selected
+          // label sits inside its palette chip, so the value reads with the same
+          // color identity it has everywhere else (e.g. a payment purpose).
+          <CellChip paletteColor={selectedColor} className="min-w-0 truncate">
+            {triggerLabel}
+          </CellChip>
+        ) : (
+          <span
+            className={joinClassNames(
+              "min-w-0 truncate",
+              !visibleSelected ? "text-[var(--foreground)]/60" : undefined,
+            )}
+          >
+            {triggerLabel}
+          </span>
+        )}
         <span aria-hidden="true" className="shrink-0 text-[var(--foreground)]/60">
           ▾
         </span>

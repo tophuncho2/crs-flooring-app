@@ -57,6 +57,8 @@ export async function applyWorkOrderPlannedPaymentsDiff(
         // Optional entity link — scalar FK on the unchecked createMany input
         // (null = unlinked). The form always carries entityId, so no tri-state.
         entityId: draft.input.entityId,
+        // Optional payment-purpose link — same scalar-FK treatment.
+        paymentPurposeId: draft.input.paymentPurposeId,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -71,6 +73,7 @@ export async function applyWorkOrderPlannedPaymentsDiff(
       direction: update.input.direction,
       notes: update.input.notes ? update.input.notes : null,
       entityId: update.input.entityId,
+      paymentPurposeId: update.input.paymentPurposeId,
       updatedBy: input.actorEmail,
     }
     await tx.flooringWorkOrderPlannedPayment.update({ where: { id: update.id }, data })

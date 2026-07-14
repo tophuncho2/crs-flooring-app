@@ -100,13 +100,14 @@ export async function syncTemplateToWorkOrderUseCase(
           notes: notesOrNull(item.notes),
         })),
         // Deliberately enumerated (never spread): carry amount / direction /
-        // notes / entityId. Unlike planned products (which drop `cost`),
-        // planned payments copy 1:1.
+        // notes / entityId / paymentPurposeId. Unlike planned products (which
+        // drop `cost`), planned payments copy 1:1.
         plannedPayments: template.plannedPayments.map((payment) => ({
           amount: payment.amount,
           direction: payment.direction,
           notes: notesOrNull(payment.notes),
           entityId: payment.entityId,
+          paymentPurposeId: payment.paymentPurposeId,
         })),
       },
       c,

@@ -52,6 +52,7 @@ export function TemplatePaymentsSection({ planned }: { planned: PlannedControlle
         editable={editable}
         onChangeField={planned.changeField}
         onSelectEntity={planned.selectEntity}
+        onSelectPaymentPurpose={planned.selectPaymentPurpose}
         onRemoveItem={planned.removeItem}
       />
     </RecordItemSection>

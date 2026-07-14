@@ -96,14 +96,15 @@ export type CreateWorkOrderFromTemplateRecordInput = {
     notes: string | null
   }>
   // Planned payments copied 1:1 from the template. Unlike planned products
-  // (which drop `cost`), payments carry amount / direction / notes / entityId
-  // verbatim. `amount` is required (money boundary); `entityId` is a nullable
-  // FK whose target is known to exist, so the straight copy is FK-safe.
+  // (which drop `cost`), payments carry amount / direction / notes / entityId /
+  // paymentPurposeId verbatim. `amount` is required (money boundary); the link
+  // FKs are nullable and their targets are known to exist, so the copy is FK-safe.
   plannedPayments: Array<{
     amount: string
     direction: FlooringPaymentDirection
     notes: string | null
     entityId: string | null
+    paymentPurposeId: string | null
   }>
 }
 
@@ -157,6 +158,7 @@ export async function createWorkOrderFromTemplateRecord(
         direction: payment.direction,
         notes: payment.notes ? payment.notes : null,
         entityId: payment.entityId,
+        paymentPurposeId: payment.paymentPurposeId,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),

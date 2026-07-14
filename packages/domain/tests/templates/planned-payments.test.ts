@@ -15,6 +15,8 @@ describe("normalizeTemplatePlannedPayment", () => {
       entity: "Acme Supply",
       entityTypes: [{ entityType: { id: "t1", type: "Vendor", color: "SLATE" as const } }],
     },
+    paymentPurposeId: "pp-1",
+    paymentPurpose: { name: "Deposit", color: "VIOLET" as const },
     createdAt: "2026-07-03T00:00:00.000Z",
     updatedAt: "2026-07-03T00:00:00.000Z",
     createdBy: "creator@example.com",
@@ -35,11 +37,29 @@ describe("normalizeTemplatePlannedPayment", () => {
     expect(row.entityTypes).toEqual([{ id: "t1", type: "Vendor", color: "SLATE" }])
   })
 
+  it("flattens the linked payment purpose into name + color", () => {
+    const row = normalizeTemplatePlannedPayment(base)
+    expect(row.paymentPurposeId).toBe("pp-1")
+    expect(row.paymentPurposeName).toBe("Deposit")
+    expect(row.paymentPurposeColor).toBe("VIOLET")
+  })
+
   it("coalesces an unlinked entity to null name + empty types", () => {
     const row = normalizeTemplatePlannedPayment({ ...base, entityId: null, entity: null })
     expect(row.entityId).toBeNull()
     expect(row.entityName).toBeNull()
     expect(row.entityTypes).toEqual([])
+  })
+
+  it("coalesces an unlinked payment purpose to null name + color", () => {
+    const row = normalizeTemplatePlannedPayment({
+      ...base,
+      paymentPurposeId: null,
+      paymentPurpose: null,
+    })
+    expect(row.paymentPurposeId).toBeNull()
+    expect(row.paymentPurposeName).toBeNull()
+    expect(row.paymentPurposeColor).toBeNull()
   })
 
   it("coalesces missing actors + notes", () => {

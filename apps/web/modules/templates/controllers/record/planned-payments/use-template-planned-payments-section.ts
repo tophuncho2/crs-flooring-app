@@ -11,6 +11,8 @@ import type {
   EntityOption,
   EntityTypeRef,
   FlooringPaymentDirection,
+  PaletteColor,
+  PaymentPurposeOption,
   TemplateDetail,
   TemplatePlannedPaymentForm,
   TemplatePlannedPaymentRow,
@@ -35,6 +37,12 @@ export type TemplatePlannedPaymentLocal = {
   // Never sent on save; seeded from the row on load, snapshotted on pick.
   entityName: string | null
   entityTypes: EntityTypeRef[]
+  // Optional payment-purpose link (null = unlinked) — writable/diffed.
+  paymentPurposeId: string | null
+  // Read-only hydration co-located with paymentPurposeId so the picker chip's
+  // label + color never desync from the id. Never sent on save.
+  paymentPurposeName: string | null
+  paymentPurposeColor: PaletteColor | null
 }
 
 type TemplatePlannedPaymentsLocalState = {
@@ -50,6 +58,9 @@ function toLocalItem(row: TemplatePlannedPaymentRow): TemplatePlannedPaymentLoca
     entityId: row.entityId,
     entityName: row.entityName,
     entityTypes: row.entityTypes,
+    paymentPurposeId: row.paymentPurposeId,
+    paymentPurposeName: row.paymentPurposeName,
+    paymentPurposeColor: row.paymentPurposeColor,
   }
 }
 
@@ -61,7 +72,7 @@ function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
     record.plannedPayments.map(
       (row) =>
-        `${row.id}:${row.amount}:${row.direction}:${row.notes}:${row.entityId}`,
+        `${row.id}:${row.amount}:${row.direction}:${row.notes}:${row.entityId}:${row.paymentPurposeId}`,
     ),
   )
 }
@@ -71,7 +82,8 @@ function itemsDiffer(local: TemplatePlannedPaymentLocal, server: TemplatePlanned
     local.amount !== server.amount ||
     local.direction !== server.direction ||
     local.notes !== server.notes ||
-    local.entityId !== server.entityId
+    local.entityId !== server.entityId ||
+    local.paymentPurposeId !== server.paymentPurposeId
   )
 }
 
@@ -80,9 +92,10 @@ function toDiffForm(local: TemplatePlannedPaymentLocal): TemplatePlannedPaymentF
     amount: local.amount,
     direction: local.direction,
     notes: local.notes,
-    // Only the writable link — entityName/entityTypes are display hydration and
-    // must never enter the diff form.
+    // Only the writable links — the *Name/*Types/*Color fields are display
+    // hydration and must never enter the diff form.
     entityId: local.entityId,
+    paymentPurposeId: local.paymentPurposeId,
   }
 }
 
@@ -161,6 +174,9 @@ export function useTemplatePlannedPaymentsSection({
           entityId: null,
           entityName: null,
           entityTypes: [],
+          paymentPurposeId: null,
+          paymentPurposeName: null,
+          paymentPurposeColor: null,
         },
       ],
     }))
@@ -206,6 +222,25 @@ export function useTemplatePlannedPaymentsSection({
     if (section.error) section.setError(null)
   }
 
+  // Snapshot the picked purpose's id + name + color into the row atomically, so
+  // the picker chip's label + color populate instantly with no server round-trip
+  // and never desync from paymentPurposeId. Null clears the link.
+  function selectPaymentPurpose(itemId: string, option: PaymentPurposeOption | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId
+          ? {
+              ...row,
+              paymentPurposeId: option?.id ?? null,
+              paymentPurposeName: option?.name ?? null,
+              paymentPurposeColor: option?.color ?? null,
+            }
+          : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
   return {
     ...section,
     items: section.localValue.items,
@@ -213,5 +248,6 @@ export function useTemplatePlannedPaymentsSection({
     removeItem,
     changeField,
     selectEntity,
+    selectPaymentPurpose,
   }
 }
