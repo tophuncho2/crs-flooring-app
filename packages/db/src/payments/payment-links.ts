@@ -1,6 +1,6 @@
 import { entityTypesSelect } from "../entities/read-repository.js"
 import type { Prisma } from "../generated/prisma/client.js"
-import type { EntityTypeRef } from "@builders/domain"
+import type { EntityTypeRef, PaletteColor } from "@builders/domain"
 
 // Hydration off a payment's optional links: the linked entity's name + its type
 // chips, and the work order's display label. Reuses the canonical
@@ -17,6 +17,10 @@ export const paymentLinksInclude = {
       property: { select: { name: true } },
     },
   },
+  // Linked purpose name + palette color — read-only hydration flattened by
+  // `projectPaymentLinks` for the colored-chip trigger. (`paymentPurposeId` is a
+  // scalar column auto-returned under `include`, read straight off the row.)
+  paymentPurpose: { select: { id: true, name: true, color: true } },
 } as const satisfies Prisma.FlooringPaymentInclude
 
 export type PaymentLinkRelations = {
@@ -29,6 +33,7 @@ export type PaymentLinkRelations = {
   workOrder:
     | { workOrderNumber: string; unitType: string | null; property: { name: string } | null }
     | null
+  paymentPurpose: { name: string; color: PaletteColor } | null
 }
 
 /** Project the included links into the flat read-only fields the normalizer reads. */
@@ -37,6 +42,8 @@ export function projectPaymentLinks(row: PaymentLinkRelations): {
   workOrderNumber: string | null
   workOrderLabel: string | null
   entityTypes: EntityTypeRef[]
+  paymentPurposeName: string | null
+  paymentPurposeColor: PaletteColor | null
 } {
   const entityTypes = (row.entity?.entityTypes ?? []).map((link) => ({
     id: link.entityType.id,
@@ -54,5 +61,7 @@ export function projectPaymentLinks(row: PaymentLinkRelations): {
     workOrderNumber: workOrder?.workOrderNumber ?? null,
     workOrderLabel,
     entityTypes,
+    paymentPurposeName: row.paymentPurpose?.name ?? null,
+    paymentPurposeColor: row.paymentPurpose?.color ?? null,
   }
 }

@@ -25,6 +25,7 @@ export type CreatePaymentRecordInput = {
   // Optional, single links. `null`/omitted = unlinked.
   entityId?: string | null
   workOrderId?: string | null
+  paymentPurposeId?: string | null
   createdBy: string
   updatedBy: string
 }
@@ -44,6 +45,7 @@ export type UpdatePaymentRecordInput = {
   // Tri-state: `undefined` = leave as-is, `null` = clear the link, string = set.
   entityId?: string | null
   workOrderId?: string | null
+  paymentPurposeId?: string | null
   updatedBy: string
 }
 
@@ -72,6 +74,7 @@ export async function createPaymentRecord(
       paymentDate: optionalDate(input.paymentDate) ?? null,
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,
+      paymentPurposeId: input.paymentPurposeId ?? null,
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
     },
@@ -99,6 +102,7 @@ export async function updatePaymentRecord(
   if (input.paymentDate !== undefined) data.paymentDate = optionalDate(input.paymentDate)
   if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.workOrderId !== undefined) data.workOrderId = input.workOrderId
+  if (input.paymentPurposeId !== undefined) data.paymentPurposeId = input.paymentPurposeId
 
   const payment = await client.flooringPayment.update({
     where: { id },

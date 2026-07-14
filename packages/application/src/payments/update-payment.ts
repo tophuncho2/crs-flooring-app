@@ -1,7 +1,7 @@
 import { Prisma, updatePaymentRecord, withDatabaseTransaction } from "@builders/db"
 import { PAYMENT_NOT_FOUND_MESSAGE, isValidMoneyAmount } from "@builders/domain"
 import { assertActorEmail } from "../shared/assert-actor-email.js"
-import { isP2025, isP2003 } from "../shared/prisma-errors.js"
+import { isP2025, isP2003, p2003FieldName } from "../shared/prisma-errors.js"
 import { PaymentExecutionError } from "./errors.js"
 import type { PaymentUseCaseResult, UpdatePaymentUseCaseInput } from "./types.js"
 
@@ -51,13 +51,17 @@ export async function updatePaymentUseCase(
           status: 404,
         })
       }
-      // A linked entity/work-order id that points at no row trips the FK (P2003).
+      // A linked id (entity, work order, or payment purpose) that points at no
+      // row trips the FK (P2003). Attribute to the right field via the P2003 detail.
       if (isP2003(error)) {
+        const isPurpose = p2003FieldName(error)?.includes("paymentpurpose") ?? false
         throw new PaymentExecutionError({
           code: "PAYMENT_LINK_INVALID",
-          message: "Linked work order or entity could not be found.",
+          message: isPurpose
+            ? "Linked payment purpose could not be found."
+            : "Linked work order or entity could not be found.",
           status: 400,
-          field: "entityId",
+          field: isPurpose ? "paymentPurposeId" : "entityId",
         })
       }
       throw error

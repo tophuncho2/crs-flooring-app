@@ -1,7 +1,7 @@
 import { Prisma, createPaymentRecord, withDatabaseTransaction } from "@builders/db"
 import { DEFAULT_PALETTE_COLOR, describePaymentFormIssues, validatePaymentForm } from "@builders/domain"
 import { assertActorEmail } from "../shared/assert-actor-email.js"
-import { isP2003 } from "../shared/prisma-errors.js"
+import { isP2003, p2003FieldName } from "../shared/prisma-errors.js"
 import { PaymentExecutionError } from "./errors.js"
 import type { CreatePaymentUseCaseInput, PaymentUseCaseResult } from "./types.js"
 
@@ -37,6 +37,9 @@ export async function createPaymentUseCase(
       paymentDate: "",
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,
+      // Optional link with no validation rule (FK is the backstop); pass through
+      // to satisfy the form shape.
+      paymentPurposeId: input.paymentPurposeId ?? null,
     })
     if (issues.length > 0) {
       throw new PaymentExecutionError({
@@ -53,13 +56,18 @@ export async function createPaymentUseCase(
         c,
       )
     } catch (error) {
-      // A linked entity/work-order id that points at no row trips the FK (P2003).
+      // A linked id (entity, work order, or payment purpose) that points at no
+      // row trips the FK (P2003). Optional links, no pre-guard — the FK is the
+      // backstop. Attribute the failure to the right field via the P2003 detail.
       if (isP2003(error)) {
+        const isPurpose = p2003FieldName(error)?.includes("paymentpurpose") ?? false
         throw new PaymentExecutionError({
           code: "PAYMENT_LINK_INVALID",
-          message: "Linked work order or entity could not be found.",
+          message: isPurpose
+            ? "Linked payment purpose could not be found."
+            : "Linked work order or entity could not be found.",
           status: 400,
-          field: "entityId",
+          field: isPurpose ? "paymentPurposeId" : "entityId",
         })
       }
       throw error

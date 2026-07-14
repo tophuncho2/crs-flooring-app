@@ -650,6 +650,8 @@ model FlooringPayment {
   entity           Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
   workOrderId      String?
   workOrder        FlooringWorkOrder?       @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  paymentPurposeId String?
+  paymentPurpose   FlooringPaymentPurpose?  @relation(fields: [paymentPurposeId], references: [id], onDelete: SetNull)
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   createdBy        String?
@@ -660,6 +662,7 @@ model FlooringPayment {
   @@index([amount])
   @@index([entityId])
   @@index([workOrderId])
+  @@index([paymentPurposeId])
   @@index([createdAt, id])
   @@map("flooring_payment")
 }
@@ -1015,6 +1018,7 @@ model FlooringPaymentPurpose {
 
   templatePlannedPayments  TemplatePlannedPayment[]
   workOrderPlannedPayments FlooringWorkOrderPlannedPayment[]
+  payments                 FlooringPayment[]
 
   @@index([name])
   @@index([paymentPurposeNumber])

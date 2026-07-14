@@ -117,6 +117,7 @@ export function validateCreatePaymentInput(
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
     entityId: optionalLinkId(body.entityId, "entityId"),
     workOrderId: optionalLinkId(body.workOrderId, "workOrderId"),
+    paymentPurposeId: optionalLinkId(body.paymentPurposeId, "paymentPurposeId"),
   }
 }
 
@@ -141,6 +142,8 @@ export function validateUpdatePaymentInput(
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
   if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
   if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")
+  if ("paymentPurposeId" in body)
+    input.paymentPurposeId = optionalLinkId(body.paymentPurposeId, "paymentPurposeId")
   return input
 }
 

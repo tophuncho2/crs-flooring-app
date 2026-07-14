@@ -43,12 +43,19 @@ export type Payment = {
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
+  // Optional payment-purpose link — the writable FK (null = unlinked).
+  paymentPurposeId: string | null
   entityName: string | null
   // `workOrderNumber` is the bare WO-N (list column); `workOrderLabel` is the
   // richer "#WO-N · property · unitType" string the record-view picker trigger reads.
   workOrderNumber: string | null
   workOrderLabel: string | null
   entityTypes: EntityTypeRef[]
+  // Read-only hydration off the purpose link (never round-trips on save): the
+  // linked purpose's name + palette color for the colored-chip trigger. Null
+  // when unlinked.
+  paymentPurposeName: string | null
+  paymentPurposeColor: PaletteColor | null
   createdAt: string
   updatedAt: string
   createdBy: string | null
@@ -94,6 +101,9 @@ export type PaymentForm = {
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
+  // Optional payment-purpose link (null = unlinked). Writable FK —
+  // paymentPurposeName/Color are read-only hydration and never enter the form.
+  paymentPurposeId: string | null
 }
 
 export const EMPTY_PAYMENT_FORM: PaymentForm = {
@@ -109,6 +119,7 @@ export const EMPTY_PAYMENT_FORM: PaymentForm = {
   paymentDate: "",
   entityId: null,
   workOrderId: null,
+  paymentPurposeId: null,
 }
 
 export function toPaymentForm(payment: Payment): PaymentForm {
@@ -125,6 +136,7 @@ export function toPaymentForm(payment: Payment): PaymentForm {
     paymentDate: payment.paymentDate,
     entityId: payment.entityId,
     workOrderId: payment.workOrderId,
+    paymentPurposeId: payment.paymentPurposeId,
   }
 }
 

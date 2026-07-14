@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const { withDatabaseTransactionMock, createPaymentRecordMock, PrismaKnownError } = vi.hoisted(() => {
   class PrismaKnownError extends Error {
     code: string
-    constructor(message: string, opts: { code: string }) {
+    meta?: Record<string, unknown>
+    constructor(message: string, opts: { code: string; meta?: Record<string, unknown> }) {
       super(message)
       this.code = opts.code
+      this.meta = opts.meta
     }
   }
   return {
@@ -135,7 +137,7 @@ describe("createPaymentUseCase", () => {
     )
   })
 
-  it("maps a P2003 (bad entity/work-order link) to a 400 link error", async () => {
+  it("maps a P2003 (bad entity/work-order link) to a 400 link error attributed to entityId", async () => {
     createPaymentRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
     await expect(
       createPaymentUseCase(
@@ -145,6 +147,28 @@ describe("createPaymentUseCase", () => {
     ).rejects.toMatchObject({
       code: "PAYMENT_LINK_INVALID",
       status: 400,
+      field: "entityId",
+    })
+  })
+
+  it("attributes a P2003 to paymentPurposeId when the failing FK names it", async () => {
+    createPaymentRecordMock.mockRejectedValue(
+      // Prisma 7's real P2003 shape: meta.constraint is an object naming the
+      // failing FK's column(s). (Legacy `field_name` no longer exists.)
+      new PrismaKnownError("fk", {
+        code: "P2003",
+        meta: { constraint: { fields: ["paymentPurposeId"] } },
+      }),
+    )
+    await expect(
+      createPaymentUseCase(
+        { amount: "10.00", direction: "REVENUE", paymentPurposeId: "missing" } as never,
+        ACTOR,
+      ),
+    ).rejects.toMatchObject({
+      code: "PAYMENT_LINK_INVALID",
+      status: 400,
+      field: "paymentPurposeId",
     })
   })
 

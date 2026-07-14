@@ -21,11 +21,14 @@ type PaymentInput = {
   paymentDate: Date | string | null
   entityId?: string | null
   workOrderId?: string | null
+  paymentPurposeId?: string | null
   /** Read-only hydration off the links (detail read only); absent on list rows. */
   entityName?: string | null
   workOrderNumber?: string | null
   workOrderLabel?: string | null
   entityTypes?: EntityTypeRef[]
+  paymentPurposeName?: string | null
+  paymentPurposeColor?: PaletteColor | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -49,10 +52,13 @@ export function normalizePayment(payment: PaymentInput): Payment {
     paymentDate: toIsoTimestamp(payment.paymentDate),
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,
+    paymentPurposeId: payment.paymentPurposeId ?? null,
     entityName: payment.entityName ?? null,
     workOrderNumber: payment.workOrderNumber ?? null,
     workOrderLabel: payment.workOrderLabel ?? null,
     entityTypes: payment.entityTypes ?? [],
+    paymentPurposeName: payment.paymentPurposeName ?? null,
+    paymentPurposeColor: payment.paymentPurposeColor ?? null,
     createdAt: toIsoTimestamp(payment.createdAt),
     updatedAt: toIsoTimestamp(payment.updatedAt),
     createdBy: payment.createdBy,

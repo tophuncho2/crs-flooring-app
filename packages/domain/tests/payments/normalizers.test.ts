@@ -37,10 +37,13 @@ describe("normalizePayment", () => {
       paymentDate: "2026-05-26T01:02:03.000Z",
       entityId: null,
       workOrderId: null,
+      paymentPurposeId: null,
       entityName: null,
       workOrderNumber: null,
       workOrderLabel: null,
       entityTypes: [],
+      paymentPurposeName: null,
+      paymentPurposeColor: null,
       createdAt: "2026-05-26T01:02:03.000Z",
       updatedAt: "2026-05-27T04:05:06.000Z",
       createdBy: "creator@x.com",
@@ -83,14 +86,58 @@ describe("normalizePayment", () => {
       paymentDate: "",
       entityId: null,
       workOrderId: null,
+      paymentPurposeId: null,
       entityName: null,
       workOrderNumber: null,
       workOrderLabel: null,
       entityTypes: [],
+      paymentPurposeName: null,
+      paymentPurposeColor: null,
       createdAt: "2026-05-26T00:00:00.000Z",
       updatedAt: "2026-05-26T00:00:00.000Z",
       createdBy: null,
       updatedBy: null,
     })
+  })
+
+  it("flattens a linked payment purpose into id + name + color", () => {
+    const row = normalizePayment({
+      id: "pay-3",
+      paymentNumber: "PAY-3",
+      paymentNumberInt: 3,
+      amount: "10.00",
+      direction: "REVENUE",
+      color: "SLATE",
+      paymentDate: null,
+      paymentPurposeId: "pp-1",
+      paymentPurposeName: "Deposit",
+      paymentPurposeColor: "VIOLET",
+      createdAt: "2026-05-26T00:00:00.000Z",
+      updatedAt: "2026-05-26T00:00:00.000Z",
+      createdBy: null,
+      updatedBy: null,
+    })
+    expect(row.paymentPurposeId).toBe("pp-1")
+    expect(row.paymentPurposeName).toBe("Deposit")
+    expect(row.paymentPurposeColor).toBe("VIOLET")
+  })
+
+  it("coalesces an unlinked payment purpose to null id + name + color", () => {
+    const row = normalizePayment({
+      id: "pay-4",
+      paymentNumber: "PAY-4",
+      paymentNumberInt: 4,
+      amount: "10.00",
+      direction: "REVENUE",
+      color: "SLATE",
+      paymentDate: null,
+      createdAt: "2026-05-26T00:00:00.000Z",
+      updatedAt: "2026-05-26T00:00:00.000Z",
+      createdBy: null,
+      updatedBy: null,
+    })
+    expect(row.paymentPurposeId).toBeNull()
+    expect(row.paymentPurposeName).toBeNull()
+    expect(row.paymentPurposeColor).toBeNull()
   })
 })

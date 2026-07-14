@@ -25,7 +25,9 @@ import {
   type EntityOption,
   type EntityTypeRef,
   type FlooringPaymentDirection,
+  type PaletteColor,
   type PaymentForm,
+  type PaymentPurposeOption,
   type WorkOrderOption,
 } from "@builders/domain"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
@@ -35,6 +37,7 @@ import {
 } from "@/modules/work-orders/components/picker/work-order-picker"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
+import { PaymentPurposePicker } from "@/modules/payment-purposes/components/picker/payment-purpose-picker"
 
 const DIRECTION_OPTIONS = [
   { value: "REVENUE", label: "Revenue", tone: "success" as const },
@@ -43,6 +46,7 @@ const DIRECTION_OPTIONS = [
 
 type LinkPick = { id: string | null; label: string | null }
 type EntityPick = LinkPick & { types: EntityTypeRef[] }
+type PurposePick = LinkPick & { color: PaletteColor | null }
 
 /**
  * The payment primary-section fields. Data-injected per the engine convention:
@@ -73,6 +77,8 @@ export function PaymentPrimaryFieldsSection({
   workOrderLabel,
   entityTypes,
   linkedEntityId,
+  paymentPurposeName,
+  paymentPurposeColor,
   hideWorkOrder = false,
   createdAt,
   updatedAt,
@@ -87,6 +93,14 @@ export function PaymentPrimaryFieldsSection({
   workOrderLabel?: string | null
   entityTypes?: EntityTypeRef[]
   linkedEntityId?: string | null
+  /**
+   * Record-seeded hydration for the linked payment purpose — the name + palette
+   * color of the current `draft.paymentPurposeId`, so the picker's colored-chip
+   * trigger reads back after reload. A fresh pick overrides them via local state
+   * until save. Omitted on the create faces (no record yet).
+   */
+  paymentPurposeName?: string | null
+  paymentPurposeColor?: PaletteColor | null
   /**
    * Omit the Work Order picker entirely. Set when the payment's work order is
    * pinned by context (the WO record-view create modal), so the link is fixed on
@@ -107,11 +121,23 @@ export function PaymentPrimaryFieldsSection({
     types: [],
   })
   const [workOrderPick, setWorkOrderPick] = useState<LinkPick>({ id: null, label: null })
+  const [purposePick, setPurposePick] = useState<PurposePick>({
+    id: null,
+    label: null,
+    color: null,
+  })
 
   const entitySelectedLabel =
     entityPick.id === draft.entityId ? entityPick.label : entityName ?? null
   const workOrderSelectedLabel =
     workOrderPick.id === draft.workOrderId ? workOrderPick.label : workOrderLabel ?? null
+  // Purpose trigger label + chip color, paralleling `entitySelectedLabel`: trust
+  // the just-picked option while its id still matches the draft; otherwise fall
+  // back to the record-seeded hydration (both null clears cleanly).
+  const purposeSelectedLabel =
+    purposePick.id === draft.paymentPurposeId ? purposePick.label : paymentPurposeName ?? null
+  const purposeSelectedColor =
+    purposePick.id === draft.paymentPurposeId ? purposePick.color : paymentPurposeColor ?? null
 
   // Type chips, paralleling `entitySelectedLabel`: trust the just-picked option's
   // types while its id still matches the draft (shows on re-select, pre-save);
@@ -232,6 +258,29 @@ export function PaymentPrimaryFieldsSection({
                 </FormField>
               </CellAt>
             ) : null}
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Purpose">
+                <PaymentPurposePicker
+                  value={draft.paymentPurposeId}
+                  selectedLabel={purposeSelectedLabel}
+                  selectedColor={purposeSelectedColor}
+                  onChange={(id) => {
+                    onFieldChange("paymentPurposeId", id)
+                    if (id === null) setPurposePick({ id: null, label: null, color: null })
+                  }}
+                  onOptionSelected={(option: PaymentPurposeOption | null) =>
+                    setPurposePick({
+                      id: option?.id ?? null,
+                      label: option?.name ?? null,
+                      color: option?.color ?? null,
+                    })
+                  }
+                  placeholder="Select purpose"
+                  disabled={!editable}
+                  ariaLabel="Payment purpose"
+                />
+              </FormField>
+            </CellAt>
             <CellAt col={1} colSpan={8}>
               <FormField label="Date">
                 <DateCell
