@@ -7,13 +7,13 @@ import type { InventoryIndicatorRow } from "@builders/domain"
  */
 export const INDICATORS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryIndicatorRow>> = [
   { key: "status", label: "Status" },
-  { key: "indicatorNumber", label: "Indicator #" },
   { key: "productName", label: "Product" },
-  { key: "warehouseName", label: "Warehouse" },
+  { key: "lowStockThreshold", label: "Low Threshold", align: "end" },
   { key: "unit", label: "Unit" },
   { key: "currentStock", label: "On Hand", align: "end" },
-  { key: "lowStockThreshold", label: "Low Threshold", align: "end" },
+  { key: "warehouseName", label: "Warehouse" },
   { key: "isActive", label: "Active" },
+  { key: "indicatorNumber", label: "Indicator #" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
   { key: "createdBy", label: "Created by" },
