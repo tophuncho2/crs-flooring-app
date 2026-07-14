@@ -203,6 +203,16 @@ export function PaymentPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Date">
+                <DateCell
+                  editable={editable}
+                  value={draft.paymentDate}
+                  onChange={(next) => onFieldChange("paymentDate", next)}
+                  ariaLabel="Payment date"
+                />
+              </FormField>
+            </CellAt>
             {hideWorkOrder ? null : (
               <CellAt col={1} colSpan={8}>
                 <FormField label="Work Order">
@@ -282,74 +292,6 @@ export function PaymentPrimaryFieldsSection({
               </CellAt>
             ) : null}
             <CellAt col={1} colSpan={8}>
-              <FormField label="Date">
-                <DateCell
-                  editable={editable}
-                  value={draft.paymentDate}
-                  onChange={(next) => onFieldChange("paymentDate", next)}
-                  ariaLabel="Payment date"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Method">
-                <TextCell
-                  editable={editable}
-                  value={draft.paymentMethod}
-                  onChange={(next) => onFieldChange("paymentMethod", next)}
-                  maxLength={PAYMENT_METHOD_MAX}
-                  placeholder="Cash, Check #…, ACH"
-                  ariaLabel="Payment method"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Receipt #">
-                <TextCell
-                  editable={editable}
-                  value={draft.receiptNumber}
-                  onChange={(next) => onFieldChange("receiptNumber", next)}
-                  maxLength={RECEIPT_NUMBER_MAX}
-                  placeholder="Receipt #"
-                  ariaLabel="Receipt number"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Store Phone">
-                <PhoneCell
-                  editable={editable}
-                  value={draft.storePhone}
-                  onChange={(next) => onFieldChange("storePhone", next)}
-                  ariaLabel="Store phone"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Store Address">
-                <TextCell
-                  editable={editable}
-                  value={draft.storeAddress}
-                  onChange={(next) => onFieldChange("storeAddress", next)}
-                  maxLength={STORE_ADDRESS_MAX}
-                  placeholder="Store address"
-                  ariaLabel="Store address"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Store #">
-                <TextCell
-                  editable={editable}
-                  value={draft.storeNumber}
-                  onChange={(next) => onFieldChange("storeNumber", next)}
-                  maxLength={STORE_NUMBER_MAX}
-                  placeholder="Store #"
-                  ariaLabel="Store number"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
               <FormField label="Internal Notes">
                 <TextareaCell
                   editable={editable}
@@ -365,8 +307,67 @@ export function PaymentPrimaryFieldsSection({
           </FieldSection>
         }
         right={
-          /* Right flank intentionally empty; the column break is retained. */
-          <FieldSection gap="0.75rem">{null}</FieldSection>
+          <FieldSection gap="0.75rem">
+            {/* Right flank: payment method + receipt + store snapshot fields. */}
+            <CellAt col={1} colSpan={4}>
+              <FormField label="Method">
+                <TextCell
+                  editable={editable}
+                  value={draft.paymentMethod}
+                  onChange={(next) => onFieldChange("paymentMethod", next)}
+                  maxLength={PAYMENT_METHOD_MAX}
+                  placeholder="Cash, Check #…, ACH"
+                  ariaLabel="Payment method"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={4}>
+              <FormField label="Receipt #">
+                <TextCell
+                  editable={editable}
+                  value={draft.receiptNumber}
+                  onChange={(next) => onFieldChange("receiptNumber", next)}
+                  maxLength={RECEIPT_NUMBER_MAX}
+                  placeholder="Receipt #"
+                  ariaLabel="Receipt number"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={4}>
+              <FormField label="Store Phone">
+                <PhoneCell
+                  editable={editable}
+                  value={draft.storePhone}
+                  onChange={(next) => onFieldChange("storePhone", next)}
+                  ariaLabel="Store phone"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={4}>
+              <FormField label="Store Address">
+                <TextCell
+                  editable={editable}
+                  value={draft.storeAddress}
+                  onChange={(next) => onFieldChange("storeAddress", next)}
+                  maxLength={STORE_ADDRESS_MAX}
+                  placeholder="Store address"
+                  ariaLabel="Store address"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={4}>
+              <FormField label="Store #">
+                <TextCell
+                  editable={editable}
+                  value={draft.storeNumber}
+                  onChange={(next) => onFieldChange("storeNumber", next)}
+                  maxLength={STORE_NUMBER_MAX}
+                  placeholder="Store #"
+                  ariaLabel="Store number"
+                />
+              </FormField>
+            </CellAt>
+          </FieldSection>
         }
       />
       {createdAt ? (
