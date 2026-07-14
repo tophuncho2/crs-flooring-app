@@ -166,14 +166,19 @@ export function InventoryPrimaryFieldsSection({
         }
         right={
           <InventoryFieldGrid>
+            {/* Product identity headline — full width, leading the flank above the
+                stat block */}
+            <CellAt col={1} row={1} colSpan={8}>
+              <ProductNameField value={record.productName} />
+            </CellAt>
             {/* Prominent stat block: Stock leads with the derived Converted balance
                 to its right; Deducted + Starting stack beneath Stock. */}
-            <CellAt col={1} row={1} colSpan={4}>
+            <CellAt col={1} row={2} colSpan={4}>
               <StockBalanceField value={record.stockBalance} unitAbbrev={record.unitAbbrev} />
             </CellAt>
             {/* Derived converted balance (on-read; blanks to "—" when the formula/
                 coverage inputs don't resolve or the source unit mismatches). */}
-            <CellAt col={5} row={1} colSpan={4}>
+            <CellAt col={5} row={2} colSpan={4}>
               <ConvertedBalanceField
                 value={record.convertedStockBalance ?? ""}
                 unitAbbrev={record.conversionUnitAbbrev ?? ""}
@@ -181,22 +186,18 @@ export function InventoryPrimaryFieldsSection({
               />
             </CellAt>
             {/* Deducted under Stock | Import # */}
-            <CellAt col={1} row={2} colSpan={4}>
+            <CellAt col={1} row={3} colSpan={4}>
               <NetDeductedField value={record.netDeducted} unitAbbrev={record.unitAbbrev} />
             </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
+            <CellAt col={5} row={3} colSpan={4}>
               <ImportNumberField value={record.importNumber} />
             </CellAt>
             {/* Starting under Deducted | PO # */}
-            <CellAt col={1} row={3} colSpan={4}>
+            <CellAt col={1} row={4} colSpan={4}>
               <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.unitAbbrev} />
             </CellAt>
-            <CellAt col={5} row={3} colSpan={4}>
+            <CellAt col={5} row={4} colSpan={4}>
               <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
-            </CellAt>
-            {/* Product identity headline — full width, closing the flank */}
-            <CellAt col={1} row={4} colSpan={8}>
-              <ProductNameField value={record.productName} />
             </CellAt>
           </InventoryFieldGrid>
         }
