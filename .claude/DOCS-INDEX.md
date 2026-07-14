@@ -19,7 +19,7 @@ Three checklists: every skill, every `CLAUDE.md`, and every other `.md` in the r
 - [ ] dispatch
 - [ ] dispatch-begin
 - [ ] engine
-- [ ] entity-picker
+- [ ] picker-entity-and-type
 - [ ] full-rename
 - [ ] newskill
 - [ ] quick-report

@@ -1,11 +1,11 @@
 ---
-name: entity-picker
-description: Master of the shared entity picker (EntityTypePicker) — the single type→entity combo used everywhere an entity is selected (payments, products, imports, properties, entities→properties create, and the work-orders/properties/templates list filters) — and the label-binding contract every consumer must honor. Invoke to wire the picker onto a NEW consumer correctly, audit an existing consumer for the blank/stale trigger-label bug or wiring drift, or fold a forked copy of the combo/presentation/options-request back onto the one shared source. Knows the footgun cold — PickerTrigger derives its label ONLY from `selectedLabel`, never from `value`, so a consumer that binds the label to the saved join name with no local picked-label state shows nothing on select. Editing skill, not read-only. Explicit-only — invoke on /entity-picker.
+name: picker-entity-and-type
+description: Master of the shared entity picker (EntityTypePicker) — the single type→entity combo used everywhere an entity is selected (payments, products, imports, properties, entities→properties create, and the work-orders/properties/templates list filters) — and the label-binding contract every consumer must honor. Invoke to wire the picker onto a NEW consumer correctly, audit an existing consumer for the blank/stale trigger-label bug or wiring drift, or fold a forked copy of the combo/presentation/options-request back onto the one shared source. Knows the footgun cold — PickerTrigger derives its label ONLY from `selectedLabel`, never from `value`, so a consumer that binds the label to the saved join name with no local picked-label state shows nothing on select. Editing skill, not read-only. Explicit-only — invoke on /picker-entity-and-type.
 ---
 
-# /entity-picker
+# /picker-entity-and-type
 
-`/entity-picker` makes you the owner of the **shared entity picker** — the `EntityTypePicker` type→entity combo and the **label-binding contract** every place that consumes it must satisfy. The user invokes it with a free-form intent — "wire the entity picker onto the new contacts form", "audit payments' entity picker for the label bug", "the import picker goes blank on select", "fold this copied combo back onto the shared one". Your job: ground in the one shared machinery, classify the task, and drive the consumer (or the shared source) to correctness.
+`/picker-entity-and-type` makes you the owner of the **shared entity picker** — the `EntityTypePicker` type→entity combo and the **label-binding contract** every place that consumes it must satisfy. The user invokes it with a free-form intent — "wire the entity picker onto the new contacts form", "audit payments' entity picker for the label bug", "the import picker goes blank on select", "fold this copied combo back onto the shared one". Your job: ground in the one shared machinery, classify the task, and drive the consumer (or the shared source) to correctness.
 
 This is an **editing** skill — it reads, classifies, then makes the change. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/session-new`). The picker's *engine chrome* (`@/engines/picker` — `PickerList`, `PickerTrigger`, the async controller) belongs to `/engine`; **this skill owns the entity-domain picker built on top of it and the consumer contract end to end.**
 
@@ -44,7 +44,7 @@ Whichever pattern: wire `onOptionSelected`, reset the picked label on clear, `va
 - **The engine chrome is `/engine`'s, not yours.** If a fix would change `PickerList`/`PickerTrigger`/the async controller themselves, stop and hand to `/engine`; this skill changes the entity combo and its consumers only.
 - **DO NOT COMMIT.** Per project CLAUDE.md the user commits — you provide a commit message ≤17 words. The user runs migrations (this skill rarely touches schema; if `EntityOption`'s read changes shape, author the migration, don't run it).
 - **Drive, don't multiple-choice.** Lay out the wiring, surface genuine open questions (which label pattern, is this a fork) in your response, then execute.
-- **Explicit-only.** Trigger on the literal `/entity-picker`. Not on "the picker is broken", "look at the entity dropdown", "which picker does X".
+- **Explicit-only.** Trigger on the literal `/picker-entity-and-type`. Not on "the picker is broken", "look at the entity dropdown", "which picker does X".
 
 ## Step 1 — Ground in the live picker surface
 
@@ -126,4 +126,4 @@ build <…> · typecheck <…> · lint <0 errors> · test <…>
 - Perform the future `EntityType → EntityIdentifier` rename — that's `/full-rename`.
 - Fork the combo, presentation, or options request per consumer (extend with a prop instead).
 - Add supporting files beyond this SKILL.md, commit the change, or run migrations.
-- Trigger on anything but the literal `/entity-picker` invocation.
+- Trigger on anything but the literal `/picker-entity-and-type` invocation.
