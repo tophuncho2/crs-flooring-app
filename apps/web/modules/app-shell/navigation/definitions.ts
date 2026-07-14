@@ -5,7 +5,6 @@ export type FlooringNavGroupId =
   | "operations"
   | "accounting"
   | "catalog"
-  | "tracking"
   | "users"
 
 export type FlooringNavGroup = {
@@ -15,8 +14,7 @@ export type FlooringNavGroup = {
 
 export const FLOORING_NAV_GROUPS: FlooringNavGroup[] = [
   { id: "management", label: "Management" },
-  { id: "operations", label: "Inventory Operations" },
-  { id: "tracking", label: "Tracking" },
+  { id: "operations", label: "Material Operations" },
   { id: "accounting", label: "Business operations" },
   { id: "catalog", label: "Catalog" },
   { id: "users", label: "Users" },
@@ -67,16 +65,16 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     slug: "flooring-certificate-tracking",
     name: "Certificate Tracking",
     href: "/dashboard/certificate-tracking",
-    group: "tracking",
+    group: "management",
     minRank: "TIER_1",
   },
-  { slug: "flooring-inventory-indicators", name: "Inventory Indicators", href: "/dashboard/inventory-indicators", group: "tracking" },
   { slug: "flooring-adjustments", name: "Adjustments", href: "/dashboard/adjustments", group: "operations" },
   { slug: "flooring-payments", name: "Payments", href: "/dashboard/payments", group: "accounting", minRank: "TIER_2" },
   { slug: "flooring-payment-purposes", name: "Payment Purposes", href: "/dashboard/payment-purposes", group: "catalog", minRank: "TIER_1" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", group: "operations" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", group: "operations" },
   { slug: "products", name: "Products", href: "/dashboard/products", group: "operations" },
+  { slug: "flooring-inventory-indicators", name: "Inventory Indicators", href: "/dashboard/inventory-indicators", group: "operations" },
   { slug: "flooring-warehouse", name: "Warehouse", href: "/dashboard/warehouse", group: "accounting", minRank: "TIER_1" },
   { slug: "flooring-job-types", name: "Job Types", href: "/dashboard/job-types", group: "catalog", minRank: "TIER_1" },
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", group: "catalog" },
