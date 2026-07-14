@@ -11,6 +11,7 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   // Sorting is driven by the toolbar Sort menu (see INVENTORY_SORT_OPTIONS), not
   // the column header — headers are static labels.
   { key: "stockBalance", label: "Stock", align: "start" },
+  { key: "converted", label: "Converted", align: "start" },
   { key: "netDeducted", label: "Deducted", align: "end" },
   { key: "productName", label: "Product" },
   { key: "inventoryNumber", label: "Inv #" },

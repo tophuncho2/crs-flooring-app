@@ -37,6 +37,16 @@ export function renderInventoryRowCell(
           {formatInventoryQuantity(row.stockBalance, row.unitAbbrev)}
         </span>
       )
+    case "converted": {
+      const converted = row.convertedStockBalance
+      return converted ? (
+        <span className="tabular-nums">
+          {formatInventoryQuantity(converted, row.conversionUnitAbbrev ?? "")}
+        </span>
+      ) : (
+        "-"
+      )
+    }
     case "netDeducted":
       return (
         <span className="tabular-nums">

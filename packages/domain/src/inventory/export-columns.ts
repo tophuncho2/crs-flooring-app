@@ -22,6 +22,8 @@ export const INVENTORY_EXPORT_COLUMNS: ReadonlyArray<ExportColumn<InventoryRow>>
   { key: "warehouseName", label: "Warehouse", value: (row) => row.warehouseName },
   { key: "location", label: "Location", value: (row) => row.location },
   { key: "stockBalance", label: "Stock", value: (row) => row.stockBalance },
+  { key: "converted", label: "Converted", value: (row) => row.convertedStockBalance ?? "" },
+  { key: "convertedUnit", label: "Converted Unit", value: (row) => row.conversionUnitAbbrev ?? "" },
   { key: "netDeducted", label: "Deducted", value: (row) => row.netDeducted },
   { key: "startingStock", label: "Starting", value: (row) => row.startingStock },
   { key: "unit", label: "Unit", value: (row) => row.unitAbbrev },

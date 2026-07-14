@@ -20,8 +20,16 @@ import type { EnrichedInventoryAdjustmentRow } from "../adjustments/types.js"
  *   - `inventoryNumber` — Inv # is the header's top-right id, always shown.
  *   - `cost` / `freight` — intentionally kept off this document (mirrors the
  *     adjustments manifest, which already omits them).
+ *   - `converted` / `convertedUnit` — the derived converted balance is a list-view
+ *     CSV column only; kept off the per-record print/CSV document.
  */
-const EXCLUDED_INVENTORY_FIELD_KEYS = new Set<string>(["inventoryNumber", "cost", "freight"])
+const EXCLUDED_INVENTORY_FIELD_KEYS = new Set<string>([
+  "inventoryNumber",
+  "cost",
+  "freight",
+  "converted",
+  "convertedUnit",
+])
 
 /**
  * Inventory fields offered on the print primary block — the inventory CSV manifest
