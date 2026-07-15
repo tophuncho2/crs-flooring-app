@@ -244,7 +244,7 @@ export function AdjustmentEditFormFields({
         left={
           <InventoryFieldGrid>
             {/* Adjustment # | Color lead the flank, then the work-order picker,
-                area, and internal notes stacked full-width beneath. */}
+                area, the waste toggle, and internal notes stacked full-width beneath. */}
             <CellAt col={1} colSpan={4}>
               <FormField label="Adjustment #">
                 <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
@@ -253,17 +253,25 @@ export function AdjustmentEditFormFields({
             <CellAt col={5} colSpan={4}>{colorField}</CellAt>
             <AdjustmentPickerStack controller={controller} colSpan={8} />
             <CellAt col={1} colSpan={8}>{areaField}</CellAt>
+            <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
             <CellAt col={1} colSpan={8}>{internalNotesField}</CellAt>
           </InventoryFieldGrid>
         }
         right={
           <InventoryFieldGrid>
-            {/* The before→after transition StatCell sits atop the quantity / type
-                it reflects; Location | Warehouse and the Waste toggle stack below. */}
+            {/* The before→after transition StatCell sits atop the derived Converted
+                stat; Quantity / Type and Location | Warehouse stack below. */}
             <CellAt col={1} colSpan={8}>
               <FormField label="Adjustment">
                 <StatCell display={transition} ariaLabel="Adjustment transition" />
               </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <ConvertedBalanceField
+                value={adjustment.convertedBalance ?? ""}
+                unitAbbrev={adjustment.conversionUnitAbbrev ?? ""}
+                prominent
+              />
             </CellAt>
             <CellAt col={1} colSpan={4}>{quantityField}</CellAt>
             <CellAt col={5} colSpan={4}>{typeField}</CellAt>
@@ -287,18 +295,11 @@ export function AdjustmentEditFormFields({
             <CellAt col={5} colSpan={4}>
               <WarehouseStaticField warehouseName={adjustment.warehouseName ?? null} />
             </CellAt>
-            <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
-            {/* Conversion cluster: Coverage/Unit | Coverage Unit paired, then the
-                formula picker and the read-only derived Converted balance. */}
+            {/* Conversion cluster: the formula picker leads, then the
+                Coverage/Unit | Coverage Unit pair it feeds. */}
+            <CellAt col={1} colSpan={8}>{formulaField}</CellAt>
             <CellAt col={1} colSpan={4}>{coveragePerUnitField}</CellAt>
             <CellAt col={5} colSpan={4}>{coverageUnitField}</CellAt>
-            <CellAt col={1} colSpan={8}>{formulaField}</CellAt>
-            <CellAt col={1} colSpan={8}>
-              <ConvertedBalanceField
-                value={adjustment.convertedBalance ?? ""}
-                unitAbbrev={adjustment.conversionUnitAbbrev ?? ""}
-              />
-            </CellAt>
           </InventoryFieldGrid>
         }
       />
