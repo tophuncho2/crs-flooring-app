@@ -3,6 +3,7 @@ import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import {
   formatAdjustmentTransition,
+  formatInventoryQuantity,
   formatSignedAdjustmentQuantity,
   type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
@@ -42,6 +43,18 @@ export function renderAdjustmentsRowCell(
           {formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.unitAbbrev ?? "")}
         </CellChip>
       )
+    case "converted": {
+      // Derived unit-conversion of the adjustment's own quantity (basis = quantity),
+      // resolved on-read. Empty string when the adjustment has no linked formula.
+      const converted = row.convertedBalance
+      return converted ? (
+        <span className="tabular-nums">
+          {formatInventoryQuantity(converted, row.conversionUnitAbbrev ?? "")}
+        </span>
+      ) : (
+        "-"
+      )
+    }
     case "adjustment": {
       const transition = formatAdjustmentTransition(row.before, row.after, row.unitAbbrev ?? "")
       return transition != null ? <span className="tabular-nums">{transition}</span> : "-"
