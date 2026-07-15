@@ -3,6 +3,7 @@ import { ADJUSTMENTS_EXPORT_COLUMNS, pickExportColumns, toCsv } from "@builders/
 import { EXPORT } from "@/server/http/rate-limit-presets"
 import { applyRoutePolicy } from "@/server/http/route-policy"
 import { routeCsv, routeError } from "@/server/http/route-helpers"
+import { respondWithSheet } from "@/server/google/respond-with-sheet"
 import { validateAdjustmentsExportRequest } from "../_validators"
 
 /**
@@ -21,14 +22,18 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as unknown
-    const { input, columns } = validateAdjustmentsExportRequest(body)
+    const { input, columns, format } = validateAdjustmentsExportRequest(body)
     const { rows, total } = await exportAdjustmentsUseCase(input)
     const csv = toCsv(rows, pickExportColumns(ADJUSTMENTS_EXPORT_COLUMNS, columns), { bom: true })
 
-    return routeCsv(access, csv, {
-      filename: "adjustments-export.csv",
-      extraHeaders: { "x-export-total": String(total), "x-export-count": String(rows.length) },
-    })
+    if (format === "csv") {
+      return routeCsv(access, csv, {
+        filename: "adjustments-export.csv",
+        extraHeaders: { "x-export-total": String(total), "x-export-count": String(rows.length) },
+      })
+    }
+
+    return respondWithSheet(access, { csv, moduleLabel: "Adjustments", total, count: rows.length })
   } catch (error) {
     return routeError(access, error)
   }

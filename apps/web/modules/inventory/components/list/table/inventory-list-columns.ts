@@ -1,33 +1,33 @@
-import type { DataTableColumn, SortMenuOption } from "@/engines/list-view"
-import type { InventoryRow } from "@builders/domain"
+import type { DataTableCellAlign, DataTableColumn, SortMenuOption } from "@/engines/list-view"
+import { INVENTORY_COLUMNS, type InventoryRow } from "@builders/domain"
 
 /**
- * Column definitions for the inventory list-view `DataTable`. Order is
- * the visual left-to-right order. Track widths are computed by the
- * browser (`table-layout: auto`) — each column sizes to
- * `max(header label, widest cell)` and never wraps.
+ * Per-column alignment overrides for the inventory list `DataTable`, keyed by the
+ * catalog column key. Anything absent left-aligns (the default). Kept module-local
+ * because alignment is a view concern the pure domain catalog doesn't carry.
  */
-export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>> = [
-  // Sorting is driven by the toolbar Sort menu (see INVENTORY_SORT_OPTIONS), not
-  // the column header — headers are static labels.
-  { key: "stockBalance", label: "Stock", align: "start" },
-  { key: "converted", label: "Converted", align: "start" },
-  { key: "netDeducted", label: "Deducted", align: "end" },
-  { key: "productName", label: "Product" },
-  { key: "inventoryNumber", label: "Inv #" },
-  { key: "rollNumber", label: "Roll #" },
-  { key: "dyeLot", label: "Dye Lot" },
-  { key: "note", label: "Note" },
-  { key: "location", label: "Location" },
-  { key: "warehouse", label: "Warehouse" },
-  { key: "purchaseOrderNumber", label: "PO #" },
-  { key: "importNumber", label: "Import #" },
-  { key: "startingStock", label: "Starting", align: "end" },
-  { key: "createdAt", label: "Created" },
-  { key: "updatedAt", label: "Updated" },
-  { key: "createdBy", label: "Created by" },
-  { key: "updatedBy", label: "Updated by" },
-]
+const INVENTORY_COLUMN_ALIGN: Record<string, DataTableCellAlign> = {
+  stockBalance: "start",
+  converted: "start",
+  netDeducted: "end",
+  startingStock: "end",
+}
+
+/**
+ * Column definitions for the inventory list-view `DataTable`, derived from the one
+ * {@link INVENTORY_COLUMNS} catalog (every non-`exportOnly` entry) so the table and
+ * the export can never drift. Order is the visual left-to-right order. Track widths
+ * are computed by the browser (`table-layout: auto`) — each column sizes to
+ * `max(header label, widest cell)` and never wraps. Sorting is driven by the
+ * toolbar Sort menu (see INVENTORY_SORT_OPTIONS), not the header — headers are
+ * static labels.
+ */
+export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>> =
+  INVENTORY_COLUMNS.filter((column) => !column.exportOnly).map((column) => ({
+    key: column.key,
+    label: column.label,
+    ...(INVENTORY_COLUMN_ALIGN[column.key] ? { align: INVENTORY_COLUMN_ALIGN[column.key] } : {}),
+  }))
 
 /**
  * Columns offered by the gutter Sort menu — keyed by backend sort field (which

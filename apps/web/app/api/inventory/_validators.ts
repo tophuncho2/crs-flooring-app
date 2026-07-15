@@ -14,7 +14,7 @@ import {
   LIST_INVENTORY_MAX_PAGE_SIZE,
   LIST_INVENTORY_PAGE_SIZE,
 } from "@builders/domain"
-import { parseExportEnvelope } from "@/server/http/export-request"
+import { parseExportEnvelope, type ExportFormat } from "@/server/http/export-request"
 import { optionsQuerySchema, parseQuery, requireColor } from "@/app/api/_shared/validators"
 
 function failInventory(message: string, field?: string): never {
@@ -312,6 +312,8 @@ export type ValidatedInventoryExport = {
   input: InventoryExportInput
   /** Picked column keys, whitelisted; `undefined` ⇒ all columns. */
   columns?: string[]
+  /** Delivery target — Google Sheet (default) or CSV download. */
+  format: ExportFormat
 }
 
 /**
@@ -332,6 +334,7 @@ export function validateInventoryExportRequest(body: unknown): ValidatedInventor
       ...(envelope.cap !== undefined ? { cap: envelope.cap } : {}),
     },
     ...(envelope.columns ? { columns: envelope.columns } : {}),
+    format: envelope.format,
   }
 }
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import { SortMenuBody, useFetchListController, useListSelection, ListExportButton, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
 import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { reconnectGoogleForSheets } from "@/modules/auth/reconnect-google"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
@@ -539,6 +540,7 @@ export default function InventoryClient({
           columns={exportColumns}
           filename="inventory-export.csv"
           selectedIds={selectedIds}
+          onReauthRequired={reconnectGoogleForSheets}
         />
       </ListActionBar>
 

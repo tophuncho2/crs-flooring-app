@@ -29,7 +29,7 @@ export function renderInventoryRowCell(
       return row.dyeLot || "-"
     case "note":
       return row.note || "-"
-    case "warehouse":
+    case "warehouseName":
       return row.warehouseName || "-"
     case "stockBalance":
       return (

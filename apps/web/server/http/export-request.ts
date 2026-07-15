@@ -12,7 +12,11 @@ const exportEnvelopeSchema = z.object({
   ids: z.array(z.string()).optional(),
   columns: z.array(z.string()).optional(),
   cap: z.union([z.literal(250), z.literal(500), z.literal(1000), z.literal("all")]).optional(),
+  format: z.enum(["sheet", "csv"]).optional(),
 })
+
+/** Delivery target for an export: a Google Sheet in the user's Drive, or a CSV file download. */
+export type ExportFormat = "sheet" | "csv"
 
 export type ParsedExportEnvelope = {
   /** The list-view search string — feed to the module's `validateList*Query`. */
@@ -20,6 +24,8 @@ export type ParsedExportEnvelope = {
   ids?: string[]
   columns?: string[]
   cap?: number | "all"
+  /** Delivery target; defaults to `"sheet"` (the primary action). */
+  format: ExportFormat
 }
 
 /**
@@ -53,5 +59,6 @@ export function parseExportEnvelope(
     ...(ids && ids.length > 0 ? { ids } : {}),
     ...(columns && columns.length > 0 ? { columns } : {}),
     ...(data.cap !== undefined ? { cap: data.cap } : {}),
+    format: data.format ?? "sheet",
   }
 }

@@ -36,7 +36,7 @@ import {
   type WorkOrderPlannedPaymentForm,
   type WorkOrderPlannedPaymentsDiff,
 } from "@builders/domain"
-import { parseExportEnvelope } from "@/server/http/export-request"
+import { parseExportEnvelope, type ExportFormat } from "@/server/http/export-request"
 import {
   optionsQuerySchema,
   parseQuery,
@@ -598,6 +598,8 @@ export type ValidatedWorkOrdersExport = {
   input: WorkOrdersExportInput
   /** Picked column keys, whitelisted; `undefined` ⇒ all columns. */
   columns?: string[]
+  /** Delivery target — Google Sheet (default) or CSV download. */
+  format: ExportFormat
 }
 
 /**
@@ -618,6 +620,7 @@ export function validateWorkOrdersExportRequest(body: unknown): ValidatedWorkOrd
       ...(envelope.cap !== undefined ? { cap: envelope.cap } : {}),
     },
     ...(envelope.columns ? { columns: envelope.columns } : {}),
+    format: envelope.format,
   }
 }
 

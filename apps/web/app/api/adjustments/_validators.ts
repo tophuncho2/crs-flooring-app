@@ -14,7 +14,7 @@ import {
   type InventoryAdjustmentListFilters,
   type PaletteColor,
 } from "@builders/domain"
-import { parseExportEnvelope } from "@/server/http/export-request"
+import { parseExportEnvelope, type ExportFormat } from "@/server/http/export-request"
 import { parseQuery, requireColor, requireString } from "@/app/api/_shared/validators"
 
 // Adjustment mutation body validators. The use cases are scope-aware, but every
@@ -399,6 +399,8 @@ export type ValidatedAdjustmentsExport = {
   input: AdjustmentsExportInput
   /** Picked column keys, whitelisted; `undefined` ⇒ all columns. */
   columns?: string[]
+  /** Delivery target — Google Sheet (default) or CSV download. */
+  format: ExportFormat
 }
 
 /**
@@ -419,5 +421,6 @@ export function validateAdjustmentsExportRequest(body: unknown): ValidatedAdjust
       ...(envelope.cap !== undefined ? { cap: envelope.cap } : {}),
     },
     ...(envelope.columns ? { columns: envelope.columns } : {}),
+    format: envelope.format,
   }
 }

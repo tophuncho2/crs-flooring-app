@@ -1,4 +1,5 @@
 export * from "./types.js"
+export * from "./columns.js"
 export * from "./export-columns.js"
 export * from "./adjustment-sort.js"
 export * from "./column-limits.js"

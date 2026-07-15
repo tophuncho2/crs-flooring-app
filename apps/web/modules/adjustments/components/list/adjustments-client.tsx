@@ -14,6 +14,7 @@ import {
   type WarehouseOption,
 } from "@builders/domain"
 import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { reconnectGoogleForSheets } from "@/modules/auth/reconnect-google"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
@@ -426,6 +427,7 @@ export default function AdjustmentsClient({
           columns={exportColumns}
           filename="adjustments-export.csv"
           selectedIds={selectedIds}
+          onReauthRequired={reconnectGoogleForSheets}
         />
       </ListActionBar>
 

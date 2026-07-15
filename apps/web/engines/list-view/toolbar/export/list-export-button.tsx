@@ -1,18 +1,26 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download } from "lucide-react"
+import { Download, Sheet } from "lucide-react"
 import { EXPORT_ROW_CAP_OPTIONS, type ExportRowCap } from "@builders/domain"
 import { ToolbarMenuButton } from "../action-bar/toolbar-menu-button"
 
 const CHECKBOX_CLASS =
   "h-4 w-4 cursor-pointer rounded border-[var(--panel-border)] text-sky-600 focus:ring-1 focus:ring-sky-500/40"
 
+// Protocol code the export routes return (HTTP 409) when the user hasn't granted
+// the Google Drive scope yet. Mirrored verbatim from the server
+// (`server/google/respond-with-sheet.ts`) — keep the two in sync.
+const GOOGLE_REAUTH_CODE = "google_reauth_required"
+
+type ExportFormat = "sheet" | "csv"
+
 type ExportStatus =
   | { kind: "idle" }
-  | { kind: "loading" }
+  | { kind: "loading"; format: ExportFormat }
   | { kind: "done"; message: string }
   | { kind: "error"; message: string }
+  | { kind: "reauth"; message: string }
 
 export type ListExportColumn = { key: string; label: string }
 
@@ -23,7 +31,7 @@ export type ListExportButtonProps = {
   query: string
   /** Exportable columns ({ key, label }) — all checked by default. */
   columns: ReadonlyArray<ListExportColumn>
-  /** Download filename, e.g. `inventory-export.csv`. */
+  /** Download filename for the CSV fallback, e.g. `inventory-export.csv`. */
   filename: string
   /**
    * Ticked row ids from the table's always-on selection column. When non-empty
@@ -32,6 +40,12 @@ export type ListExportButtonProps = {
    * — this menu only reflects the current tick count, it no longer gates it.
    */
   selectedIds: ReadonlyArray<string>
+  /**
+   * Called when a Sheets export fails because the user hasn't granted the Google
+   * Drive scope yet — the consumer re-runs Google sign-in (which re-consents).
+   * Optional: without it the reconnect message shows but has no action button.
+   */
+  onReauthRequired?: () => void
 }
 
 function capLabel(cap: ExportRowCap): string {
@@ -40,12 +54,12 @@ function capLabel(cap: ExportRowCap): string {
 
 /**
  * The right-cluster "Export" tool: a {@link ToolbarMenuButton} whose popover
- * hosts the column-picker checkboxes, a row-cap dropdown, and a Download button.
- * Row selection is no longer gated here — checkboxes live on the table itself
- * (always visible) — so this menu just reflects the current tick count. Always
- * POSTs to the consumer's export endpoint with the current list query plus, when
- * rows are ticked, the ticked ids, then streams the CSV back via `fetch → blob`
- * so the button can show a loading state and surface errors / truncation inline.
+ * hosts the column-picker checkboxes, a row-cap dropdown, and two actions —
+ * the primary **Open in Google Sheets** (creates a Sheet in the user's Drive and
+ * opens it) and a secondary **Download CSV** (the file fallback). Row selection is
+ * not gated here — checkboxes live on the table itself — so this menu just
+ * reflects the current tick count. Both actions POST the current list query plus,
+ * when rows are ticked, the ticked ids, differing only by `format`.
  */
 export function ListExportButton({
   endpoint,
@@ -53,6 +67,7 @@ export function ListExportButton({
   columns,
   filename,
   selectedIds,
+  onReauthRequired,
 }: ListExportButtonProps) {
   const allKeys = useMemo(() => columns.map((column) => column.key), [columns])
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(() => new Set(allKeys))
@@ -62,7 +77,7 @@ export function ListExportButton({
   const useIds = selectedIds.length > 0
   const checkedCount = checkedKeys.size
   const isLoading = status.kind === "loading"
-  const canDownload = checkedCount > 0 && !isLoading
+  const canExport = checkedCount > 0 && !isLoading
 
   const toggleColumn = (key: string) => {
     setCheckedKeys((prev) => {
@@ -77,8 +92,8 @@ export function ListExportButton({
     setCheckedKeys(checked ? new Set(allKeys) : new Set())
   }
 
-  const download = async () => {
-    setStatus({ kind: "loading" })
+  const runExport = async (format: ExportFormat) => {
+    setStatus({ kind: "loading", format })
     try {
       const orderedKeys = allKeys.filter((key) => checkedKeys.has(key))
       const response = await fetch(endpoint, {
@@ -90,21 +105,44 @@ export function ListExportButton({
           ...(useIds ? { ids: [...selectedIds] } : {}),
           columns: orderedKeys,
           cap,
+          format,
         }),
       })
 
       if (!response.ok) {
         let message = `Export failed (${response.status})`
+        let code: string | undefined
         try {
-          const data = (await response.json()) as { error?: string }
+          const data = (await response.json()) as { error?: string; code?: string }
           if (data?.error) message = data.error
+          code = data?.code
         } catch {
           // non-JSON error body — keep the status-code message
         }
-        setStatus({ kind: "error", message })
+        if (code === GOOGLE_REAUTH_CODE) {
+          setStatus({ kind: "reauth", message })
+        } else {
+          setStatus({ kind: "error", message })
+        }
         return
       }
 
+      if (format === "sheet") {
+        const data = (await response.json()) as { url?: string; total?: number; count?: number }
+        if (data.url) window.open(data.url, "_blank", "noopener")
+        const total = data.total ?? 0
+        const count = data.count ?? 0
+        setStatus({
+          kind: "done",
+          message:
+            total > count
+              ? `Opened first ${count.toLocaleString()} of ${total.toLocaleString()} rows in Google Sheets`
+              : `Opened ${count.toLocaleString()} ${count === 1 ? "row" : "rows"} in Google Sheets`,
+        })
+        return
+      }
+
+      // CSV: stream the blob back and download via a synthetic anchor click.
       const total = Number(response.headers.get("x-export-total") ?? "0")
       const count = Number(response.headers.get("x-export-count") ?? "0")
       const blob = await response.blob()
@@ -137,7 +175,7 @@ export function ListExportButton({
       label="Export"
       icon={Download}
       active={useIds}
-      title="Export CSV"
+      title="Export"
       bodyClassName="w-[24rem]"
       maxHeight={560}
     >
@@ -207,18 +245,42 @@ export function ListExportButton({
         </select>
       </label>
 
-      <button
-        type="button"
-        onClick={download}
-        disabled={!canDownload}
-        className="inline-flex items-center justify-center gap-1.5 rounded-md bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <Download size={14} strokeWidth={2.5} aria-hidden="true" />
-        {isLoading ? "Exporting…" : "Download CSV"}
-      </button>
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => runExport("sheet")}
+          disabled={!canExport}
+          className="inline-flex items-center justify-center gap-1.5 rounded-md bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Sheet size={14} strokeWidth={2.5} aria-hidden="true" />
+          {status.kind === "loading" && status.format === "sheet" ? "Opening…" : "Open in Google Sheets"}
+        </button>
+        <button
+          type="button"
+          onClick={() => runExport("csv")}
+          disabled={!canExport}
+          className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-sm font-semibold text-[var(--foreground)]/80 transition hover:bg-[var(--panel-border)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Download size={14} strokeWidth={2.5} aria-hidden="true" />
+          {status.kind === "loading" && status.format === "csv" ? "Exporting…" : "Download CSV"}
+        </button>
+      </div>
 
       {status.kind === "error" ? (
         <p className="text-xs text-rose-500">{status.message}</p>
+      ) : status.kind === "reauth" ? (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xs text-amber-600">{status.message}</p>
+          {onReauthRequired ? (
+            <button
+              type="button"
+              onClick={onReauthRequired}
+              className="self-start text-xs font-semibold text-sky-600 hover:underline"
+            >
+              Reconnect Google
+            </button>
+          ) : null}
+        </div>
       ) : status.kind === "done" ? (
         <p className="text-xs text-emerald-600">{status.message}</p>
       ) : null}

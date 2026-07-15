@@ -22,6 +22,7 @@ import {
   usePickedOptionLabel,
   useMultiPickedOptionLabels,
 } from "@/engines/picker"
+import { reconnectGoogleForSheets } from "@/modules/auth/reconnect-google"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
@@ -622,6 +623,7 @@ export default function WorkOrdersClient({
           columns={exportColumns}
           filename="work-orders-export.csv"
           selectedIds={selectedIds}
+          onReauthRequired={reconnectGoogleForSheets}
         />
       </ListActionBar>
 

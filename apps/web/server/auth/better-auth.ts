@@ -67,6 +67,15 @@ export const auth = betterAuth({
       clientId: authEnv.googleClientId,
       clientSecret: authEnv.googleClientSecret,
       hd: COMPANY_GOOGLE_DOMAIN,
+      // Beyond SSO identity, the app writes list exports into the user's own Drive
+      // as Google Sheets. `drive.file` is per-file (only files WE create) and
+      // non-sensitive, so an internal Workspace app needs no Google verification.
+      // `offline` + `consent` are what make Google return a refresh token (stored on
+      // the linked Account row) so the server can mint a Sheet on demand later, and
+      // re-prompt existing users once so they grant the newly-added scope.
+      scope: ["https://www.googleapis.com/auth/drive.file"],
+      accessType: "offline",
+      prompt: "consent",
     },
   },
 

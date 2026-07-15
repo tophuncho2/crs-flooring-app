@@ -3,6 +3,7 @@ import { WORK_ORDER_EXPORT_COLUMNS, pickExportColumns, toCsv } from "@builders/d
 import { EXPORT } from "@/server/http/rate-limit-presets"
 import { applyRoutePolicy } from "@/server/http/route-policy"
 import { routeCsv, routeError } from "@/server/http/route-helpers"
+import { respondWithSheet } from "@/server/google/respond-with-sheet"
 import { validateWorkOrdersExportRequest } from "../_validators"
 
 /**
@@ -20,14 +21,18 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as unknown
-    const { input, columns } = validateWorkOrdersExportRequest(body)
+    const { input, columns, format } = validateWorkOrdersExportRequest(body)
     const { rows, total } = await exportWorkOrdersUseCase(input)
     const csv = toCsv(rows, pickExportColumns(WORK_ORDER_EXPORT_COLUMNS, columns), { bom: true })
 
-    return routeCsv(access, csv, {
-      filename: "work-orders-export.csv",
-      extraHeaders: { "x-export-total": String(total), "x-export-count": String(rows.length) },
-    })
+    if (format === "csv") {
+      return routeCsv(access, csv, {
+        filename: "work-orders-export.csv",
+        extraHeaders: { "x-export-total": String(total), "x-export-count": String(rows.length) },
+      })
+    }
+
+    return respondWithSheet(access, { csv, moduleLabel: "Work Orders", total, count: rows.length })
   } catch (error) {
     return routeError(access, error)
   }

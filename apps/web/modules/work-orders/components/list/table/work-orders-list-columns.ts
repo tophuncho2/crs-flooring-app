@@ -1,39 +1,20 @@
 import type { DataTableColumn, SortMenuOption } from "@/engines/list-view"
-import type { WorkOrderListRow } from "@builders/domain"
+import { WORK_ORDER_COLUMNS, type WorkOrderListRow } from "@builders/domain"
 
 /**
- * Column definitions for the work-orders list-view `DataTable`. Order is
- * the visual left-to-right order. Track widths are computed by the
- * browser (`table-layout: auto`) — each column sizes to
- * `max(header label, widest cell)` and never wraps.
- *
- * Sorting is driven by the toolbar Sort menu (see WORK_ORDERS_SORT_OPTIONS), not
- * the column header — headers are static labels.
+ * Column definitions for the work-orders list-view `DataTable`, derived from the
+ * one {@link WORK_ORDER_COLUMNS} catalog (every non-`exportOnly` entry) so the
+ * table and the export can never drift. Order is the visual left-to-right order.
+ * Track widths are computed by the browser (`table-layout: auto`) — each column
+ * sizes to `max(header label, widest cell)` and never wraps. Sorting is driven by
+ * the toolbar Sort menu (see WORK_ORDERS_SORT_OPTIONS), not the column header —
+ * headers are static labels.
  */
-export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderListRow>> = [
-  { key: "workOrderNumber", label: "WO #" },
-  { key: "scheduledFor", label: "Date" },
-  { key: "timeOfDay", label: "Time of Day" },
-  { key: "warehouseName", label: "Warehouse" },
-  { key: "entityName", label: "Entity" },
-  { key: "propertyName", label: "Property" },
-  { key: "customerName", label: "Customer Name" },
-  { key: "streetAddress", label: "Street" },
-  { key: "city", label: "City" },
-  { key: "state", label: "State" },
-  { key: "zip", label: "Zip" },
-  { key: "jobTypeName", label: "Job Type" },
-  { key: "vacancy", label: "Vacancy" },
-  { key: "unitNumber", label: "Unit #" },
-  { key: "unitType", label: "Unit Type" },
-  { key: "description", label: "Description" },
-  { key: "installer", label: "Installer" },
-  { key: "purchaseOrderNumber", label: "PO #" },
-  { key: "createdAt", label: "Created" },
-  { key: "updatedAt", label: "Updated" },
-  { key: "createdBy", label: "Created by" },
-  { key: "updatedBy", label: "Updated by" },
-]
+export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderListRow>> =
+  WORK_ORDER_COLUMNS.filter((column) => !column.exportOnly).map((column) => ({
+    key: column.key,
+    label: column.label,
+  }))
 
 /**
  * Columns offered by the toolbar Sort menu — keyed by backend sort field (what

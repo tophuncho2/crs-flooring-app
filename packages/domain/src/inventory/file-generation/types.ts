@@ -29,6 +29,10 @@ const EXCLUDED_INVENTORY_FIELD_KEYS = new Set<string>([
   "freight",
   "converted",
   "convertedUnit",
+  // Actor emails now ride the list export (visible ⇒ exported), but the per-record
+  // print/CSV document stays as it was — they add nothing on a single record.
+  "createdBy",
+  "updatedBy",
 ])
 
 /**

@@ -12,6 +12,30 @@ export type ExportColumn<TRow> = {
   value: (row: TRow) => string
 }
 
+/**
+ * One entry in a module's **column catalog** — the single source that drives BOTH
+ * the visible list table and the export (checkboxes + CSV/Sheet). A plain entry
+ * (no flag) appears in both; the two flags are the only way to "prop a column out"
+ * of one surface for a specific reason:
+ *   - `exportOnly` — in the export, NOT the table (e.g. raw cost/freight/unit cols).
+ *   - `listOnly`   — in the table, NOT the export.
+ * The client derives its `DataTableColumn`s from `!exportOnly` entries; the domain
+ * derives its `ExportColumn` manifest from `!listOnly` entries via {@link toExportColumns}.
+ */
+export type ColumnCatalogEntry<TRow> = ExportColumn<TRow> & {
+  exportOnly?: boolean
+  listOnly?: boolean
+}
+
+/** Derive the export manifest from a column catalog: every non-`listOnly` entry, flags stripped. */
+export function toExportColumns<TRow>(
+  catalog: ReadonlyArray<ColumnCatalogEntry<TRow>>,
+): ReadonlyArray<ExportColumn<TRow>> {
+  return catalog
+    .filter((entry) => !entry.listOnly)
+    .map(({ key, label, value }) => ({ key, label, value }))
+}
+
 /** Row counts offered in the export panel; `"all"` resolves to {@link EXPORT_MAX_ROWS}. */
 export const EXPORT_ROW_CAP_OPTIONS = [250, 500, 1000, "all"] as const
 export type ExportRowCap = (typeof EXPORT_ROW_CAP_OPTIONS)[number]

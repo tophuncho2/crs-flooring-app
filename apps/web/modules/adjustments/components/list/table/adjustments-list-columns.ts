@@ -1,32 +1,30 @@
-import type { DataTableColumn, SortMenuOption } from "@/engines/list-view"
-import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
+import type { DataTableCellAlign, DataTableColumn, SortMenuOption } from "@/engines/list-view"
+import { ADJUSTMENTS_COLUMNS, type EnrichedInventoryAdjustmentRow } from "@builders/domain"
 
 /**
- * Column definitions for the adjustments ledger `DataTable`. Order is the visual
- * left-to-right order. Waste is shown as a data column (the ledger surfaces it)
- * but is not filterable — warehouse is the only toolbar filter.
+ * Per-column alignment overrides for the adjustments ledger `DataTable`, keyed by
+ * the catalog column key. Anything absent left-aligns (the default). Kept
+ * module-local because alignment is a view concern the pure domain catalog doesn't
+ * carry.
  */
-export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInventoryAdjustmentRow>> = [
-  { key: "quantity", label: "Quantity", align: "end" },
-  { key: "converted", label: "Converted", align: "end" },
-  { key: "adjustment", label: "Adjustment" },
-  { key: "productName", label: "Product" },
-  { key: "rollNumber", label: "Roll #" },
-  { key: "dyeLot", label: "Dye Lot" },
-  { key: "inventoryNumber", label: "Inv #" },
-  { key: "inventoryNote", label: "Note" },
-  { key: "location", label: "Location" },
-  { key: "isWaste", label: "Waste" },
-  { key: "area", label: "Area" },
-  { key: "workOrderNumber", label: "WO #" },
-  { key: "warehouseName", label: "Warehouse" },
-  { key: "adjustmentNumber", label: "Adjustment #" },
-  { key: "adjustmentType", label: "Type" },
-  { key: "createdAt", label: "Created" },
-  { key: "updatedAt", label: "Updated" },
-  { key: "createdBy", label: "Created by" },
-  { key: "updatedBy", label: "Updated by" },
-]
+const ADJUSTMENTS_COLUMN_ALIGN: Record<string, DataTableCellAlign> = {
+  quantity: "end",
+  converted: "end",
+}
+
+/**
+ * Column definitions for the adjustments ledger `DataTable`, derived from the one
+ * {@link ADJUSTMENTS_COLUMNS} catalog (every non-`exportOnly` entry) so the table
+ * and the export can never drift. Order is the visual left-to-right order. Waste is
+ * shown as a data column (the ledger surfaces it) but is not filterable — warehouse
+ * is the only toolbar filter.
+ */
+export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInventoryAdjustmentRow>> =
+  ADJUSTMENTS_COLUMNS.filter((column) => !column.exportOnly).map((column) => ({
+    key: column.key,
+    label: column.label,
+    ...(ADJUSTMENTS_COLUMN_ALIGN[column.key] ? { align: ADJUSTMENTS_COLUMN_ALIGN[column.key] } : {}),
+  }))
 
 /**
  * Columns offered by the toolbar Sort menu — keyed by backend sort field (which
