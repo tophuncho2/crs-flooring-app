@@ -23,6 +23,7 @@ export const SEEDED_CATEGORIES = [
   { name: "Stair Treads" },
   { name: "Rubber Transition" },
   { name: "Rock/Stone" },
+  { name: "Threshold" },
 ] as const
 
 export type SeededCategory = (typeof SEEDED_CATEGORIES)[number]

@@ -30,6 +30,7 @@ const SEEDED_CATEGORIES = [
   { name: "Stair Treads" },
   { name: "Rubber Transition" },
   { name: "Rock/Stone" },
+  { name: "Threshold" },
 ]
 
 function verifySyncWithTypeScriptSource() {
