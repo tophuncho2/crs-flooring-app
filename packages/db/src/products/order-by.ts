@@ -1,5 +1,6 @@
 import type { Prisma } from "../generated/prisma/client.js"
 import { DEFAULT_LIST_ORDER, appendUniqueOrderBy } from "../shared/order-by.js"
+import { productAttributeOrderBy } from "./product-list-filters.js"
 import type { ProductListViewSort } from "./read-repository.js"
 
 /**
@@ -17,18 +18,13 @@ export function productFieldOrderBy(
   direction: Prisma.SortOrder,
 ): Prisma.FlooringProductOrderByWithRelationInput | undefined {
   switch (field) {
-    case "category":
-      return { category: { name: direction } }
-    case "style":
-      return { style: { sort: direction, nulls: "last" } }
-    case "color":
-      return { color: { sort: direction, nulls: "last" } }
     case "createdAt":
       return { createdAt: direction }
     case "updatedAt":
       return { updatedAt: direction }
+    // category / style / color share one source with the linked-table lists.
     default:
-      return undefined
+      return productAttributeOrderBy(field, direction)
   }
 }
 

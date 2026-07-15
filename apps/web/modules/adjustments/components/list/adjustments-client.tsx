@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
-import { DebouncedSearchControl, ListActionBar, ListExportButton, ListPageShell, SortMenuBody, ToolbarMenuButton, useFetchListController, useListSelection, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, FilterGroupLabel, ListActionBar, ListExportButton, ListPageShell, SortMenuBody, ToolbarMenuButton, useFetchListController, useListSelection, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   ADJUSTMENTS_EXPORT_COLUMNS,
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
+  PRODUCT_SEARCH_KEYS,
   type CategoryOption,
   type InventoryAdjustmentListFilters,
   type EnrichedInventoryAdjustmentRow,
   type ProductOption,
+  type ProductSearchKey,
   type WarehouseOption,
 } from "@builders/domain"
 import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
@@ -18,6 +20,7 @@ import { reconnectGoogleForSheets } from "@/modules/auth/reconnect-google"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
+import { ProductSearchControls } from "@/modules/products/components/list/product-search-controls"
 import { useRouter } from "next/navigation"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { buildInventoryAdjustmentHref, buildInventorySplitOffHref } from "@/hooks/navigation/routes"
@@ -42,6 +45,7 @@ const ADJUSTMENTS_FILTERABLE_FIELDS = [
   "rollNumber",
   "dyeLot",
   "note",
+  ...PRODUCT_SEARCH_KEYS,
 ] as const
 
 /**
@@ -59,7 +63,7 @@ type EngineAdjustmentFilters = {
   rollNumber?: ReadonlyArray<string>
   dyeLot?: ReadonlyArray<string>
   note?: ReadonlyArray<string>
-}
+} & Partial<Record<ProductSearchKey, ReadonlyArray<string>>>
 
 function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentFilters {
   const out: EngineAdjustmentFilters = {}
@@ -71,6 +75,10 @@ function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentF
   if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
   if (app.dyeLot && app.dyeLot.length > 0) out.dyeLot = [app.dyeLot]
   if (app.note && app.note.length > 0) out.note = [app.note]
+  for (const key of PRODUCT_SEARCH_KEYS) {
+    const value = app[key]?.trim()
+    if (value) out[key] = [value]
+  }
   return out
 }
 
@@ -89,6 +97,10 @@ function toAppFilters(engine: EngineAdjustmentFilters): InventoryAdjustmentListF
   if (dyeLot) out.dyeLot = dyeLot
   const note = engine.note?.[0]?.trim()
   if (note) out.note = note
+  for (const key of PRODUCT_SEARCH_KEYS) {
+    const value = engine[key]?.[0]?.trim()
+    if (value) out[key] = value
+  }
   return out
 }
 
@@ -202,6 +214,21 @@ export default function AdjustmentsClient({
   const dyeLotValue = filters.dyeLot?.[0] ?? ""
   const noteValue = filters.note?.[0] ?? ""
 
+  // Shared product-attribute search bars (resolve through the product join).
+  const productSearchValues = useMemo(
+    () => ({
+      prodNumber: filters.prodNumber?.[0] ?? "",
+      color: filters.color?.[0] ?? "",
+      style: filters.style?.[0] ?? "",
+      namingAddon: filters.namingAddon?.[0] ?? "",
+    }),
+    [filters],
+  )
+  const hasActiveProductSearch = useMemo(
+    () => Object.values(productSearchValues).some((value) => value.trim().length > 0),
+    [productSearchValues],
+  )
+
   const warehouseLabel = useMemo(() => {
     if (!selectedWarehouseId) return null
     if (initialSelectedWarehouse?.id === selectedWarehouseId) {
@@ -275,6 +302,15 @@ export default function AdjustmentsClient({
     [onFilterChange],
   )
 
+  // Shared product-attribute search bars — same 1-element-array encoding.
+  const handleProductSearchChange = useCallback(
+    (key: ProductSearchKey, next: string) => {
+      const trimmed = next.trim()
+      onFilterChange(key, trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = the warehouse/category/product
   // pickers; Search = the adj#/inv#/roll#/dye-lot/note identity bars.
@@ -292,8 +328,9 @@ export default function AdjustmentsClient({
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||
-      Boolean(noteValue),
-    [adjNumberValue, invNumberValue, rollNumberValue, dyeLotValue, noteValue],
+      Boolean(noteValue) ||
+      hasActiveProductSearch,
+    [adjNumberValue, invNumberValue, rollNumberValue, dyeLotValue, noteValue, hasActiveProductSearch],
   )
 
   // An active user sort folds into the single "Clear all" signal; the Sort menu
@@ -380,43 +417,59 @@ export default function AdjustmentsClient({
           </FilterPickerChip>
         </ToolbarMenuButton>
 
-        {/* Search — the five identity bars. Adj # is the exact record-number
-            match; the rest ILIKE their own column. */}
+        {/* Search — two grouped columns (Identity | Product) in a 2-column grid,
+            mirroring the WO Filter menu. Adj # is the exact record-number match;
+            the rest ILIKE their own column. Product bars resolve through the
+            product join and share their source with the Products list. */}
         <ToolbarMenuButton
           label="Search"
           icon={Search}
           active={hasActiveSearchTool}
+          bodyClassName="w-[30rem]"
         >
-          <DebouncedSearchControl
-            value={adjNumberValue}
-            onCommit={(next) => handleTextFilterChange("adjNumber", next)}
-            placeholder="Adj #"
-            ariaLabel="Search adjustments by adjustment number"
-          />
-          <DebouncedSearchControl
-            value={rollNumberValue}
-            onCommit={(next) => handleTextFilterChange("rollNumber", next)}
-            placeholder="Roll #"
-            ariaLabel="Search adjustments by roll number"
-          />
-          <DebouncedSearchControl
-            value={invNumberValue}
-            onCommit={(next) => handleTextFilterChange("invNumber", next)}
-            placeholder="Inv #"
-            ariaLabel="Search adjustments by inventory number"
-          />
-          <DebouncedSearchControl
-            value={dyeLotValue}
-            onCommit={(next) => handleTextFilterChange("dyeLot", next)}
-            placeholder="Dye lot"
-            ariaLabel="Search adjustments by dye lot"
-          />
-          <DebouncedSearchControl
-            value={noteValue}
-            onCommit={(next) => handleTextFilterChange("note", next)}
-            placeholder="Note"
-            ariaLabel="Search adjustments by note"
-          />
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div className="flex flex-col gap-2">
+              <FilterGroupLabel>Identity</FilterGroupLabel>
+              <DebouncedSearchControl
+                value={adjNumberValue}
+                onCommit={(next) => handleTextFilterChange("adjNumber", next)}
+                placeholder="Adj #"
+                ariaLabel="Search adjustments by adjustment number"
+              />
+              <DebouncedSearchControl
+                value={rollNumberValue}
+                onCommit={(next) => handleTextFilterChange("rollNumber", next)}
+                placeholder="Roll #"
+                ariaLabel="Search adjustments by roll number"
+              />
+              <DebouncedSearchControl
+                value={invNumberValue}
+                onCommit={(next) => handleTextFilterChange("invNumber", next)}
+                placeholder="Inv #"
+                ariaLabel="Search adjustments by inventory number"
+              />
+              <DebouncedSearchControl
+                value={dyeLotValue}
+                onCommit={(next) => handleTextFilterChange("dyeLot", next)}
+                placeholder="Dye lot"
+                ariaLabel="Search adjustments by dye lot"
+              />
+              <DebouncedSearchControl
+                value={noteValue}
+                onCommit={(next) => handleTextFilterChange("note", next)}
+                placeholder="Note"
+                ariaLabel="Search adjustments by note"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <FilterGroupLabel>Product</FilterGroupLabel>
+              <ProductSearchControls
+                values={productSearchValues}
+                onChange={handleProductSearchChange}
+                subject="adjustments"
+              />
+            </div>
+          </div>
         </ToolbarMenuButton>
 
         {/* Export — column-picker + row-cap; exports the ticked rows, or the

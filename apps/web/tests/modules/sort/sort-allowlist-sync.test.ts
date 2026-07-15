@@ -55,6 +55,13 @@ import {
 } from "@/modules/products/components/list/table/products-list-columns"
 import { PRODUCTS_LIST_SORT_FIELDS } from "@/modules/products/data/list-products-request"
 import { PRODUCTS_UI_SORT_FIELDS } from "@/app/api/products/_validators"
+import {
+  INDICATORS_ALLOWED_SORT_FIELDS,
+  INDICATORS_MAX_SORT_LEVELS,
+  INDICATORS_SORT_OPTIONS,
+} from "@/modules/inventory-indicators/components/list/table/inventory-indicators-list-columns"
+import { INDICATORS_LIST_SORT_FIELDS } from "@/modules/inventory-indicators/data/list-inventory-indicators-request"
+import { INDICATORS_UI_SORT_FIELDS } from "@/app/api/inventory-indicators/_validators"
 
 /**
  * Drift guard for the Sort tool. A field is sortable only if EVERY layer agrees:
@@ -263,5 +270,30 @@ describe("sort allowlist sync — products", () => {
 
   it("caps at 3 sort levels", () => {
     expect(PRODUCTS_MAX_SORT_LEVELS).toBe(3)
+  })
+})
+
+describe("sort allowlist sync — inventory indicators", () => {
+  const optionKeys = INDICATORS_SORT_OPTIONS.map((option) => option.key)
+  const canonical = set(optionKeys)
+
+  it("menu, client allowlist, request parser, and API validator expose identical field sets", () => {
+    expect(set(INDICATORS_ALLOWED_SORT_FIELDS)).toEqual(canonical)
+    expect(set(INDICATORS_LIST_SORT_FIELDS)).toEqual(canonical)
+    expect(set(INDICATORS_UI_SORT_FIELDS)).toEqual(canonical)
+  })
+
+  it("has no duplicate menu option keys", () => {
+    expect(optionKeys).toHaveLength(new Set(optionKeys).size)
+  })
+
+  it("every menu option declares a direction-label type", () => {
+    for (const option of INDICATORS_SORT_OPTIONS) {
+      expect(option.type, `option ${option.key} is missing a type`).toBeTruthy()
+    }
+  })
+
+  it("caps at 3 sort levels", () => {
+    expect(INDICATORS_MAX_SORT_LEVELS).toBe(3)
   })
 })

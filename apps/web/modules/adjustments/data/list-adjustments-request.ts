@@ -1,6 +1,8 @@
 import type { ListInput, ListOutput, ListSort } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
+  PRODUCT_SEARCH_KEYS,
+  PRODUCT_SORT_FIELDS,
   type InventoryAdjustmentListFilters,
   type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
@@ -19,6 +21,7 @@ export const ADJUSTMENTS_LIST_SORT_FIELDS = [
   "updatedAt",
   "location",
   "productName",
+  ...PRODUCT_SORT_FIELDS,
 ] as const
 
 /** Cap on user-selected sort columns — mirrors the engine + API + use case. */
@@ -78,7 +81,14 @@ const MULTI_VALUE_FILTER_KEYS = [
 // Scalar free-text filter params — the identity search bars. Shared by parse +
 // build so the URL contract stays in one place. (adjNumber/invNumber resolve to
 // exact integer matches server-side; roll/dye/note stay substring.)
-const TEXT_FILTER_KEYS = ["adjNumber", "invNumber", "rollNumber", "dyeLot", "note"] as const
+const TEXT_FILTER_KEYS = [
+  "adjNumber",
+  "invNumber",
+  "rollNumber",
+  "dyeLot",
+  "note",
+  ...PRODUCT_SEARCH_KEYS,
+] as const
 
 export function parseAdjustmentsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,

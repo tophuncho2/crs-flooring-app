@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
-  DebouncedSearchControl,
   SearchControl,
   ListActionBar,
   ListCreateButtonPortal,
@@ -21,7 +20,9 @@ import {
   LIST_PRODUCTS_PAGE_SIZE,
   type CategoryOption,
   type ProductListRow,
+  type ProductSearchKey,
 } from "@builders/domain"
+import { ProductSearchControls } from "./product-search-controls"
 import {
   PRODUCTS_LIST_QUERY_KEY,
   listProductsRequest,
@@ -148,34 +149,20 @@ export default function ProductsClient({
   const styleValue = filters.style?.[0] ?? ""
   const namingAddonValue = filters.namingAddon?.[0] ?? ""
 
-  const handleProdNumberChange = useCallback(
-    (next: string) => {
-      const trimmed = next.trim()
-      onFilterChange("prodNumber", trimmed.length > 0 ? [trimmed] : [])
-    },
-    [onFilterChange],
+  const productSearchValues = useMemo(
+    () => ({
+      prodNumber: prodNumberValue,
+      color: colorValue,
+      style: styleValue,
+      namingAddon: namingAddonValue,
+    }),
+    [prodNumberValue, colorValue, styleValue, namingAddonValue],
   )
 
-  const handleColorChange = useCallback(
-    (next: string) => {
+  const handleProductSearchChange = useCallback(
+    (key: ProductSearchKey, next: string) => {
       const trimmed = next.trim()
-      onFilterChange("color", trimmed.length > 0 ? [trimmed] : [])
-    },
-    [onFilterChange],
-  )
-
-  const handleStyleChange = useCallback(
-    (next: string) => {
-      const trimmed = next.trim()
-      onFilterChange("style", trimmed.length > 0 ? [trimmed] : [])
-    },
-    [onFilterChange],
-  )
-
-  const handleNamingAddonChange = useCallback(
-    (next: string) => {
-      const trimmed = next.trim()
-      onFilterChange("namingAddon", trimmed.length > 0 ? [trimmed] : [])
+      onFilterChange(key, trimmed.length > 0 ? [trimmed] : [])
     },
     [onFilterChange],
   )
@@ -324,29 +311,10 @@ export default function ProductsClient({
             onQueryChange={onSearchQueryChange}
             placeholder="Search products"
           />
-          <DebouncedSearchControl
-            value={prodNumberValue}
-            onCommit={handleProdNumberChange}
-            placeholder="PROD #"
-            ariaLabel="Search products by product number"
-          />
-          <DebouncedSearchControl
-            value={colorValue}
-            onCommit={handleColorChange}
-            placeholder="Color"
-            ariaLabel="Search products by color"
-          />
-          <DebouncedSearchControl
-            value={styleValue}
-            onCommit={handleStyleChange}
-            placeholder="Style"
-            ariaLabel="Search products by style"
-          />
-          <DebouncedSearchControl
-            value={namingAddonValue}
-            onCommit={handleNamingAddonChange}
-            placeholder="Naming addon"
-            ariaLabel="Search products by naming addon"
+          <ProductSearchControls
+            values={productSearchValues}
+            onChange={handleProductSearchChange}
+            subject="products"
           />
         </ToolbarMenuButton>
       </ListActionBar>

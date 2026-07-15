@@ -11,6 +11,7 @@ import type {
   InventoryNeighbor,
   InventoryPurchaseOrderOption,
   InventoryRow,
+  ProductSearchInput,
 } from "@builders/domain"
 import { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
@@ -18,6 +19,7 @@ import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
+import { productSearchRelationClause } from "../products/product-list-filters.js"
 import { normalizeEnrichedInventoryAdjustmentRow } from "./adjustments/read-repository.js"
 import { resolveConversion } from "./conversion.js"
 import {
@@ -314,7 +316,7 @@ export type InventoryListViewOptions = {
      * archived rows; users opt in via a filter chip.
      */
     isArchived?: boolean
-  }
+  } & ProductSearchInput
   sort?: InventoryListViewSort
   skip: number
   take: number
@@ -425,6 +427,14 @@ function buildListViewWhere(
   const categoryIds = options.filters?.categoryId
   if (categoryIds && categoryIds.length > 0) {
     clauses.push({ product: { is: { categoryId: { in: [...categoryIds] } } } })
+  }
+
+  // The four shared product-attribute searches (PROD-#/color/style/naming addon)
+  // resolve through the `product` relation — same source as the Products list,
+  // reusing the product-side indexes.
+  const productSearch = productSearchRelationClause(options.filters)
+  if (productSearch) {
+    clauses.push(productSearch)
   }
 
   const productIds = options.filters?.productId

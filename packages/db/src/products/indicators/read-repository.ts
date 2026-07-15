@@ -10,6 +10,8 @@ import {
 import { db } from "../../client.js"
 import { exactNumberIntEquals } from "../../shared/exact-number-search.js"
 import { sliceHasMore } from "../../shared/paginate.js"
+import { combineAnd } from "../../shared/where.js"
+import { buildProductSearchClauses } from "../product-list-filters.js"
 import { buildIndicatorsListViewOrderBy } from "./order-by.js"
 import {
   indicatorRowSelect,
@@ -189,6 +191,20 @@ function buildIndicatorsListViewWhere(
   const productIds = filters.productId
   if (productIds && productIds.length > 0) {
     where.productId = { in: [...productIds] }
+  }
+
+  // Category and the four shared product-attribute searches both narrow via the
+  // live `product` relation, so they combine into ONE `product.is` clause (Prisma
+  // allows only one relation key). Product is a direct `productId` match above.
+  const productClauses: Prisma.FlooringProductWhereInput[] = []
+  const categoryIds = filters.categoryId
+  if (categoryIds && categoryIds.length > 0) {
+    productClauses.push({ categoryId: { in: [...categoryIds] } })
+  }
+  productClauses.push(...buildProductSearchClauses(filters))
+  const productWhere = combineAnd(productClauses)
+  if (productWhere) {
+    where.product = { is: productWhere }
   }
 
   const indicatorNumber = filters.indicatorNumber?.trim()

@@ -1,6 +1,8 @@
 import type { ListInput, ListOutput, ListSort } from "@builders/application"
 import {
   INVENTORY_INDICATORS_LIST_PAGE_SIZE,
+  PRODUCT_SEARCH_KEYS,
+  PRODUCT_SORT_FIELDS,
   type InventoryIndicatorListFilters,
   type InventoryIndicatorRow,
 } from "@builders/domain"
@@ -18,6 +20,7 @@ export const INDICATORS_LIST_SORT_FIELDS = [
   "updatedAt",
   "productName",
   "warehouseName",
+  ...PRODUCT_SORT_FIELDS,
 ] as const
 
 const INDICATORS_MAX_SORT_LEVELS = 3
@@ -65,8 +68,8 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
-const MULTI_VALUE_FILTER_KEYS = ["warehouseId", "productId"] as const
-const TEXT_FILTER_KEYS = ["indicatorNumber"] as const
+const MULTI_VALUE_FILTER_KEYS = ["warehouseId", "productId", "categoryId"] as const
+const TEXT_FILTER_KEYS = ["indicatorNumber", ...PRODUCT_SEARCH_KEYS] as const
 
 export function parseIndicatorsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,

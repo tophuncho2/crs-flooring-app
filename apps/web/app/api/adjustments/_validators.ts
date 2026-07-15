@@ -11,6 +11,8 @@ import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_PAGE_SIZE,
+  PRODUCT_SEARCH_KEYS,
+  PRODUCT_SORT_FIELDS,
   type InventoryAdjustmentListFilters,
   type PaletteColor,
 } from "@builders/domain"
@@ -292,6 +294,7 @@ export const ADJUSTMENTS_UI_SORT_FIELDS = [
   "updatedAt",
   "location",
   "productName",
+  ...PRODUCT_SORT_FIELDS,
 ] as const
 
 /** Cap on user-selected sort columns — mirrors the engine + data request + use case. */
@@ -319,6 +322,12 @@ const listAdjustmentsQuerySchema = z.object({
   rollNumber: z.string().optional(),
   dyeLot: z.string().optional(),
   note: z.string().optional(),
+  // The four shared product-attribute search bars, resolved through the product
+  // relation server-side.
+  prodNumber: z.string().optional(),
+  color: z.string().optional(),
+  style: z.string().optional(),
+  namingAddon: z.string().optional(),
   sorts: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
@@ -374,6 +383,10 @@ export function validateAdjustmentsListQuery(
   if (rollNumber) filters.rollNumber = rollNumber
   if (dyeLot) filters.dyeLot = dyeLot
   if (note) filters.note = note
+  for (const key of PRODUCT_SEARCH_KEYS) {
+    const value = trim(parsed[key])
+    if (value) filters[key] = value
+  }
 
   const hasAnyFilter = Object.keys(filters).length > 0
 

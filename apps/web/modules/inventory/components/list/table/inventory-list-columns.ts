@@ -1,5 +1,6 @@
 import type { DataTableCellAlign, DataTableColumn, SortMenuOption } from "@/engines/list-view"
 import { INVENTORY_COLUMNS, type InventoryRow } from "@builders/domain"
+import { PRODUCT_SORT_OPTIONS_FRAGMENT } from "@/modules/products/components/list/product-sort-options"
 
 /**
  * Per-column alignment overrides for the inventory list `DataTable`, keyed by the
@@ -38,6 +39,7 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
 export const INVENTORY_SORT_OPTIONS: ReadonlyArray<SortMenuOption> = [
   { key: "stockBalance", label: "Stock", type: "number" },
   { key: "productName", label: "Product", type: "text" },
+  ...PRODUCT_SORT_OPTIONS_FRAGMENT,
   { key: "location", label: "Location", type: "text" },
   { key: "warehouse", label: "Warehouse", type: "text" },
   { key: "createdAt", label: "Created", type: "date" },

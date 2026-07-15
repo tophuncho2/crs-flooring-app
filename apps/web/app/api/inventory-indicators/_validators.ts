@@ -7,6 +7,8 @@ import {
   INVENTORY_INDICATOR_SECTION_PAGE_SIZE,
   INVENTORY_INDICATORS_LIST_MAX_PAGE_SIZE,
   INVENTORY_INDICATORS_LIST_PAGE_SIZE,
+  PRODUCT_SEARCH_KEYS,
+  PRODUCT_SORT_FIELDS,
   type InventoryIndicatorListFilters,
   type InventoryIndicatorsSectionDiff,
 } from "@builders/domain"
@@ -160,7 +162,7 @@ export function validateIndicatorsPageQuery(
 
 // --- Standalone list query (GET /api/inventory-indicators) ---
 
-const INDICATORS_MULTI_VALUE_FILTER_KEYS = ["warehouseId", "productId"] as const
+const INDICATORS_MULTI_VALUE_FILTER_KEYS = ["warehouseId", "productId", "categoryId"] as const
 type IndicatorsMultiValueFilterKey = (typeof INDICATORS_MULTI_VALUE_FILTER_KEYS)[number]
 
 function readIndicatorsMultiValue(searchParams: URLSearchParams, key: string): string[] {
@@ -180,6 +182,7 @@ export const INDICATORS_UI_SORT_FIELDS = [
   "updatedAt",
   "productName",
   "warehouseName",
+  ...PRODUCT_SORT_FIELDS,
 ] as const
 
 const INDICATORS_MAX_SORT_LEVELS = 3
@@ -201,6 +204,12 @@ function parseSortsParam(raw: string | undefined): ListSort[] {
 
 const listIndicatorsQuerySchema = z.object({
   indicatorNumber: z.string().optional(),
+  // The four shared product-attribute search bars, resolved through the product
+  // relation server-side.
+  prodNumber: z.string().optional(),
+  color: z.string().optional(),
+  style: z.string().optional(),
+  namingAddon: z.string().optional(),
   sorts: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
@@ -243,6 +252,10 @@ export function validateIndicatorsListQuery(
     if (values.length > 0) filters[key] = values
   }
   if (indicatorNumber) filters.indicatorNumber = indicatorNumber
+  for (const key of PRODUCT_SEARCH_KEYS) {
+    const value = parsed[key]?.trim()
+    if (value) filters[key] = value
+  }
 
   const hasAnyFilter = Object.keys(filters).length > 0
   const sorts = parseSortsParam(parsed.sorts)

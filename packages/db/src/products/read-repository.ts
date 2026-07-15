@@ -15,10 +15,10 @@ import {
   type ProductsDbClient,
 } from "./shared.js"
 import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
-import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
 import { buildProductListViewOrderBy } from "./order-by.js"
+import { buildProductSearchClauses } from "./product-list-filters.js"
 
 // --- Record types ---
 
@@ -401,28 +401,10 @@ function buildListViewWhere(
     clauses.push({ name: { contains: options.search, mode: "insensitive" } })
   }
 
-  // Exact identity search on the generated int — strip non-digits, parse, match.
-  // No digits → -1 sentinel so a junk term returns no rows (never all rows).
-  const prodNumber = options.filters?.prodNumber?.trim() ?? ""
-  if (prodNumber.length > 0) {
-    clauses.push({ productNumberInt: exactNumberIntEquals(prodNumber) })
-  }
-
-  // Substring identity searches on the free-text attribute columns (trgm GIN).
-  const color = options.filters?.color?.trim() ?? ""
-  if (color.length > 0) {
-    clauses.push({ color: { contains: color, mode: "insensitive" } })
-  }
-
-  const style = options.filters?.style?.trim() ?? ""
-  if (style.length > 0) {
-    clauses.push({ style: { contains: style, mode: "insensitive" } })
-  }
-
-  const namingAddon = options.filters?.namingAddon?.trim() ?? ""
-  if (namingAddon.length > 0) {
-    clauses.push({ productNamingAddon: { contains: namingAddon, mode: "insensitive" } })
-  }
+  // The four product-attribute searches (PROD-#, color, style, naming addon) share
+  // one source with the linked-table lists — here they apply to the product row
+  // itself (no relation wrap).
+  clauses.push(...buildProductSearchClauses(options.filters))
 
   const categoryIds = options.filters?.categoryId
   if (categoryIds && categoryIds.length > 0) {

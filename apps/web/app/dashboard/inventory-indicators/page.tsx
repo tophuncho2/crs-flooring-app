@@ -1,10 +1,11 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
   listIndicatorsUseCase,
+  searchCategoryOptionsUseCase,
   searchProductOptionsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
-import type { ProductOption, WarehouseOption } from "@builders/domain"
+import type { CategoryOption, ProductOption, WarehouseOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
 import InventoryIndicatorsClient from "@/modules/inventory-indicators/components/list/inventory-indicators-client"
@@ -39,21 +40,26 @@ export default async function InventoryIndicatorsPage({
 
   let initialWarehouseOptions: WarehouseOption[] = []
   let initialSelectedWarehouse: WarehouseOption | null = null
+  let initialCategoryOptions: CategoryOption[] = []
+  let initialSelectedCategory: CategoryOption | null = null
   let initialSelectedProduct: ProductOption | null = null
 
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
+    const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
     const selectedProductId = initialInput.filters?.productId?.[0] ?? null
 
-    const [, warehousePage] = await Promise.all([
+    const [, warehousePage, categoryPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...INDICATORS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listIndicatorsUseCase(initialInput),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      searchCategoryOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
     initialWarehouseOptions = warehousePage.items
+    initialCategoryOptions = categoryPage.items
 
     if (selectedWarehouseId) {
       initialSelectedWarehouse = await resolveSelectedById(
@@ -61,6 +67,17 @@ export default async function InventoryIndicatorsPage({
         initialWarehouseOptions,
         async (id) => {
           const [match] = (await searchWarehouseOptionsUseCase({ search: id, take: 1 })).items
+          return match && match.id === id ? match : null
+        },
+      )
+    }
+
+    if (selectedCategoryId) {
+      initialSelectedCategory = await resolveSelectedById(
+        selectedCategoryId,
+        initialCategoryOptions,
+        async (id) => {
+          const [match] = (await searchCategoryOptionsUseCase({ search: id, take: 1 })).items
           return match && match.id === id ? match : null
         },
       )
@@ -89,6 +106,8 @@ export default async function InventoryIndicatorsPage({
         initialFilters={initialInput.filters ?? {}}
         initialWarehouseOptions={initialWarehouseOptions}
         initialSelectedWarehouse={initialSelectedWarehouse}
+        initialCategoryOptions={initialCategoryOptions}
+        initialSelectedCategory={initialSelectedCategory}
         initialSelectedProduct={initialSelectedProduct}
       />
     </HydrationBoundary>

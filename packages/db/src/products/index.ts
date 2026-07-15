@@ -1,4 +1,5 @@
 export * from "./shared.js"
+export * from "./product-list-filters.js"
 export * from "./read-repository.js"
 export * from "./write-repository.js"
 export * from "./indicators/index.js"

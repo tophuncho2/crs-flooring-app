@@ -1,5 +1,6 @@
 import type { Prisma } from "../../generated/prisma/client.js"
 import { DEFAULT_LIST_ORDER, appendUniqueOrderBy } from "../../shared/order-by.js"
+import { productRelationAttributeOrderBy } from "../product-list-filters.js"
 import type { IndicatorsListViewSort } from "./read-repository.js"
 
 /**
@@ -21,8 +22,10 @@ export function indicatorFieldOrderBy(
       return { createdAt: direction }
     case "updatedAt":
       return { updatedAt: direction }
+    // category / style / color resolve through the product relation — shared with
+    // the Products list and the other product-linked lists.
     default:
-      return undefined
+      return productRelationAttributeOrderBy(field, direction)
   }
 }
 

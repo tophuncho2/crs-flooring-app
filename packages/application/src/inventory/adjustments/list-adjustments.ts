@@ -7,6 +7,7 @@ import {
 } from "@builders/domain"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 import { resolveInventoryListSort } from "../list-inventory-input.js"
+import { resolveProductSearchFilters } from "../../products/list-filters.js"
 
 function normalizeIds(
   raw: ReadonlyArray<string> | undefined,
@@ -36,6 +37,7 @@ export async function listAdjustmentsUseCase(
   const rollNumber = input.filters?.rollNumber?.trim() || undefined
   const dyeLot = input.filters?.dyeLot?.trim() || undefined
   const note = input.filters?.note?.trim() || undefined
+  const productSearch = resolveProductSearchFilters(input.filters)
 
   // Canonical multi-column sort (capped at 3) resolved from `?sorts=`; the
   // generic inventory resolver is reused since the shape is identical and the
@@ -53,6 +55,7 @@ export async function listAdjustmentsUseCase(
       ...(rollNumber ? { rollNumber } : {}),
       ...(dyeLot ? { dyeLot } : {}),
       ...(note ? { note } : {}),
+      ...(productSearch ?? {}),
     },
     page,
     pageSize,

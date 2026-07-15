@@ -1,5 +1,6 @@
 import type { DataTableColumn, SortMenuOption } from "@/engines/list-view"
 import type { InventoryIndicatorRow } from "@builders/domain"
+import { PRODUCT_SORT_OPTIONS_FRAGMENT } from "@/modules/products/components/list/product-sort-options"
 
 /**
  * Column definitions for the inventory-indicators `DataTable`. Order is the
@@ -23,6 +24,7 @@ export const INDICATORS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryInd
 /** Columns offered by the toolbar Sort menu — keyed by backend sort field. */
 export const INDICATORS_SORT_OPTIONS: ReadonlyArray<SortMenuOption> = [
   { key: "productName", label: "Product", type: "text" },
+  ...PRODUCT_SORT_OPTIONS_FRAGMENT,
   { key: "warehouseName", label: "Warehouse", type: "text" },
   { key: "createdAt", label: "Created", type: "date" },
   { key: "updatedAt", label: "Updated", type: "date" },

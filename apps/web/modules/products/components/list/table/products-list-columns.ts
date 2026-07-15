@@ -1,5 +1,6 @@
 import type { DataTableColumn, SortMenuOption } from "@/engines/list-view"
 import type { ProductListRow } from "@builders/domain"
+import { PRODUCT_SORT_OPTIONS_FRAGMENT } from "../product-sort-options"
 
 export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow>> = [
   { key: "productNumber", label: "PROD #" },
@@ -25,9 +26,7 @@ export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow
  * the two can never drift; the two server allowlists mirror these keys.
  */
 export const PRODUCTS_SORT_OPTIONS = [
-  { key: "category", label: "Category", type: "text" },
-  { key: "style", label: "Style", type: "text" },
-  { key: "color", label: "Color", type: "text" },
+  ...PRODUCT_SORT_OPTIONS_FRAGMENT,
   { key: "createdAt", label: "Created", type: "date" },
   { key: "updatedAt", label: "Updated", type: "date" },
 ] as const satisfies ReadonlyArray<SortMenuOption>

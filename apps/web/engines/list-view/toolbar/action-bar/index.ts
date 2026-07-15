@@ -1,4 +1,5 @@
 export * from "./list-action-bar"
+export * from "./filter-group-label"
 export * from "./list-header-portal"
 export * from "./toolbar-menu-button"
 export * from "./list-create-button-portal"

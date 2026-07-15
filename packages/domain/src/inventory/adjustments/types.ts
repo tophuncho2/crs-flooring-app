@@ -1,4 +1,5 @@
 import type { PaletteColor } from "../../shared/palette.js"
+import type { ProductSearchInput } from "../../products/list-filters.js"
 
 export type FlooringInventoryAdjustmentType = "INCREASE" | "DEDUCTION"
 
@@ -94,7 +95,10 @@ export type InventoryAdjustmentListFilters = {
   rollNumber?: string
   dyeLot?: string
   note?: string
-}
+  // The four shared product-attribute searches (PROD-#/color/style/naming addon)
+  // resolve through the `product` relation — single-sourced with the other
+  // product-linked lists.
+} & ProductSearchInput
 
 /**
  * Prev/next adjustment in a single parent inventory's ledger, walked by the

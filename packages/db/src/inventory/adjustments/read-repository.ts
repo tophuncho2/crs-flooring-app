@@ -12,6 +12,8 @@ import {
 import { db } from "../../client.js"
 import { exactNumberIntEquals } from "../../shared/exact-number-search.js"
 import { sliceHasMore } from "../../shared/paginate.js"
+import { combineAnd } from "../../shared/where.js"
+import { buildProductSearchClauses } from "../../products/product-list-filters.js"
 import { resolveConversion } from "../conversion.js"
 import { buildAdjustmentsListViewOrderBy } from "./order-by.js"
 import {
@@ -427,10 +429,19 @@ function buildAdjustmentsListViewWhere(
     where.warehouseId = { in: [...warehouseIds] }
   }
 
-  // Category narrows via the live product relation; product is a direct match.
+  // Category and the four shared product-attribute searches (PROD-#/color/style/
+  // naming addon) all narrow via the live `product` relation, so they combine
+  // into ONE `product.is` clause (Prisma allows only one relation key). Product
+  // is a direct `productId` match, separate from the relation filter.
+  const productClauses: Prisma.FlooringProductWhereInput[] = []
   const categoryIds = filters.categoryId
   if (categoryIds && categoryIds.length > 0) {
-    where.product = { is: { categoryId: { in: [...categoryIds] } } }
+    productClauses.push({ categoryId: { in: [...categoryIds] } })
+  }
+  productClauses.push(...buildProductSearchClauses(filters))
+  const productWhere = combineAnd(productClauses)
+  if (productWhere) {
+    where.product = { is: productWhere }
   }
 
   const productIds = filters.productId

@@ -1,5 +1,6 @@
 import type { DataTableCellAlign, DataTableColumn, SortMenuOption } from "@/engines/list-view"
 import { ADJUSTMENTS_COLUMNS, type EnrichedInventoryAdjustmentRow } from "@builders/domain"
+import { PRODUCT_SORT_OPTIONS_FRAGMENT } from "@/modules/products/components/list/product-sort-options"
 
 /**
  * Per-column alignment overrides for the adjustments ledger `DataTable`, keyed by
@@ -34,6 +35,7 @@ export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInv
  */
 export const ADJUSTMENTS_SORT_OPTIONS: ReadonlyArray<SortMenuOption> = [
   { key: "productName", label: "Product", type: "text" },
+  ...PRODUCT_SORT_OPTIONS_FRAGMENT,
   { key: "location", label: "Location", type: "text" },
   { key: "createdAt", label: "Created", type: "date" },
   { key: "updatedAt", label: "Updated", type: "date" },

@@ -13,6 +13,8 @@ import {
   INVENTORY_LOCATION_MAX,
   LIST_INVENTORY_MAX_PAGE_SIZE,
   LIST_INVENTORY_PAGE_SIZE,
+  PRODUCT_SEARCH_KEYS,
+  PRODUCT_SORT_FIELDS,
 } from "@builders/domain"
 import { parseExportEnvelope, type ExportFormat } from "@/server/http/export-request"
 import { optionsQuerySchema, parseQuery, requireColor } from "@/app/api/_shared/validators"
@@ -177,6 +179,12 @@ const listInventoryQuerySchema = z.object({
   rollNumber: z.string().optional(),
   dyeLot: z.string().optional(),
   note: z.string().optional(),
+  // The four shared product-attribute search bars, resolved through the product
+  // relation server-side.
+  prodNumber: z.string().optional(),
+  color: z.string().optional(),
+  style: z.string().optional(),
+  namingAddon: z.string().optional(),
   location: z.string().optional(),
   archived: z.enum(["true", "false"]).optional(),
   // Sort: direction + field. `createdAt` is the default; row# is intentionally
@@ -203,6 +211,7 @@ export const INVENTORY_UI_SORT_FIELDS = [
   "stockBalance",
   "productName",
   "warehouse",
+  ...PRODUCT_SORT_FIELDS,
 ] as const
 const INVENTORY_MAX_SORT_LEVELS = 3
 
@@ -280,6 +289,10 @@ export function validateListInventoryQuery(
   if (rollNumber) filterRecord.rollNumber = rollNumber
   if (dyeLot) filterRecord.dyeLot = dyeLot
   if (note) filterRecord.note = note
+  for (const key of PRODUCT_SEARCH_KEYS) {
+    const value = trim(parsed[key])
+    if (value) filterRecord[key] = value
+  }
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 

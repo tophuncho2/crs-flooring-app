@@ -2,6 +2,7 @@
 // one (product, warehouse, unit) triple. Mirrors the adjustments contract
 // (child of a parent record), but the parent here is the product.
 
+import type { ProductSearchInput } from "../list-filters.js"
 import type { IndicatorStockStatus } from "./status.js"
 
 export type InventoryIndicatorRow = {
@@ -102,6 +103,12 @@ export type InventoryIndicatorListFilters = {
   id?: ReadonlyArray<string>
   warehouseId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
+  // Category narrows via the live `product.categoryId` relation — mirrors the
+  // inventory/adjustments list chips.
+  categoryId?: ReadonlyArray<string>
   // Exact integer match on the generated `indicatorNumberInt` column ("12" → IND-12).
   indicatorNumber?: string
-}
+  // The four shared product-attribute searches (PROD-#/color/style/naming addon)
+  // resolve through the `product` relation — single-sourced with the other
+  // product-linked lists.
+} & ProductSearchInput

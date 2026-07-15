@@ -6,6 +6,7 @@ import {
   DebouncedSearchControl,
   StateSearchControl,
   SortMenuBody,
+  FilterGroupLabel,
   ListActionBar,
   ListCreateButtonPortal,
   ListExportButton,
@@ -58,7 +59,6 @@ import {
   WORK_ORDERS_MAX_SORT_LEVELS,
   WORK_ORDERS_SORT_OPTIONS,
 } from "./table/work-orders-list-columns"
-import { FilterGroupLabel } from "./toolbar-controls/filter-group-label"
 import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-body"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 

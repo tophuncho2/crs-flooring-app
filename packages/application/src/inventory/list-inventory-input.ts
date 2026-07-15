@@ -1,7 +1,12 @@
-import { normalizeIdFilter } from "@builders/domain"
+import { normalizeIdFilter, type ProductSearchInput } from "@builders/domain"
+import { resolveProductSearchFilters } from "../products/list-filters.js"
 import type { ListInput, ListSort } from "../list-view/contracts.js"
 
-export type InventoryListFilters = {
+// The four shared product-attribute searches (PROD-#/color/style/naming addon)
+// resolve through the row's `product` relation — see `productSearchRelationClause`
+// in @builders/db. Composed via `ProductSearchInput` so the key set stays single-
+// sourced with the other product-linked lists.
+export type InventoryListFilters = ProductSearchInput & {
   warehouseId?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
@@ -19,7 +24,7 @@ export type InventoryListFilters = {
 }
 
 /** The resolved repo-facing filters object (matches the read repo filter shape). */
-export type ResolvedInventoryListFilters = {
+export type ResolvedInventoryListFilters = ProductSearchInput & {
   warehouseId?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
@@ -55,6 +60,7 @@ export function resolveInventoryListFilters(
   const rollNumber = filters?.rollNumber?.trim() || undefined
   const dyeLot = filters?.dyeLot?.trim() || undefined
   const note = filters?.note?.trim() || undefined
+  const productSearch = resolveProductSearchFilters(filters)
 
   const hasAny =
     warehouseId ||
@@ -67,7 +73,8 @@ export function resolveInventoryListFilters(
     invNumber ||
     rollNumber ||
     dyeLot ||
-    note
+    note ||
+    productSearch
 
   if (!hasAny) return undefined
 
@@ -83,6 +90,7 @@ export function resolveInventoryListFilters(
     ...(rollNumber ? { rollNumber } : {}),
     ...(dyeLot ? { dyeLot } : {}),
     ...(note ? { note } : {}),
+    ...(productSearch ?? {}),
   }
 }
 

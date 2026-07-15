@@ -7,6 +7,7 @@ import {
 } from "@builders/domain"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 import { resolveInventoryListSort } from "../../inventory/list-inventory-input.js"
+import { resolveProductSearchFilters } from "../list-filters.js"
 
 function normalizeIds(
   raw: ReadonlyArray<string> | undefined,
@@ -35,7 +36,9 @@ export async function listIndicatorsUseCase(
 
   const warehouseId = normalizeIds(input.filters?.warehouseId)
   const productId = normalizeIds(input.filters?.productId)
+  const categoryId = normalizeIds(input.filters?.categoryId)
   const indicatorNumber = input.filters?.indicatorNumber?.trim() || undefined
+  const productSearch = resolveProductSearchFilters(input.filters)
 
   const sort = resolveInventoryListSort(input)
 
@@ -43,7 +46,9 @@ export async function listIndicatorsUseCase(
     filters: {
       ...(warehouseId ? { warehouseId } : {}),
       ...(productId ? { productId } : {}),
+      ...(categoryId ? { categoryId } : {}),
       ...(indicatorNumber ? { indicatorNumber } : {}),
+      ...(productSearch ?? {}),
     },
     page,
     pageSize,

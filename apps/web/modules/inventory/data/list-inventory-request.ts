@@ -1,6 +1,8 @@
 import type { InventoryListFilters, ListInput, ListOutput, ListSort } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
+  PRODUCT_SEARCH_KEYS,
+  PRODUCT_SORT_FIELDS,
   type InventoryRow,
 } from "@builders/domain"
 import { requestJson } from "@/transport/http"
@@ -41,9 +43,16 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
-// Scalar free-text filter params — the four identity search bars. Shared by
-// parse + build so the URL contract stays in one place.
-const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
+// Scalar free-text filter params — the four identity search bars plus the four
+// shared product-attribute search bars (PROD-#/color/style/naming addon). Shared
+// by parse + build so the URL contract stays in one place.
+const TEXT_FILTER_KEYS = [
+  "invNumber",
+  "rollNumber",
+  "dyeLot",
+  "note",
+  ...PRODUCT_SEARCH_KEYS,
+] as const
 
 /**
  * Sort fields recognised by the inventory list. Mirrors the API validator enum
@@ -57,6 +66,7 @@ export const INVENTORY_LIST_SORT_FIELDS = [
   "stockBalance",
   "productName",
   "warehouse",
+  ...PRODUCT_SORT_FIELDS,
 ] as const
 
 /** Cap on user-selected sort columns — mirrors the engine + API + use case. */
