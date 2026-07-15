@@ -180,60 +180,59 @@ export function PropertyRecordView({
           <div className="flex flex-col gap-4">
             <RecordColumnBreak
               left={
-                <div className="flex flex-col gap-4">
-                  <EntityPickerSection
-                    value={selectedEntityId}
-                    onChange={(id) =>
-                      primary.setLocalValue((previous) => ({
-                        ...previous,
-                        entityId: id ?? "",
-                      }))
-                    }
-                    onOptionSelected={selectEntity}
-                    selectedLabel={entityLabel}
-                    display={entityDisplay}
-                    typeRefs={entityTypeRefs}
-                    entityNumber={entityNumber}
-                    entityColor={entityColor}
-                    editable={!primary.isSaving}
-                    onOpen={openEntity}
-                    onCreate={() =>
-                      router.push(
-                        buildRecordCreateHref("/dashboard/entities", {
-                          returnTo: buildCurrentRecordEntryPath(pathname, searchParams),
-                        }),
-                      )
-                    }
-                  />
-                  <PropertyFieldsSection
-                    draft={primary.localValue}
-                    editable={!primary.isSaving}
-                    onFieldChange={(field, value) =>
-                      primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
-                    }
-                    nameRowTrailing={
-                      <FormField label="Property #">
-                        <CellChip paletteColor={primary.localValue.color}>
-                          {entry.propertyNumber}
-                        </CellChip>
-                      </FormField>
-                    }
-                    trailingFields={
-                      <FormField label="Color">
-                        <PaletteColorDropdown
-                          value={primary.localValue.color}
-                          editable={!primary.isSaving}
-                          onChange={(color) =>
-                            primary.setLocalValue((previous) => ({ ...previous, color }))
-                          }
-                          ariaLabel="Property color"
-                        />
-                      </FormField>
-                    }
-                  />
-                </div>
+                <PropertyFieldsSection
+                  draft={primary.localValue}
+                  editable={!primary.isSaving}
+                  onFieldChange={(field, value) =>
+                    primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
+                  }
+                  nameRowTrailing={
+                    <FormField label="Property #">
+                      <CellChip paletteColor={primary.localValue.color}>
+                        {entry.propertyNumber}
+                      </CellChip>
+                    </FormField>
+                  }
+                  trailingFields={
+                    <FormField label="Color">
+                      <PaletteColorDropdown
+                        value={primary.localValue.color}
+                        editable={!primary.isSaving}
+                        onChange={(color) =>
+                          primary.setLocalValue((previous) => ({ ...previous, color }))
+                        }
+                        ariaLabel="Property color"
+                      />
+                    </FormField>
+                  }
+                />
               }
-              right={null}
+              right={
+                <EntityPickerSection
+                  value={selectedEntityId}
+                  onChange={(id) =>
+                    primary.setLocalValue((previous) => ({
+                      ...previous,
+                      entityId: id ?? "",
+                    }))
+                  }
+                  onOptionSelected={selectEntity}
+                  selectedLabel={entityLabel}
+                  display={entityDisplay}
+                  typeRefs={entityTypeRefs}
+                  entityNumber={entityNumber}
+                  entityColor={entityColor}
+                  editable={!primary.isSaving}
+                  onOpen={openEntity}
+                  onCreate={() =>
+                    router.push(
+                      buildRecordCreateHref("/dashboard/entities", {
+                        returnTo: buildCurrentRecordEntryPath(pathname, searchParams),
+                      }),
+                    )
+                  }
+                />
+              }
             />
             <RecordSectionDivider />
             <div className="grid grid-cols-2 gap-x-6 gap-y-2">
