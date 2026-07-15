@@ -43,6 +43,7 @@ function allTopFieldsVisible(): WorkOrderTopFieldVisibility {
 const ALL_ADJUSTMENT_COLUMNS: WorkOrderAdjustmentColumnVisibility = {
   dyeLot: true,
   rollNumber: true,
+  converted: true,
   adjustment: true,
   location: true,
   area: true,
@@ -316,6 +317,7 @@ export function renderWorkOrderAdjustments(
     columns.dyeLot ? `<th>Dyelot</th>` : "",
     columns.rollNumber ? `<th>Roll#</th>` : "",
     `<th class="cl-num">Quantity</th>`,
+    columns.converted ? `<th class="cl-num">Converted</th>` : "",
     columns.adjustment ? `<th class="cl-num">Adjustment</th>` : "",
     columns.location ? `<th>Location</th>` : "",
     columns.area ? `<th>Area</th>` : "",
@@ -469,6 +471,9 @@ function renderAdjustmentRow(
     columns.rollNumber ? `\n  <td>${escapeOrEmpty(adj.rollNumber)}</td>` : "",
   ].join("")
   const trailDetailCells = [
+    columns.converted
+      ? `\n  <td class="cl-num">${renderUnitValue(adj.convertedBalance, adj.conversionUnitAbbrev)}</td>`
+      : "",
     columns.adjustment
       ? `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.unitAbbrev)}</td>`
       : "",
@@ -505,6 +510,7 @@ function renderSubtotalRow(
     columns.rollNumber ? "\n  <td></td>" : "",
   ].join("")
   const trailDetailCells = [
+    columns.converted ? "\n  <td></td>" : "",
     columns.adjustment ? "\n  <td></td>" : "",
     columns.location ? "\n  <td></td>" : "",
     columns.area ? "\n  <td></td>" : "",

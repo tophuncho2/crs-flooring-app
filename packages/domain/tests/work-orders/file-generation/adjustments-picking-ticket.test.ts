@@ -16,11 +16,12 @@ function count(haystack: string, needle: string): number {
 describe("picking ticket — header", () => {
   const html = pickingTable([makeMaterialItem()])
 
-  it("renders all seven columns in order", () => {
+  it("renders all eight columns in order", () => {
     expect(html).toContain("<th>Adjustment Products</th>")
     expect(html).toContain("<th>Dyelot</th>")
     expect(html).toContain("<th>Roll#</th>")
     expect(html).toContain('<th class="cl-num">Quantity</th>')
+    expect(html).toContain('<th class="cl-num">Converted</th>')
     expect(html).toContain('<th class="cl-num">Adjustment</th>')
     expect(html).toContain("<th>Location</th>")
     expect(html).toContain("<th>Area</th>")
@@ -108,6 +109,28 @@ describe("picking ticket — location always shows (the invariant)", () => {
     ])
     expect(html).toContain("&lt;b&gt;A&amp;B&lt;/b&gt;")
     expect(html).not.toContain("<b>A&B</b>")
+  })
+})
+
+describe("picking ticket — Converted (derived) column", () => {
+  it("renders the converted balance with its target-unit suffix", () => {
+    const html = pickingTable([
+      makeMaterialItem({
+        inventoryAdjustments: [
+          makeAdjustment({ convertedBalance: "250", conversionUnitAbbrev: "SF" }),
+        ],
+      }),
+    ])
+    expect(html).toContain('<td class="cl-num">250 SF</td>')
+  })
+
+  it("renders the empty-cell placeholder when the adjustment has no linked formula", () => {
+    const html = pickingTable([
+      makeMaterialItem({
+        inventoryAdjustments: [makeAdjustment({ convertedBalance: "", conversionUnitAbbrev: "" })],
+      }),
+    ])
+    expect(html).toContain(`<td class="cl-num">${EMPTY_CELL}</td>`)
   })
 })
 

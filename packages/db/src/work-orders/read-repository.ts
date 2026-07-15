@@ -4,6 +4,7 @@ import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
+import { resolveConversion } from "../inventory/conversion.js"
 import {
   buildFlooringProductDisplayName,
   normalizeWorkOrder,
@@ -467,6 +468,22 @@ export async function getWorkOrderForFileGeneration(
       // the grouping so mixed units never share a block/subtotal.
       unitId: true,
       unit: { select: { abbreviation: true } },
+      // Conversion inputs — the adjustment's coverage basis + linked formula.
+      // `convertedBalance` (basis = `quantity`) + the target-unit abbrev derive
+      // on read via `resolveConversion`; nothing here is stored.
+      coveragePerUnit: true,
+      conversionFormulaId: true,
+      conversionFormula: {
+        select: {
+          id: true,
+          name: true,
+          fromUnitId: true,
+          operator: true,
+          factorMode: true,
+          constantFactor: true,
+          toUnit: { select: { id: true, name: true, abbreviation: true } },
+        },
+      },
       productId: true,
       product: { select: { name: true, style: true, color: true } },
     },
@@ -480,6 +497,14 @@ export async function getWorkOrderForFileGeneration(
   let currentProductId: string | null = null
   let currentUnitId: string | null = null
   for (const adj of adjustments) {
+    // Derived converted balance for this adjustment (basis = its own `quantity`),
+    // mirroring the inventory-adjustment normalizer's use of `resolveConversion`.
+    const conversion = resolveConversion({
+      formula: adj.conversionFormula,
+      rowUnitId: adj.unitId,
+      coveragePerUnit: adj.coveragePerUnit?.toString() ?? null,
+      balance: adj.quantity.toString(),
+    })
     const projection = {
       id: adj.id,
       adjustmentNumber: adj.adjustmentNumber,
@@ -497,6 +522,10 @@ export async function getWorkOrderForFileGeneration(
       // Unit abbrev derives from the adjustment's own unit FK join (UoM epic 2B);
       // the frozen snapshot column is no longer a fallback (dropped in 2D).
       unitAbbrev: adj.unit?.abbreviation ?? "",
+      // Converted balance + its target-unit abbrev, derived above; empty strings
+      // when the adjustment has no linked conversion formula.
+      convertedBalance: conversion.convertedBalance,
+      conversionUnitAbbrev: conversion.conversionUnitAbbrev,
     }
     if (adj.productId !== currentProductId || (adj.unitId ?? "") !== currentUnitId) {
       currentProductId = adj.productId

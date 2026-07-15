@@ -39,6 +39,12 @@ export type WorkOrderFileAdjustmentProjection = {
   // from the adjustment's own unit FK join (UoM epic 2B); no snapshot fallback.
   // Empty string when the unit is unresolved.
   unitAbbrev: string
+  // Converted balance — the adjustment's own `quantity` run through its linked
+  // conversion formula (basis = quantity), plus the target-unit abbrev for the
+  // per-cell suffix. Both DERIVED on read via `resolveConversion`, never stored;
+  // empty strings when the adjustment has no linked formula.
+  convertedBalance: string
+  conversionUnitAbbrev: string
 }
 
 /**
@@ -128,6 +134,7 @@ export type WorkOrderTopFieldVisibility = Record<WorkOrderTopFieldKey, boolean>
 export type WorkOrderAdjustmentColumnVisibility = {
   dyeLot: boolean
   rollNumber: boolean
+  converted: boolean
   adjustment: boolean
   location: boolean
   area: boolean

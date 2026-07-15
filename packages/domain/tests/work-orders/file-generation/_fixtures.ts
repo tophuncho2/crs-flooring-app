@@ -87,6 +87,8 @@ export function makeAdjustment(
     location: "A-1",
     area: "",
     unitAbbrev: "rolls",
+    convertedBalance: "",
+    conversionUnitAbbrev: "",
     ...overrides,
   }
 }

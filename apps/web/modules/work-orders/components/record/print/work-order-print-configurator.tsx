@@ -28,6 +28,7 @@ const CHECKBOX_CLASS =
 const ADJUSTMENT_COLUMN_FIELDS = [
   { key: "dyeLot", label: "Dyelot" },
   { key: "rollNumber", label: "Roll#" },
+  { key: "converted", label: "Converted" },
   { key: "adjustment", label: "Adjustment" },
   { key: "location", label: "Location" },
   { key: "area", label: "Area" },

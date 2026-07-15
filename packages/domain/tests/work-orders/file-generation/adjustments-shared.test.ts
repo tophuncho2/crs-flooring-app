@@ -125,6 +125,26 @@ describe("both sections — renderUnitValue", () => {
   })
 })
 
+describe("both sections — Converted column gating", () => {
+  const item = makeMaterialItem({
+    inventoryAdjustments: [
+      makeAdjustment({ convertedBalance: "250", conversionUnitAbbrev: "SF" }),
+    ],
+  })
+
+  it("renders the converted value when the column is on (picking default)", () => {
+    expect(picking([item])).toContain('<td class="cl-num">250 SF</td>')
+  })
+
+  it("omits the Converted header and value when the column is off", () => {
+    const html = renderWorkOrderAdjustments([item], {
+      columns: { dyeLot: false, rollNumber: false, converted: false, adjustment: false, location: false },
+    })
+    expect(html).not.toContain('<th class="cl-num">Converted</th>')
+    expect(html).not.toContain("250 SF")
+  })
+})
+
 describe("both sections — product name is HTML-escaped", () => {
   const productName = "<b>Carpet & Co</b>"
   const item = makeMaterialItem({ productName, inventoryAdjustments: [makeAdjustment()] })

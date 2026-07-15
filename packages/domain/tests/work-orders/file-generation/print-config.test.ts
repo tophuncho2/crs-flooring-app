@@ -25,6 +25,7 @@ describe("presets seed the right document", () => {
     expect(config.adjustmentColumns).toEqual({
       dyeLot: true,
       rollNumber: true,
+      converted: true,
       adjustment: true,
       location: true,
       area: true,

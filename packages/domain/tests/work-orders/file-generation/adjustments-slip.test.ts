@@ -8,7 +8,7 @@ import { makeAdjustment, makeFileGenInput, makeMaterialItem } from "./_fixtures.
 // detail column toggled off.
 function slipTable(items: ReturnType<typeof makeMaterialItem>[]): string {
   return renderWorkOrderAdjustments(items, {
-    columns: { dyeLot: false, rollNumber: false, adjustment: false, location: false },
+    columns: { dyeLot: false, rollNumber: false, converted: false, adjustment: false, location: false },
   })
 }
 
@@ -28,6 +28,7 @@ describe("slip — header is Product / Quantity only", () => {
     expect(html).not.toContain('<th class="cl-num">Coverage</th>')
     expect(html).not.toContain("<th>Dyelot</th>")
     expect(html).not.toContain("<th>Roll#</th>")
+    expect(html).not.toContain('<th class="cl-num">Converted</th>')
     expect(html).not.toContain('<th class="cl-num">Adjustment</th>')
     expect(html).not.toContain("<th>Location</th>")
   })
