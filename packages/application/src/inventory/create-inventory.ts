@@ -17,6 +17,12 @@ import { guardUnitsExist } from "../shared/guard-units-exist.js"
 import { InventoryExecutionError } from "./errors.js"
 import type { CreateInventoryInput, InventoryResult } from "./types.js"
 
+// Returns the full InventoryResult — deliberately UNLIKE updateInventoryUseCase,
+// which returns a lean `{ id }`. Divergence rationale: create has no prior detail
+// record to reconcile, and the caller needs the freshly-inserted row, so building
+// it here is the only read; update's caller re-reads the full DETAIL at the
+// response boundary anyway, so a row enrich there would be a wasted extra read
+// over the WAN dev DB. See update-inventory.ts.
 export async function createInventoryUseCase(
   input: CreateInventoryInput,
   actorEmail: string,

@@ -22,11 +22,21 @@ function getPoolMax(): number {
 // already backed up), so the offense is invisible until it blows the tx timeout
 // over the WAN dev DB. This strict client surfaces the SECOND concurrent query —
 // any query issued while the connection is still mid-query — pointing the
-// developer at the fix. Installed only outside production (local dev); never in a
-// deployed env. Warns by default; set DB_TX_CAGE=throw to hard-fail once the
-// codebase is swept clean (belt + suspenders alongside the static arch-test).
-const TX_CAGE_ENABLED = process.env.NODE_ENV !== "production"
-const TX_CAGE_THROWS = process.env.DB_TX_CAGE === "throw"
+// developer at the fix.
+//
+// Mode is resolved from DB_TX_CAGE, falling back to NODE_ENV so existing
+// behavior is unchanged when the var is unset:
+//   - DB_TX_CAGE="throw" → hard-fail (CI enforcement + sweep-clean local dev)
+//   - DB_TX_CAGE="warn"  → warn-only (lets a DEPLOYED env like staging observe
+//                          without crashing — NODE_ENV=production there would
+//                          otherwise skip the cage entirely)
+//   - DB_TX_CAGE="off"   → disabled escape hatch
+//   - unset → default by env: warn in non-production (local dev, tests), off in
+//     production. Belt + suspenders alongside the static arch-test.
+const TX_CAGE_MODE =
+  process.env.DB_TX_CAGE ?? (process.env.NODE_ENV !== "production" ? "warn" : "off")
+const TX_CAGE_ENABLED = TX_CAGE_MODE !== "off"
+const TX_CAGE_THROWS = TX_CAGE_MODE === "throw"
 const TX_CAGE_MESSAGE =
   "[db-tx-cage] Concurrent query on a pinned connection: a multi-relation read or " +
   "Promise.all ran on a transaction (tx) client. Move the read to the pool (db) and " +

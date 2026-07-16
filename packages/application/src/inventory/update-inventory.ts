@@ -15,10 +15,12 @@ function emptyToNull(value: string): string | null {
   return trimmed.length === 0 ? null : trimmed
 }
 
-// Returns a lean `{ id }`. The only caller (the primary/section route) needs the
-// full DETAIL record (row + adjustments) for the record-view reconciler, which it
-// reads once via `getInventoryDetailById` at the response boundary — so a row
-// enrich here would be a wasted third multi-relation read over the WAN dev DB.
+// Returns a lean `{ id }` — deliberately UNLIKE createInventoryUseCase, which
+// returns the full InventoryResult. The only caller (the primary/section route)
+// needs the full DETAIL record (row + adjustments) for the record-view
+// reconciler, which it reads once via `getInventoryDetailById` at the response
+// boundary — so a row enrich here would be a wasted third multi-relation read
+// over the WAN dev DB. See create-inventory.ts for the mirror of this note.
 export async function updateInventoryUseCase(
   id: string,
   input: UpdateInventoryInput,

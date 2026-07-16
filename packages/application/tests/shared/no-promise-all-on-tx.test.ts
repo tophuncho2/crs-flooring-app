@@ -13,10 +13,16 @@ import { describe, expect, it } from "vitest"
  * a `tx` client — two statements on one pinned connection cannot run concurrently
  * anyway, so they must be sequenced (or moved to the pool).
  *
- * This is DELIBERATELY COARSE: it catches the lexical form (a `Promise.all` whose
- * arguments reference the transaction client named `tx`). It cannot catch a
- * multi-relation `include` handed a tx client several calls down — that dataflow
- * is the runtime tripwire's job. Scans the two layers that issue tx work.
+ * Two lexical checks, both DELIBERATELY COARSE (a multi-relation `include`
+ * handed a tx client several calls down is the runtime tripwire's job — see
+ * packages/db/tests-integration/tx-cage.integration.test.ts):
+ *   1. any `Promise.all` whose arguments reference the transaction client `tx`;
+ *   2. any `Promise.all` appearing anywhere inside a `withDatabaseTransaction(…)`
+ *      body — a concurrent fan-out on the pinned connection even when the args
+ *      don't literally name `tx`. (A `Promise.all` of pool `db` reads inside a tx
+ *      body trips this too, which is itself a smell — why open a tx then fan out
+ *      concurrently? — so flagging it is intended.)
+ * Scans the two layers that issue tx work.
  */
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOTS = [
@@ -57,20 +63,55 @@ function balancedArgs(text: string, openParenIdx: number): string {
 // `tx.model.update(…)` and `helper(tx)` forms.
 const TX_REFERENCE = /\btx\b/
 
+// Every occurrence of `Promise.all(` in `src`, with its 1-based line number and
+// the index just after the token (the position of its open paren).
+function findPromiseAllCalls(src: string): { line: number; openParenIdx: number }[] {
+  const calls: { line: number; openParenIdx: number }[] = []
+  let idx = src.indexOf("Promise.all(")
+  while (idx !== -1) {
+    const openParenIdx = src.indexOf("(", idx)
+    calls.push({ line: src.slice(0, idx).split("\n").length, openParenIdx })
+    idx = src.indexOf("Promise.all(", idx + 1)
+  }
+  return calls
+}
+
 describe("no Promise.all on a pinned transaction connection", () => {
   it("finds no Promise.all whose arguments reference the tx client", () => {
     const offenders: string[] = []
     for (const root of ROOTS) {
       for (const file of collectSourceFiles(root)) {
         const src = readFileSync(file, "utf8")
-        let idx = src.indexOf("Promise.all(")
-        while (idx !== -1) {
-          const open = src.indexOf("(", idx)
-          if (TX_REFERENCE.test(balancedArgs(src, open))) {
-            const line = src.slice(0, idx).split("\n").length
+        for (const { line, openParenIdx } of findPromiseAllCalls(src)) {
+          if (TX_REFERENCE.test(balancedArgs(src, openParenIdx))) {
             offenders.push(`${file}:${line}`)
           }
-          idx = src.indexOf("Promise.all(", idx + 1)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it("finds no Promise.all inside a withDatabaseTransaction body", () => {
+    const offenders: string[] = []
+    for (const root of ROOTS) {
+      for (const file of collectSourceFiles(root)) {
+        const src = readFileSync(file, "utf8")
+        // Collect the [start, end) span of every withDatabaseTransaction(…) call
+        // body via balanced parens; a Promise.all whose token falls inside any
+        // span is a concurrent fan-out on the pinned connection.
+        const spans: { start: number; end: number }[] = []
+        let idx = src.indexOf("withDatabaseTransaction(")
+        while (idx !== -1) {
+          const open = src.indexOf("(", idx)
+          spans.push({ start: open, end: open + balancedArgs(src, open).length + 1 })
+          idx = src.indexOf("withDatabaseTransaction(", idx + 1)
+        }
+        if (spans.length === 0) continue
+        for (const { line, openParenIdx } of findPromiseAllCalls(src)) {
+          if (spans.some((s) => openParenIdx > s.start && openParenIdx < s.end)) {
+            offenders.push(`${file}:${line}`)
+          }
         }
       }
     }
