@@ -1,6 +1,9 @@
 import {
   WORK_ORDER_TOP_FIELD_KEYS,
+  type WorkOrderAdjustmentColumnVisibility,
+  type WorkOrderMaterialColumnVisibility,
   type WorkOrderPrintConfig,
+  type WorkOrderSectionVisibility,
   type WorkOrderTopFieldVisibility,
 } from "./types.js"
 
@@ -60,5 +63,45 @@ export function buildWorkOrderPrintConfig(preset: WorkOrderPrintPreset): WorkOrd
         adjustmentColumns: { dyeLot: true, rollNumber: true, converted: true, adjustment: true, location: true, area: true },
         materialColumns: { notes: true },
       }
+  }
+}
+
+/**
+ * The persisted per-doc-type default visibilities. A PARTIAL of each visibility
+ * map — this is exactly what a `FlooringWorkOrderDocumentType.printConfig` (jsonb)
+ * column holds. Every map is partial so that a doc type configured before a new
+ * print column existed still parses, and the missing key falls back to the code
+ * base default on read (see {@link resolvePrintConfig}) — the "flows in naturally"
+ * guarantee. `documentLabel` is NOT stored here; it is the doc type's `name`.
+ */
+export type WorkOrderStoredPrintConfig = {
+  sections?: Partial<WorkOrderSectionVisibility>
+  topFields?: Partial<WorkOrderTopFieldVisibility>
+  adjustmentColumns?: Partial<WorkOrderAdjustmentColumnVisibility>
+  materialColumns?: Partial<WorkOrderMaterialColumnVisibility>
+}
+
+/**
+ * Resolve a stored (partial) doc-type config into a full, ready-to-render
+ * {@link WorkOrderPrintConfig} by MERGING it over the code base-defaults
+ * (`buildWorkOrderPrintConfig("pickingTicket")` — every column/top field on,
+ * adjustments section on). Per-key merge means any key absent from the stored
+ * config keeps its base default, so:
+ *   - an empty `{}` printConfig ⇒ today's full picking-ticket defaults, and
+ *   - a newly-added print column ⇒ defaults to on until an operator toggles it.
+ * `documentLabel` is set to the doc type's `name` (the printed document tag).
+ */
+export function resolvePrintConfig(
+  stored: WorkOrderStoredPrintConfig | null | undefined,
+  name: string,
+): WorkOrderPrintConfig {
+  const base = buildWorkOrderPrintConfig("pickingTicket")
+  const config = stored ?? {}
+  return {
+    documentLabel: name,
+    sections: { ...base.sections, ...config.sections },
+    topFields: { ...base.topFields, ...config.topFields },
+    adjustmentColumns: { ...base.adjustmentColumns, ...config.adjustmentColumns },
+    materialColumns: { ...base.materialColumns, ...config.materialColumns },
   }
 }

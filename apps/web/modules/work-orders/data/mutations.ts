@@ -83,6 +83,22 @@ export async function saveWorkOrderPlannedPaymentsSectionRequest(
   )
 }
 
+// Record one print/export event for a work order, keyed by the doc type printed.
+// Fired by the print configurator's Print button right before window.print().
+// `withMutationMeta` with no revision key mints a FRESH idempotency key per call,
+// so every Print click is counted (not deduped as a replay).
+export async function recordWorkOrderPrintEventRequest(
+  workOrderId: string,
+  documentTypeId: string,
+  documentTypeName: string,
+) {
+  return requestJson<{ ok: true }>(`/api/work-orders/${workOrderId}/print-events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta({ documentTypeId, documentTypeName })),
+  })
+}
+
 // Adjustment mutations live at `@/modules/adjustments/data/mutations` (the
 // shared peer module consumed by both work-orders and inventory record
 // views). They were extracted in the adjustments FE sweep; this file no

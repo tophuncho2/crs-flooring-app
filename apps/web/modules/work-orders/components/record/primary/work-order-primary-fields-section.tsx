@@ -77,6 +77,7 @@ export function WorkOrderPrimaryFieldsSection({
   disabled,
   onFieldChange,
   onFieldsChange,
+  printCounts,
 }: {
   draft: WorkOrderForm
   detail: WorkOrderPrimaryDetail | null
@@ -84,6 +85,11 @@ export function WorkOrderPrimaryFieldsSection({
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
   /** Multi-field setter — used for the entity→Property→Template cascade. */
   onFieldsChange: (patch: Partial<WorkOrderForm>) => void
+  /**
+   * Per-doc-type print counts (read-only), shown beneath the actor cells. Omitted
+   * in the create flow (a new WO has no print history).
+   */
+  printCounts?: ReadonlyArray<{ documentTypeName: string; count: number }>
 }) {
   const editable = !disabled
   const { instructions: propertyInstructions, handlePropertyOption } = usePropertyJoinedOverride(detail)
@@ -550,6 +556,26 @@ export function WorkOrderPrimaryFieldsSection({
           <StaticFieldValue>{detail?.updatedBy ?? "—"}</StaticFieldValue>
         </FormField>
       </div>
+      {printCounts && printCounts.length > 0 ? (
+        <>
+          <RecordSectionDivider />
+          <FormField label="Print history">
+            <div className="flex flex-col gap-1">
+              {printCounts.map((entry) => (
+                <div
+                  key={entry.documentTypeName}
+                  className="flex items-center justify-between gap-4 text-sm"
+                >
+                  <span className="text-neutral-700">{entry.documentTypeName}</span>
+                  <span className="tabular-nums text-neutral-500">
+                    {entry.count} print{entry.count === 1 ? "" : "s"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </FormField>
+        </>
+      ) : null}
     </div>
   )
 }

@@ -23,6 +23,7 @@ export function WorkOrderDetailClient({
   initialAdjustmentsForWorkOrder,
   initialPlannedPayments,
   initialPayments,
+  printCounts,
   backHref,
 }: {
   initialWorkOrder: WorkOrderDetail
@@ -30,6 +31,7 @@ export function WorkOrderDetailClient({
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
   initialPlannedPayments: WorkOrderPlannedPaymentRow[]
   initialPayments: Payment[]
+  printCounts: ReadonlyArray<{ documentTypeName: string; count: number }>
   backHref: string
 }) {
   const router = useRouter()
@@ -78,6 +80,7 @@ export function WorkOrderDetailClient({
             initialAdjustmentsForWorkOrder={initialAdjustmentsForWorkOrder}
             initialPlannedPayments={initialPlannedPayments}
             initialPayments={initialPayments}
+            printCounts={printCounts}
           />
         </>
       )}

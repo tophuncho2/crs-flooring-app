@@ -40,13 +40,16 @@ export default async function WorkOrderPrintPage({
 
   const logoUrl = await getBrandLogoPrintUrl()
 
-  // Seed the fullest starting point (adjustments, all detail columns). The
-  // user switches the centered document label and toggles from there.
+  // The configurator seeds its checkboxes from the selected doc type's saved
+  // printConfig (operator-configured defaults), merged over the code base
+  // defaults. `printCounts` drives the per-doc-type "printed N×" readout.
   return (
     <WorkOrderPrintConfigurator
       input={result.data.workOrder}
       logoUrl={logoUrl}
-      preset="pickingTicket"
+      documentTypes={result.data.documentTypes}
+      printCounts={result.data.printCounts}
+      workOrderId={id}
       previousWorkOrderId={result.data.neighbors.previousWorkOrder?.id ?? null}
       nextWorkOrderId={result.data.neighbors.nextWorkOrder?.id ?? null}
     />

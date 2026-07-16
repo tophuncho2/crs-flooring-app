@@ -917,6 +917,7 @@ model FlooringWorkOrder {
   inventoryAdjustments FlooringInventoryAdjustment[]
   payments             FlooringPayment[]
   plannedPayments      FlooringWorkOrderPlannedPayment[]
+  printEvents          FlooringWorkOrderPrintEvent[]
 
   @@index([workOrderNumber])
   @@index([workOrderNumberInt])
@@ -1108,5 +1109,57 @@ model FlooringPaymentPurpose {
   @@index([paymentPurposeNumberInt])
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_payment_purpose_name_trgm_idx")
   @@map("flooring_payment_purpose")
+}
+
+// Standalone user-managed lookup row for WORK-ORDER PRINT/EXPORT document types
+// (e.g. "Picking Ticket", "Work Order"). Mirrors FlooringPaymentPurpose's
+// canonical numbered-record shape (sequence-backed `ROW-N` string + generated int
+// for exact search + stepper) + a non-semantic palette color + actor columns.
+// `printConfig` (jsonb) stores the per-doc-type checkbox default visibilities
+// (sections/topFields/adjustmentColumns/materialColumns); it is MERGED over the
+// code base-defaults on read (resolvePrintConfig), so newly-added print columns
+// flow in naturally without a config backfill. `name` is @unique — it doubles as
+// the printed document tag.
+model FlooringWorkOrderDocumentType {
+  id                             String       @id @default(uuid())
+  workOrderDocumentTypeNumber    String       @unique @default(dbgenerated("('ROW-'::text || (nextval('flooring_work_order_document_type_number_seq'::regclass))::text)")) @map("work_order_document_type_number")
+  workOrderDocumentTypeNumberInt Int?         @default(dbgenerated("(SUBSTRING(work_order_document_type_number FROM 5))::integer"))
+  name                           String       @unique @db.VarChar(40)
+  color                          PaletteColor @default(SLATE)
+  printConfig                    Json         @default(dbgenerated("'{}'::jsonb"))
+  createdAt                      DateTime     @default(now())
+  updatedAt                      DateTime     @updatedAt
+  createdBy                      String?
+  updatedBy                      String?
+
+  printEvents FlooringWorkOrderPrintEvent[]
+
+  @@index([name])
+  @@index([workOrderDocumentTypeNumber])
+  @@index([workOrderDocumentTypeNumberInt])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_document_type_name_trgm_idx")
+  @@map("flooring_work_order_document_type")
+}
+
+// Append-only print/export event log for work orders. One row per Print click,
+// keyed by the doc type printed. Counts are aggregates (groupBy documentTypeId).
+// Mirrors the WO-child convention (Cascade off the work order + actor + createdAt).
+// `documentTypeId` is SetNull (a doc type may be deleted); `documentTypeName` is a
+// snapshot of the doc type's name at print time so historical counts survive that
+// deletion. Append-only ⇒ no updatedAt, no OCC.
+model FlooringWorkOrderPrintEvent {
+  id               String                         @id @default(uuid())
+  workOrderId      String
+  workOrder        FlooringWorkOrder              @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  documentTypeId   String?
+  documentType     FlooringWorkOrderDocumentType? @relation(fields: [documentTypeId], references: [id], onDelete: SetNull)
+  documentTypeName String                         @db.VarChar(40)
+  createdBy        String?
+  createdAt        DateTime                       @default(now())
+
+  @@index([workOrderId])
+  @@index([workOrderId, documentTypeId])
+  @@index([documentTypeId])
+  @@map("flooring_work_order_print_event")
 }
 

@@ -3,18 +3,22 @@ import {
   getWorkOrderDetailById,
   getWorkOrderForFileGeneration,
   getWorkOrderNeighborsById,
+  getWorkOrderPrintCountsByDocumentType,
   isPrismaNotFoundError,
   listAdjustmentsForWorkOrder,
   listPaymentsByWorkOrder,
+  listWorkOrderDocumentTypeOptions,
   listWorkOrderMaterialItems,
   listWorkOrderPlannedPayments,
   type PrismaDetailPageResult,
   type WorkOrderNeighbors,
+  type WorkOrderPrintCountByDocumentType,
 } from "@builders/db"
 import type {
   EnrichedInventoryAdjustmentRow,
   Payment,
   WorkOrderDetail,
+  WorkOrderDocumentTypeOption,
   WorkOrderFileGenerationInput,
   WorkOrderMaterialItemRow,
   WorkOrderPlannedPaymentRow,
@@ -49,19 +53,25 @@ export type WorkOrderDetailPageData = {
    * (like adjustmentsForWorkOrder; a create/delete re-runs this loader).
    */
   payments: Payment[]
+  /**
+   * Per-doc-type print counts for this work order (by snapshotted doc-type name),
+   * rendered read-only in the primary section beneath the actor cells.
+   */
+  printCounts: WorkOrderPrintCountByDocumentType[]
 }
 
 export async function getWorkOrderDetailPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderDetailPageData>> {
   try {
-    const [workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments, payments] =
+    const [workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments, payments, printCounts] =
       await Promise.all([
         getWorkOrderDetailById(id),
         listWorkOrderMaterialItems(id),
         listAdjustmentsForWorkOrder(id),
         listWorkOrderPlannedPayments(id),
         listPaymentsByWorkOrder(id),
+        getWorkOrderPrintCountsByDocumentType(id),
       ])
 
     if (!workOrder) {
@@ -70,7 +80,14 @@ export async function getWorkOrderDetailPageData(
 
     return {
       ok: true,
-      data: { workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments, payments },
+      data: {
+        workOrder,
+        materialItems,
+        adjustmentsForWorkOrder,
+        plannedPayments,
+        payments,
+        printCounts,
+      },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
@@ -95,6 +112,13 @@ export type WorkOrderFileGenerationPageData = {
    * print view's stepper. `null` at a sequence edge.
    */
   neighbors: WorkOrderNeighbors
+  /**
+   * All doc types (id/name/color/printConfig) — the configurator's doc-type
+   * selector renders these and seeds its checkboxes from the selected one.
+   */
+  documentTypes: WorkOrderDocumentTypeOption[]
+  /** Per-doc-type print counts for THIS work order (by snapshotted name). */
+  printCounts: WorkOrderPrintCountByDocumentType[]
 }
 
 /**
@@ -109,11 +133,13 @@ export async function getWorkOrderForFileGenerationPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderFileGenerationPageData>> {
   try {
-    const [workOrder, neighbors] = await Promise.all([
+    const [workOrder, neighbors, documentTypes, printCounts] = await Promise.all([
       getWorkOrderForFileGeneration(id),
       getWorkOrderNeighborsById(id),
+      listWorkOrderDocumentTypeOptions(),
+      getWorkOrderPrintCountsByDocumentType(id),
     ])
-    return { ok: true, data: { workOrder, neighbors } }
+    return { ok: true, data: { workOrder, neighbors, documentTypes, printCounts } }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
       return { ok: false, notFound: true }

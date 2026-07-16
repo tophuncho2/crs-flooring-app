@@ -647,3 +647,19 @@ export function validateWorkOrderOptionsSearchQuery(
     take: parsed.take,
   }
 }
+
+// --- Print-event recorder (fired by the print configurator's Print button) ---
+
+export type ValidatedRecordWorkOrderPrintEvent = {
+  documentTypeId: string
+  documentTypeName: string
+}
+
+export function validateRecordWorkOrderPrintEventInput(
+  body: Record<string, unknown>,
+): ValidatedRecordWorkOrderPrintEvent {
+  return {
+    documentTypeId: requireString(body.documentTypeId, "documentTypeId", failWorkOrder),
+    documentTypeName: requireString(body.documentTypeName, "documentTypeName", failWorkOrder),
+  }
+}

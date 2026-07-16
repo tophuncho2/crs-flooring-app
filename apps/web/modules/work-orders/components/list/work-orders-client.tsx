@@ -1,7 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useCallback, useEffect, useMemo } from "react"
-import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
+import { ArrowUpDown, Search, Settings, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   StateSearchControl,
@@ -625,6 +626,17 @@ export default function WorkOrdersClient({
           selectedIds={selectedIds}
           onReauthRequired={reconnectGoogleForSheets}
         />
+
+        {/* Options — module-level management actions. Routes to the print/export
+            document-type configurator list (per-doc-type checkbox defaults). */}
+        <ToolbarMenuButton label="Options" icon={Settings}>
+          <Link
+            href="/dashboard/work-order-document-types"
+            className="block rounded px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
+          >
+            Manage Document Types
+          </Link>
+        </ToolbarMenuButton>
       </ListActionBar>
 
       <WorkOrdersTable

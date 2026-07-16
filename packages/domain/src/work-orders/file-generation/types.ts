@@ -129,20 +129,39 @@ export type WorkOrderTopFieldVisibility = Record<WorkOrderTopFieldKey, boolean>
 /**
  * Optional adjustment columns (Product + Quantity are always shown). Mirrors the
  * old `includeInventoryDetail` boolean, split into independent toggles so the
- * configurator can show any subset.
+ * configurator can show any subset. The key list is the ONE source the domain
+ * renderer, the configurator checklist, and the doc-type printConfig zod schema
+ * all derive from — do not hand-fork it.
  */
-export type WorkOrderAdjustmentColumnVisibility = {
-  dyeLot: boolean
-  rollNumber: boolean
-  converted: boolean
-  adjustment: boolean
-  location: boolean
-  area: boolean
+export const WORK_ORDER_ADJUSTMENT_COLUMN_KEYS = [
+  "dyeLot",
+  "rollNumber",
+  "converted",
+  "adjustment",
+  "location",
+  "area",
+] as const
+export type WorkOrderAdjustmentColumnKey = (typeof WORK_ORDER_ADJUSTMENT_COLUMN_KEYS)[number]
+export type WorkOrderAdjustmentColumnVisibility = Record<WorkOrderAdjustmentColumnKey, boolean>
+
+/** Human labels for the adjustment column checkboxes (configurator + doc-type editor). */
+export const WORK_ORDER_ADJUSTMENT_COLUMN_LABELS: Record<WorkOrderAdjustmentColumnKey, string> = {
+  dyeLot: "Dyelot",
+  rollNumber: "Roll#",
+  converted: "Converted",
+  adjustment: "Adjustment",
+  location: "Location",
+  area: "Area",
 }
 
 /** Optional material columns (Product + Qty/Unit are always shown). */
-export type WorkOrderMaterialColumnVisibility = {
-  notes: boolean
+export const WORK_ORDER_MATERIAL_COLUMN_KEYS = ["notes"] as const
+export type WorkOrderMaterialColumnKey = (typeof WORK_ORDER_MATERIAL_COLUMN_KEYS)[number]
+export type WorkOrderMaterialColumnVisibility = Record<WorkOrderMaterialColumnKey, boolean>
+
+/** Human labels for the material column checkboxes. */
+export const WORK_ORDER_MATERIAL_COLUMN_LABELS: Record<WorkOrderMaterialColumnKey, string> = {
+  notes: "Notes",
 }
 
 /**
@@ -150,10 +169,9 @@ export type WorkOrderMaterialColumnVisibility = {
  * both may be on, so a document/export can carry the adjustments table AND the
  * requested-material table at once.
  */
-export type WorkOrderSectionVisibility = {
-  adjustments: boolean
-  material: boolean
-}
+export const WORK_ORDER_SECTION_KEYS = ["adjustments", "material"] as const
+export type WorkOrderSectionKey = (typeof WORK_ORDER_SECTION_KEYS)[number]
+export type WorkOrderSectionVisibility = Record<WorkOrderSectionKey, boolean>
 
 /**
  * The full checkbox-driven configuration for ONE work-order print document.

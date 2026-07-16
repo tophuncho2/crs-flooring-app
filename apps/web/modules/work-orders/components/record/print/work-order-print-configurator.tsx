@@ -4,16 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useRouter } from "next/navigation"
 import {
   buildWorkOrderCsv,
-  buildWorkOrderPrintConfig,
   buildWorkOrderPrintHtml,
-  WORK_ORDER_DOCUMENT_LABELS,
+  resolvePrintConfig,
   WORK_ORDER_TOP_FIELD_KEYS,
   WORK_ORDER_TOP_FIELD_LABELS,
+  type WorkOrderDocumentTypeOption,
   type WorkOrderFileGenerationInput,
   type WorkOrderPrintConfig,
-  type WorkOrderPrintPreset,
 } from "@builders/domain"
 import { RecordStepper } from "@/engines/record-view"
+import { recordWorkOrderPrintEventRequest } from "@/modules/work-orders/data/mutations"
 
 /**
  * On-demand work-order print configurator. Seeds a {@link WorkOrderPrintConfig}
@@ -37,13 +37,19 @@ const ADJUSTMENT_COLUMN_FIELDS = [
 export function WorkOrderPrintConfigurator({
   input,
   logoUrl,
-  preset,
+  documentTypes,
+  printCounts,
+  workOrderId,
   previousWorkOrderId,
   nextWorkOrderId,
 }: {
   input: WorkOrderFileGenerationInput
   logoUrl: string | null
-  preset: WorkOrderPrintPreset
+  /** Operator-configured doc types — the selector options + their saved defaults. */
+  documentTypes: WorkOrderDocumentTypeOption[]
+  /** Per-doc-type print counts for this WO (by snapshotted name). */
+  printCounts: ReadonlyArray<{ documentTypeName: string; count: number }>
+  workOrderId: string
   previousWorkOrderId: string | null
   nextWorkOrderId: string | null
 }) {
@@ -68,13 +74,30 @@ export function WorkOrderPrintConfigurator({
     [input.materialItemGroups],
   )
 
-  // Seed from the preset, then start with every row selected so the preview
-  // matches the named document the user clicked into.
-  const [config, setConfig] = useState<WorkOrderPrintConfig>(() => ({
-    ...buildWorkOrderPrintConfig(preset),
-    selectedAdjustmentIds: allAdjustmentIds,
-    selectedMaterialIds: allMaterialIds,
-  }))
+  // Which doc type is selected. Defaults to the first configured one; its saved
+  // printConfig seeds the checkboxes (and its name is the printed document tag).
+  const [selectedDocumentTypeId, setSelectedDocumentTypeId] = useState<string | null>(
+    documentTypes[0]?.id ?? null,
+  )
+
+  // Seed from the selected doc type's resolved config, then start with every row
+  // selected so the preview matches the document the user opened.
+  const [config, setConfig] = useState<WorkOrderPrintConfig>(() => {
+    const first = documentTypes[0]
+    const seeded = resolvePrintConfig(first?.printConfig ?? {}, first?.name ?? "Work Order")
+    return {
+      ...seeded,
+      selectedAdjustmentIds: allAdjustmentIds,
+      selectedMaterialIds: allMaterialIds,
+    }
+  })
+
+  // name → print count, for the "(printed N×)" readout on each doc-type button.
+  const countByDocumentName = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const entry of printCounts) map.set(entry.documentTypeName, entry.count)
+    return map
+  }, [printCounts])
 
   const selectedAdjustmentIds = useMemo(
     () => new Set(config.selectedAdjustmentIds ?? []),
@@ -122,8 +145,18 @@ export function WorkOrderPrintConfigurator({
         await Promise.race([Promise.all(pending), timeout])
       }
     }
+    // Record the print event (best-effort telemetry — a failed record must never
+    // block the print dialog). Fresh idempotency key per click ⇒ every print counts.
+    const selectedDocType = documentTypes.find((dt) => dt.id === selectedDocumentTypeId)
+    if (selectedDocType) {
+      try {
+        await recordWorkOrderPrintEventRequest(workOrderId, selectedDocType.id, selectedDocType.name)
+      } catch {
+        // swallow — printing proceeds regardless
+      }
+    }
     window.print()
-  }, [])
+  }, [documentTypes, selectedDocumentTypeId, workOrderId])
 
   // Export the CURRENT preview as CSV — same `input` + `config` the print builder
   // reads, so the file matches what's on screen (checked top fields, the active
@@ -156,10 +189,21 @@ export function WorkOrderPrintConfigurator({
       sections: { ...current.sections, [key]: !current.sections[key] },
     }))
 
-  // Document-type switch is label-only — it sets the centered top tag and leaves
-  // the user's section/columns/row selections untouched.
-  const setDocumentLabel = (documentLabel: string) =>
-    setConfig((current) => ({ ...current, documentLabel }))
+  // Selecting a doc type re-seeds the checkbox defaults (sections/top fields/
+  // columns) + the centered document tag from that doc type's saved config, while
+  // preserving the user's per-row selections. They can still tweak toggles after.
+  const selectDocumentType = (documentType: WorkOrderDocumentTypeOption) => {
+    setSelectedDocumentTypeId(documentType.id)
+    const seeded = resolvePrintConfig(documentType.printConfig, documentType.name)
+    setConfig((current) => ({
+      ...current,
+      documentLabel: seeded.documentLabel,
+      sections: seeded.sections,
+      topFields: seeded.topFields,
+      adjustmentColumns: seeded.adjustmentColumns,
+      materialColumns: seeded.materialColumns,
+    }))
+  }
 
   const toggleAdjustmentColumn = (key: (typeof ADJUSTMENT_COLUMN_FIELDS)[number]["key"]) =>
     setConfig((current) => ({
@@ -231,17 +275,26 @@ export function WorkOrderPrintConfigurator({
 
         <PanelSection title="Document">
           <div className="flex flex-col gap-1 rounded border border-neutral-200 p-0.5">
-            {WORK_ORDER_DOCUMENT_LABELS.map((label) => (
-              <ModeButton
-                key={label}
-                active={config.documentLabel === label}
-                onClick={() => setDocumentLabel(label)}
-              >
-                {label}
-              </ModeButton>
-            ))}
+            {documentTypes.length === 0 ? (
+              <p className="px-2 py-1 text-xs text-neutral-400">No document types configured.</p>
+            ) : (
+              documentTypes.map((documentType) => {
+                const count = countByDocumentName.get(documentType.name) ?? 0
+                return (
+                  <ModeButton
+                    key={documentType.id}
+                    active={selectedDocumentTypeId === documentType.id}
+                    onClick={() => selectDocumentType(documentType)}
+                  >
+                    {count > 0 ? `${documentType.name} (printed ${count}×)` : documentType.name}
+                  </ModeButton>
+                )
+              })
+            )}
           </div>
-          <p className="mt-1 text-xs text-neutral-400">Sets the centered title on the document.</p>
+          <p className="mt-1 text-xs text-neutral-400">
+            Seeds the checkboxes + the centered title from this document type.
+          </p>
         </PanelSection>
 
         <PanelSection title="Top section">

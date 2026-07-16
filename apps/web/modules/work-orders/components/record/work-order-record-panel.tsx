@@ -31,6 +31,7 @@ export function WorkOrderRecordPanel({
   initialAdjustmentsForWorkOrder,
   initialPlannedPayments,
   initialPayments,
+  printCounts,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
@@ -38,6 +39,8 @@ export function WorkOrderRecordPanel({
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
   initialPlannedPayments: WorkOrderPlannedPaymentRow[]
   initialPayments: Payment[]
+  /** Per-doc-type print counts for this WO (read-only, shown in the primary section). */
+  printCounts: ReadonlyArray<{ documentTypeName: string; count: number }>
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
@@ -124,6 +127,7 @@ export function WorkOrderRecordPanel({
               >
                 <WorkOrderPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
+                  printCounts={printCounts}
                   detail={{
                     workOrderNumber: controller.record.workOrderNumber,
                     propertyId: controller.record.propertyId,
