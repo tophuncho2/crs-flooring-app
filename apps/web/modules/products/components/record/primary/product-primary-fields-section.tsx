@@ -30,15 +30,16 @@ const PRODUCT_NAMING_ADDON_MAX = 80
 
 /**
  * Products primary section, on the canonical record-view invisible grid.
- * In the detail view a `RecordColumnBreak` splits the section into two flanks —
- * left = all spec fields (PROD # + Palette paired / Category + Stock Unit paired /
- * Conversion Formula / Coverage·Unit + Coverage Unit paired / Cost + Cost Unit /
- * Style / Color / Naming Add-on / Entity),
- * right = the read-only
- * linked-row counts stacked vertically — then a `RecordSectionDivider` terminates
- * the section above a read-only metadata band (Created / Updated / Created by /
- * Updated by), mirroring warehouse + job-types. The create flow renders the same
- * spec fields as a single column (no stats, no metadata band yet).
+ * In the detail view a centered (`even`) `RecordColumnBreak` splits the section
+ * into two flanks — left = identity + descriptive fields (PROD # + Palette paired /
+ * Style / Color / Naming Add-on / Entity), right = the category + unit pricing
+ * group (Category + Stock Unit paired / Conversion Formula / Coverage·Unit +
+ * Coverage Unit paired / Cost + Cost Unit paired) — then a `RecordSectionDivider`
+ * terminates the section above a read-only metadata band (Created / Updated /
+ * Created by / Updated by), with the read-only linked-row stat counts (Planned
+ * Products / Work Order Items / Inventory / Adjustments) in a 2×2 band beneath it.
+ * The create flow renders both flanks' spec fields as a single column (no stats,
+ * no metadata band).
  *
  * `categoryReadOnly` is the detail-vs-create discriminator (the record panel sets
  * it; the create flow leaves it false) — it drives the detail-only layout (PROD #,
@@ -140,12 +141,11 @@ export function ProductPrimaryFieldsSection({
     setPickedFormulaLabel(null)
   }
 
-  // All spec fields, shared by both flows. Detail puts these in the left flank;
-  // create renders them as a single column. Top down: PROD # + Palette paired
-  // (detail-only) / Category + Stock Unit paired (equal width) / Coverage·Unit +
-  // Coverage Unit paired / Style / Color / Naming Add-on / Entity. Entity takes
-  // col 1 with no explicit row, so it stacks vertically below Naming Add-on.
-  const specFields = (
+  // Left-flank spec fields, shared by both flows. Detail puts these in the left
+  // flank; create renders the right group first, then these (see create return).
+  // Top down: PROD # + Palette paired (detail-only) / Style / Color / Naming
+  // Add-on / Entity.
+  const leftSpecFields = (
     <>
       {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
       {product.productNumber ? (
@@ -172,6 +172,78 @@ export function ProductPrimaryFieldsSection({
           </FormField>
         </CellAt>
       ) : null}
+      {/* Descriptive free-text fields, stacked under PROD # + Palette. */}
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Style">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.style}
+              onChange={(value) => onFieldChange("style", value)}
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Color">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.color}
+              onChange={(value) => onFieldChange("color", value)}
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={8}>
+        <FormField
+          label="Naming Add-on"
+          currentLength={editable ? draft.productNamingAddon.length : undefined}
+          maxLength={editable ? PRODUCT_NAMING_ADDON_MAX : undefined}
+        >
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.productNamingAddon || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.productNamingAddon}
+              onChange={(value) => onFieldChange("productNamingAddon", value)}
+              maxLength={PRODUCT_NAMING_ADDON_MAX}
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Entity">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{entityName || "—"}</StaticFieldValue>
+          ) : (
+            <EntityTypePicker
+              value={draft.entityId || null}
+              onChange={(id) => onFieldChange("entityId", id ?? "")}
+              onOptionSelected={(opt) => setPickedLabel(opt?.entity ?? null)}
+              selectedLabel={draft.entityId ? pickedLabel ?? entityName : null}
+              disabled={disabled}
+              placeholder="Select entity"
+              ariaLabel="Entity"
+            />
+          )}
+        </FormField>
+      </CellAt>
+    </>
+  )
+
+  // Right-flank spec fields — the category + unit pricing group. Detail puts
+  // these opposite the left flank across the centered column break; create
+  // renders them FIRST (above the left group) in the single column. Top down:
+  // Category + Unit paired / Conversion Formula / Coverage·Unit + Coverage Unit
+  // paired / Cost + Cost Unit paired.
+  const rightSpecFields = (
+    <>
       {/* Category + Unit sit side by side, equal width (4 + 4). Both editable
           pickers now (UoM epic 2A) — category is mutable, unit is its own FK. */}
       <CellAt col={1} colSpan={4}>
@@ -293,128 +365,38 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Style">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
-          ) : (
-            <TextCell
-              editable={editable}
-              value={draft.style}
-              onChange={(value) => onFieldChange("style", value)}
-            />
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Color">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
-          ) : (
-            <TextCell
-              editable={editable}
-              value={draft.color}
-              onChange={(value) => onFieldChange("color", value)}
-            />
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField
-          label="Naming Add-on"
-          currentLength={editable ? draft.productNamingAddon.length : undefined}
-          maxLength={editable ? PRODUCT_NAMING_ADDON_MAX : undefined}
-        >
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{draft.productNamingAddon || "—"}</StaticFieldValue>
-          ) : (
-            <TextCell
-              editable={editable}
-              value={draft.productNamingAddon}
-              onChange={(value) => onFieldChange("productNamingAddon", value)}
-              maxLength={PRODUCT_NAMING_ADDON_MAX}
-            />
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Entity">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{entityName || "—"}</StaticFieldValue>
-          ) : (
-            <EntityTypePicker
-              value={draft.entityId || null}
-              onChange={(id) => onFieldChange("entityId", id ?? "")}
-              onOptionSelected={(opt) => setPickedLabel(opt?.entity ?? null)}
-              selectedLabel={draft.entityId ? pickedLabel ?? entityName : null}
-              disabled={disabled}
-              placeholder="Select entity"
-              ariaLabel="Entity"
-            />
-          )}
-        </FormField>
-      </CellAt>
     </>
   )
 
   // Create flow: no stats / no metadata / no column rule / no divider. The spec
   // fields sit at the SAME width as the detail view's left flank — the 7fr side
-  // of the right-narrow split — instead of stretching the full panel width. We
-  // reuse the engine's right-narrow grid template but leave the rule + 3fr flank
-  // empty (nothing rendered where the stats sit in the detail view).
+  // of the right-narrow split — instead of stretching the full panel width. Both
+  // flanks' fields stack in the single column, right group (Category / Unit / …)
+  // first, then the left group's descriptive fields (PROD # + Palette are null
+  // on create), so the create order stays Category-first.
   if (!categoryReadOnly) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,7fr)_auto_minmax(0,3fr)] md:gap-x-8">
         <div className="min-w-0">
-          <FieldSection>{specFields}</FieldSection>
+          <FieldSection>
+            {rightSpecFields}
+            {leftSpecFields}
+          </FieldSection>
         </div>
       </div>
     )
   }
 
-  // Detail flow: spec fields left, linked-row counts stacked right, then a
-  // divider over the read-only snapshot + actor metadata band.
+  // Detail flow: spec fields split across a centered column break — identity +
+  // descriptive fields left, category + unit pricing group right — then a divider
+  // over the read-only actor metadata band, with the linked-row stat counts
+  // stacked beneath it.
   return (
     <div className="flex flex-col gap-4">
       <RecordColumnBreak
-        split="right-narrow"
-        left={<FieldSection>{specFields}</FieldSection>}
-        right={
-          <FieldSection>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Planned Products">
-                <StatCell
-                  value={stats?.plannedProductsCount ?? 0}
-                  ariaLabel="Linked planned products total"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Work Order Items">
-                <StatCell
-                  value={stats?.workOrderItemsCount ?? 0}
-                  ariaLabel="Linked work order items total"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Inventory">
-                <StatCell
-                  value={stats?.inventoryCount ?? 0}
-                  ariaLabel="Linked inventory total"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Adjustments">
-                <StatCell
-                  value={stats?.adjustmentsCount ?? 0}
-                  ariaLabel="Linked adjustments total"
-                />
-              </FormField>
-            </CellAt>
-          </FieldSection>
-        }
+        split="even"
+        left={<FieldSection>{leftSpecFields}</FieldSection>}
+        right={<FieldSection>{rightSpecFields}</FieldSection>}
       />
       {product.createdAt ? (
         <>
@@ -443,6 +425,42 @@ export function ProductPrimaryFieldsSection({
             <CellAt col={5} row={2} colSpan={4}>
               <FormField label="Updated by">
                 <StaticFieldValue>{product.updatedBy ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </FieldSection>
+          {/* Linked-row stat counts, beneath the actor band — Planned Products /
+              Work Order Items over Inventory / Adjustments. */}
+          <FieldSection>
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Planned Products">
+                <StatCell
+                  value={stats?.plannedProductsCount ?? 0}
+                  ariaLabel="Linked planned products total"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={4}>
+              <FormField label="Work Order Items">
+                <StatCell
+                  value={stats?.workOrderItemsCount ?? 0}
+                  ariaLabel="Linked work order items total"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField label="Inventory">
+                <StatCell
+                  value={stats?.inventoryCount ?? 0}
+                  ariaLabel="Linked inventory total"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={2} colSpan={4}>
+              <FormField label="Adjustments">
+                <StatCell
+                  value={stats?.adjustmentsCount ?? 0}
+                  ariaLabel="Linked adjustments total"
+                />
               </FormField>
             </CellAt>
           </FieldSection>
