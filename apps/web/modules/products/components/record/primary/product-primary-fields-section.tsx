@@ -32,7 +32,8 @@ const PRODUCT_NAMING_ADDON_MAX = 80
  * Products primary section, on the canonical record-view invisible grid.
  * In the detail view a `RecordColumnBreak` splits the section into two flanks —
  * left = all spec fields (PROD # + Palette paired / Category + Stock Unit paired /
- * Coverage·Unit + Coverage Unit paired / Style / Color / Naming Add-on / Entity),
+ * Conversion Formula / Coverage·Unit + Coverage Unit paired / Cost + Cost Unit /
+ * Style / Color / Naming Add-on / Entity),
  * right = the read-only
  * linked-row counts stacked vertically — then a `RecordSectionDivider` terminates
  * the section above a read-only metadata band (Created / Updated / Created by /
@@ -208,8 +209,28 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
+      {/* Conversion formula — full width, sitting directly under Category +
+          Unit and above the Coverage pairing. Picked directly on the product
+          (no category coupling); seeds the row conversion trio. */}
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Conversion Formula">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{savedFormulaName || "—"}</StaticFieldValue>
+          ) : (
+            <ConversionFormulaPicker
+              value={draft.conversionFormulaId || null}
+              onChange={(id) => onFieldChange("conversionFormulaId", id ?? "")}
+              onOptionSelected={(opt) => setPickedFormulaLabel(opt?.name ?? null)}
+              selectedLabel={draft.conversionFormulaId ? pickedFormulaLabel ?? savedFormulaName : null}
+              disabled={disabled}
+              placeholder="Select a formula"
+              ariaLabel="Conversion formula"
+            />
+          )}
+        </FormField>
+      </CellAt>
       {/* Coverage·Unit + its coverage-unit picker paired (4 + 4), sitting
-          directly under Category + Unit. The picker sets the product's OWN
+          under the Conversion Formula. The picker sets the product's OWN
           coverage unit (UoM epic 1a); no unit suffix on the value cell — the
           Coverage Unit picker beside it already shows the unit. */}
       <CellAt col={1} colSpan={4}>
@@ -268,25 +289,6 @@ export function ProductPrimaryFieldsSection({
               disabled={disabled}
               placeholder="Select a unit"
               ariaLabel="Cost unit"
-            />
-          )}
-        </FormField>
-      </CellAt>
-      {/* Conversion formula — full width under the Cost pairing. Picked directly
-          on the product (no category coupling); seeds the row conversion trio. */}
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Conversion Formula">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{savedFormulaName || "—"}</StaticFieldValue>
-          ) : (
-            <ConversionFormulaPicker
-              value={draft.conversionFormulaId || null}
-              onChange={(id) => onFieldChange("conversionFormulaId", id ?? "")}
-              onOptionSelected={(opt) => setPickedFormulaLabel(opt?.name ?? null)}
-              selectedLabel={draft.conversionFormulaId ? pickedFormulaLabel ?? savedFormulaName : null}
-              disabled={disabled}
-              placeholder="Select a formula"
-              ariaLabel="Conversion formula"
             />
           )}
         </FormField>
