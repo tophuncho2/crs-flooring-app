@@ -37,7 +37,12 @@ export async function createAdjustmentUseCase(
 ): Promise<AdjustmentMutationResult> {
   assertActorEmail(actorEmail, "createAdjustmentUseCase")
 
-  return withDatabaseTransaction(async (tx) => {
+  // The tx holds locks + the lean insert + the ledger recompute + the ceiling
+  // assert (which must roll back on breach). It returns only a lean carrier; the
+  // full multi-relation adjustment record is re-read on the pool after commit —
+  // a relation-heavy read on the pinned tx connection trips Prisma's concurrent
+  // sub-query error.
+  const carrier = await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
     const quantity = input.quantity
@@ -153,10 +158,6 @@ export async function createAdjustmentUseCase(
       )
     }
 
-    // The recompute stamped this row's `before`/`after` (insert left them null);
-    // re-read so the response carries the fresh ledger values.
-    const adjustment = (await getAdjustmentById(inserted.id, c)) ?? inserted
-
     try {
       assertNetDeductedWithinStartingStock({
         netDeducted: result.netDeducted,
@@ -183,9 +184,27 @@ export async function createAdjustmentUseCase(
     }
 
     return {
-      adjustment,
+      adjustmentId: inserted.id,
       inventoryId: result.inventoryId,
       netDeducted: result.netDeducted,
     }
   })
+
+  // Enrich on the pool after commit. The recompute stamped this row's
+  // `before`/`after` (insert left them null), so the fresh full record carries
+  // the up-to-date ledger values. Just-inserted → it cannot be missing.
+  const adjustment = await getAdjustmentById(carrier.adjustmentId)
+  if (!adjustment) {
+    throw new InventoryAdjustmentExecutionError({
+      code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
+      message: "Inventory adjustment not found",
+      status: 404,
+    })
+  }
+
+  return {
+    adjustment,
+    inventoryId: carrier.inventoryId,
+    netDeducted: carrier.netDeducted,
+  }
 }

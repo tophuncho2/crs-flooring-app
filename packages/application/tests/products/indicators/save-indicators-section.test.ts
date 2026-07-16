@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   withDatabaseTransactionMock,
-  getIndicatorByIdMock,
+  getIndicatorScopeByIdMock,
   lockIndicatorRowMock,
   updateIndicatorRecordMock,
   deleteIndicatorRecordByIdMock,
@@ -10,7 +10,7 @@ const {
 } = vi.hoisted(() => {
   return {
     withDatabaseTransactionMock: vi.fn(),
-    getIndicatorByIdMock: vi.fn(),
+    getIndicatorScopeByIdMock: vi.fn(),
     lockIndicatorRowMock: vi.fn(),
     updateIndicatorRecordMock: vi.fn(),
     deleteIndicatorRecordByIdMock: vi.fn(),
@@ -20,8 +20,10 @@ const {
 
 vi.mock("@builders/db", () => ({
   Prisma: {},
+  // Pool sentinel — the post-commit list enrich reads on `db` (or the composed client).
+  db: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
-  getIndicatorById: getIndicatorByIdMock,
+  getIndicatorScopeById: getIndicatorScopeByIdMock,
   lockIndicatorRow: lockIndicatorRowMock,
   updateIndicatorRecord: updateIndicatorRecordMock,
   deleteIndicatorRecordById: deleteIndicatorRecordByIdMock,
@@ -37,7 +39,7 @@ const VALID_FORM = { lowStockThreshold: "10.00", internalNotes: "note", isActive
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  getIndicatorByIdMock.mockReset()
+  getIndicatorScopeByIdMock.mockReset()
   lockIndicatorRowMock.mockReset()
   updateIndicatorRecordMock.mockReset()
   deleteIndicatorRecordByIdMock.mockReset()
@@ -52,11 +54,11 @@ describe("saveIndicatorsSectionUseCase", () => {
     await expect(
       saveIndicatorsSectionUseCase({ productId: PRODUCT, diff: EMPTY_DIFF }, "   "),
     ).rejects.toThrowError(/actorEmail/)
-    expect(getIndicatorByIdMock).not.toHaveBeenCalled()
+    expect(getIndicatorScopeByIdMock).not.toHaveBeenCalled()
   })
 
   it("applies a modified row's editable subset, stamping the actor as updatedBy", async () => {
-    getIndicatorByIdMock.mockResolvedValue({ id: "ind-1", productId: PRODUCT })
+    getIndicatorScopeByIdMock.mockResolvedValue({ id: "ind-1", productId: PRODUCT })
     listIndicatorsForProductMock.mockResolvedValue({ rows: [{ id: "ind-1" }], hasMore: false })
 
     const result = await saveIndicatorsSectionUseCase(
@@ -74,7 +76,7 @@ describe("saveIndicatorsSectionUseCase", () => {
   })
 
   it("deletes a removed row and never updates it", async () => {
-    getIndicatorByIdMock.mockResolvedValue({ id: "ind-2", productId: PRODUCT })
+    getIndicatorScopeByIdMock.mockResolvedValue({ id: "ind-2", productId: PRODUCT })
 
     await saveIndicatorsSectionUseCase(
       { productId: PRODUCT, diff: { modified: [], deleted: [{ id: "ind-2" }] } },
@@ -86,7 +88,7 @@ describe("saveIndicatorsSectionUseCase", () => {
   })
 
   it("rejects a modified row that belongs to another product (scope guard)", async () => {
-    getIndicatorByIdMock.mockResolvedValue({ id: "ind-9", productId: "other-product" })
+    getIndicatorScopeByIdMock.mockResolvedValue({ id: "ind-9", productId: "other-product" })
 
     await expect(
       saveIndicatorsSectionUseCase(

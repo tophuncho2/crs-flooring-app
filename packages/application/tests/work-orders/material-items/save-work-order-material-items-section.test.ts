@@ -16,6 +16,8 @@ const {
 
 vi.mock("@builders/db", () => ({
   Prisma: {},
+  // Pool sentinel — the use case reads/guards on `client ?? db`.
+  db: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
   applyWorkOrderMaterialItemsDiff: applyWorkOrderMaterialItemsDiffMock,
   getProductById: getProductByIdMock,
@@ -34,7 +36,8 @@ beforeEach(() => {
   listWorkOrderMaterialItemsMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  applyWorkOrderMaterialItemsDiffMock.mockResolvedValue({ items: [], tempIdMap: {} })
+  // The applier now returns only tempIdMap; the list is enriched on the pool.
+  applyWorkOrderMaterialItemsDiffMock.mockResolvedValue({ tempIdMap: {} })
   listWorkOrderMaterialItemsMock.mockResolvedValue([])
 })
 

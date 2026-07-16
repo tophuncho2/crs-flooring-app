@@ -2,7 +2,6 @@ import type { PaletteColor } from "@builders/domain"
 import { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { type ImportsDbClient } from "./shared.js"
-import { getImportById, type ImportRecord } from "./read-repository.js"
 
 export async function lockImportRow(
   tx: Prisma.TransactionClient,
@@ -58,11 +57,18 @@ export type UpdateImportRecordInput = Partial<
   Omit<CreateImportRecordInput, "createdBy" | "updatedBy">
 > & { updatedBy: string; color?: PaletteColor }
 
+/**
+ * Lean write — returns only the new row's id. The full multi-relation record is
+ * read on the pool by the caller AFTER the transaction commits: a re-read whose
+ * select pulls 2+ relations run on the pinned interactive-transaction connection
+ * fires concurrent relation sub-queries on one pg connection ("client is already
+ * executing a query") and wedges it.
+ */
 export async function createImportRecord(
   input: CreateImportRecordInput,
   client: ImportsDbClient = db,
-): Promise<ImportRecord> {
-  const row = await client.flooringImportEntry.create({
+): Promise<{ id: string }> {
+  return client.flooringImportEntry.create({
     data: {
       purchaseOrderNumber: input.purchaseOrderNumber,
       internalNotes: input.internalNotes,
@@ -73,16 +79,18 @@ export async function createImportRecord(
     },
     select: { id: true },
   })
-  const record = await getImportById(row.id, client)
-  if (!record) throw new Error("createImportRecord: record disappeared mid-transaction")
-  return record
 }
 
+/**
+ * Lean write — returns only the row's id. The caller enriches the full
+ * multi-relation record on the pool after the transaction commits (see the
+ * note on `createImportRecord`).
+ */
 export async function updateImportRecord(
   id: string,
   input: UpdateImportRecordInput,
   client: ImportsDbClient = db,
-): Promise<ImportRecord> {
+): Promise<{ id: string }> {
   // `updatedBy` is always stamped (aggregate-root actor), so the update always
   // runs — even when no user-editable field changed, the actor + `updatedAt`
   // must move.
@@ -97,15 +105,11 @@ export async function updateImportRecord(
   }
   if (input.color !== undefined) data.color = input.color
 
-  await client.flooringImportEntry.update({
+  return client.flooringImportEntry.update({
     where: { id },
     data,
     select: { id: true },
   })
-
-  const record = await getImportById(id, client)
-  if (!record) throw new Error(`updateImportRecord: import ${id} not found after update`)
-  return record
 }
 
 export async function deleteImportRecordById(

@@ -1,7 +1,8 @@
 import {
   Prisma,
+  db,
   deleteIndicatorRecordById,
-  getIndicatorById,
+  getIndicatorScopeById,
   listIndicatorsForProduct,
   lockIndicatorRow,
   updateIndicatorRecord,
@@ -53,12 +54,16 @@ export async function saveIndicatorsSectionUseCase(
     }
   }
 
-  return withDatabaseTransaction(async (tx) => {
+  // The tx holds only the lean scope reads (relation-free `{ id, productId }`,
+  // safe on the pinned connection) + the locks + writes. The fresh 3-relation
+  // list is read on the POOL after commit — a relation-rich read on the tx
+  // connection fires concurrent sub-queries and blows the tx timeout.
+  await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
     // Deletes first — a row removed this save can't also be in `modified`.
     for (const { id } of input.diff.deleted) {
-      const existing = await getIndicatorById(id, c)
+      const existing = await getIndicatorScopeById(id, c)
       // Already gone → idempotent no-op (a concurrent delete). A row that belongs
       // to another product is a scope violation.
       if (!existing) continue
@@ -70,7 +75,7 @@ export async function saveIndicatorsSectionUseCase(
     }
 
     for (const modified of input.diff.modified) {
-      const existing = await getIndicatorById(modified.id, c)
+      const existing = await getIndicatorScopeById(modified.id, c)
       if (!existing) {
         throw new InventoryIndicatorExecutionError({
           code: "INVENTORY_INDICATOR_NOT_FOUND",
@@ -95,13 +100,17 @@ export async function saveIndicatorsSectionUseCase(
       }
       await updateIndicatorRecord(c, { id: existing.id, patch })
     }
-
-    const { rows } = await listIndicatorsForProduct(
-      { productId: input.productId, skip: 0, take: INVENTORY_INDICATOR_SECTION_MAX_PAGE_SIZE },
-      c,
-    )
-    return { rows }
   })
+
+  // Enrich the product's fresh indicator rows on the POOL after commit. When a
+  // caller-managed tx is composed in, read on that client so it sees its own
+  // uncommitted writes; otherwise the default pool.
+  const reader = client ?? db
+  const { rows } = await listIndicatorsForProduct(
+    { productId: input.productId, skip: 0, take: INVENTORY_INDICATOR_SECTION_MAX_PAGE_SIZE },
+    reader,
+  )
+  return { rows }
 }
 
 function scopeMismatch(indicatorId: string): InventoryIndicatorExecutionError {

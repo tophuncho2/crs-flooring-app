@@ -7,6 +7,8 @@ const {
   getUnitOfMeasureByIdMock,
   listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiffMock,
+  listFilterRowsByImportMock,
+  listStagedInventoryByImportMock,
   lockImportRowMock,
   stampImportActorMock,
 } = vi.hoisted(() => ({
@@ -16,6 +18,8 @@ const {
   getUnitOfMeasureByIdMock: vi.fn(),
   listStagedInventoryRowDiffSummariesByImportMock: vi.fn(),
   applyImportStagedInventorySectionDiffMock: vi.fn(),
+  listFilterRowsByImportMock: vi.fn(),
+  listStagedInventoryByImportMock: vi.fn(),
   lockImportRowMock: vi.fn(),
   stampImportActorMock: vi.fn(),
 }))
@@ -33,6 +37,9 @@ vi.mock("@builders/db", () => ({
   getUnitOfMeasureById: getUnitOfMeasureByIdMock,
   listStagedInventoryRowDiffSummariesByImport: listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiff: applyImportStagedInventorySectionDiffMock,
+  // Post-commit pool reload of both slices (the applier no longer reloads in-tx).
+  listFilterRowsByImport: listFilterRowsByImportMock,
+  listStagedInventoryByImport: listStagedInventoryByImportMock,
   lockImportRow: lockImportRowMock,
   stampImportActor: stampImportActorMock,
 }))
@@ -148,6 +155,8 @@ beforeEach(() => {
   getUnitOfMeasureByIdMock.mockReset()
   listStagedInventoryRowDiffSummariesByImportMock.mockReset()
   applyImportStagedInventorySectionDiffMock.mockReset()
+  listFilterRowsByImportMock.mockReset()
+  listStagedInventoryByImportMock.mockReset()
   lockImportRowMock.mockReset()
   stampImportActorMock.mockReset()
 
@@ -166,12 +175,14 @@ beforeEach(() => {
     abbreviation: "SF",
   }))
   listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
+  // The applier now returns ONLY the temp-id maps; the post-state lists are
+  // reloaded on the pool after commit.
   applyImportStagedInventorySectionDiffMock.mockResolvedValue({
-    filterRows: [],
-    stagedRows: [],
     filterTempIdMap: {},
     rowTempIdMap: {},
   })
+  listFilterRowsByImportMock.mockResolvedValue([])
+  listStagedInventoryByImportMock.mockResolvedValue([])
 })
 
 describe("saveImportStagedInventorySectionUseCase — parent locking", () => {
@@ -658,13 +669,15 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
     expect(args.filters.added[0]!.id.length).toBeGreaterThan(0)
   })
 
-  it("returns the data layer's result verbatim (filterRows, stagedRows, both tempId maps)", async () => {
+  it("assembles the result from the applier's tempId maps + the pool-reloaded lists", async () => {
+    // The applier returns only the temp-id maps; the two full lists come from the
+    // post-commit pool reload (mirrors the work-orders section save).
     applyImportStagedInventorySectionDiffMock.mockResolvedValue({
-      filterRows: [{ id: "f-real" } as never],
-      stagedRows: [{ id: "r-real" } as never],
       filterTempIdMap: { "tmp-f": "f-real" },
       rowTempIdMap: { "tmp-r": "r-real" },
     })
+    listFilterRowsByImportMock.mockResolvedValue([{ id: "f-real" }])
+    listStagedInventoryByImportMock.mockResolvedValue([{ id: "r-real" }])
 
     const result = await runSave(emptyInput())
     expect(result).toEqual({
@@ -673,6 +686,14 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
       filterTempIdMap: { "tmp-f": "f-real" },
       rowTempIdMap: { "tmp-r": "r-real" },
     })
+
+    // The reload runs AFTER the applier (post-commit), on the pool.
+    expect(applyImportStagedInventorySectionDiffMock.mock.invocationCallOrder[0]!).toBeLessThan(
+      listFilterRowsByImportMock.mock.invocationCallOrder[0]!,
+    )
+    expect(applyImportStagedInventorySectionDiffMock.mock.invocationCallOrder[0]!).toBeLessThan(
+      listStagedInventoryByImportMock.mock.invocationCallOrder[0]!,
+    )
   })
 
   it("passes deletes through unchanged for both slices", async () => {

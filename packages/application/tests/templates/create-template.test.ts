@@ -1,16 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, createTemplateRecordMock } = vi.hoisted(() => {
-  return {
-    withDatabaseTransactionMock: vi.fn(),
-    createTemplateRecordMock: vi.fn(),
-  }
-})
+const { withDatabaseTransactionMock, createTemplateRecordMock, getTemplateByIdMock } = vi.hoisted(
+  () => {
+    return {
+      withDatabaseTransactionMock: vi.fn(),
+      createTemplateRecordMock: vi.fn(),
+      getTemplateByIdMock: vi.fn(),
+    }
+  },
+)
 
 vi.mock("@builders/db", () => ({
   Prisma: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
   createTemplateRecord: createTemplateRecordMock,
+  // Full record read on the pool after the tx commits (the return value).
+  getTemplateById: getTemplateByIdMock,
 }))
 
 import { createTemplateUseCase } from "../../src/templates/create-template.js"
@@ -39,9 +44,12 @@ function detail(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   createTemplateRecordMock.mockReset()
+  getTemplateByIdMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  createTemplateRecordMock.mockResolvedValue(detail())
+  // Lean write returns just the id; the pool enrich returns the full record.
+  createTemplateRecordMock.mockResolvedValue({ id: "tpl-1" })
+  getTemplateByIdMock.mockResolvedValue(detail())
 })
 
 describe("createTemplateUseCase", () => {
@@ -61,16 +69,17 @@ describe("createTemplateUseCase", () => {
     expect(createTemplateRecordMock).not.toHaveBeenCalled()
   })
 
-  it("persists the record, stamping createdBy/updatedBy, and returns it", async () => {
-    const created = detail({ id: "tpl-9" })
-    createTemplateRecordMock.mockResolvedValue(created)
+  it("persists the record, stamping createdBy/updatedBy, and returns the pool-enriched record", async () => {
+    createTemplateRecordMock.mockResolvedValue({ id: "tpl-9" })
+    const enriched = detail({ id: "tpl-9" })
+    getTemplateByIdMock.mockResolvedValue(enriched)
 
     const result = await createTemplateUseCase(
       input({ unitType: "3BR", customerName: "Jane Doe" }) as never,
       ACTOR,
     )
 
-    expect(result).toBe(created)
+    expect(result).toBe(enriched)
     expect(createTemplateRecordMock).toHaveBeenCalledWith(
       expect.objectContaining({
         unitType: "3BR",
@@ -80,6 +89,8 @@ describe("createTemplateUseCase", () => {
       }),
       expect.anything(),
     )
+    // Enrich reads the full record on the pool by the just-written id.
+    expect(getTemplateByIdMock).toHaveBeenCalledWith("tpl-9", { withNeighbors: false })
   })
 
   it("re-throws unexpected database errors unchanged", async () => {

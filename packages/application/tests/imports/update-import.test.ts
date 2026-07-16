@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const {
   withDatabaseTransactionMock,
   lockImportRowMock,
+  getImportPrimaryStateByIdMock,
   getImportByIdMock,
   getWarehouseByIdMock,
   getImportLinkStateMock,
@@ -10,6 +11,7 @@ const {
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
   lockImportRowMock: vi.fn(),
+  getImportPrimaryStateByIdMock: vi.fn(),
   getImportByIdMock: vi.fn(),
   getWarehouseByIdMock: vi.fn(),
   getImportLinkStateMock: vi.fn(),
@@ -22,6 +24,9 @@ vi.mock("@builders/db", () => ({
   },
   withDatabaseTransaction: withDatabaseTransactionMock,
   lockImportRow: lockImportRowMock,
+  // Lean, relation-free merge read on the tx connection.
+  getImportPrimaryStateById: getImportPrimaryStateByIdMock,
+  // Pool enrich after commit (multi-relation read off the pinned tx connection).
   getImportById: getImportByIdMock,
   getWarehouseById: getWarehouseByIdMock,
   getImportLinkState: getImportLinkStateMock,
@@ -42,6 +47,8 @@ function currentRecord(overrides: Record<string, unknown> = {}) {
     internalNotes: "",
     warehouseId: "wh-1",
     warehouseName: "Main",
+    entityId: "",
+    entityName: "",
     color: "SLATE",
     stagedInventoryRowsCount: 0,
     liveInventoryRowsCount: 0,
@@ -53,9 +60,22 @@ function currentRecord(overrides: Record<string, unknown> = {}) {
   }
 }
 
+// The lean in-tx merge read returns only the scalar subset the merge needs.
+function currentState(overrides: Record<string, unknown> = {}) {
+  return {
+    purchaseOrderNumber: "PO-1",
+    internalNotes: "",
+    warehouseId: "wh-1",
+    entityId: "",
+    color: "SLATE",
+    ...overrides,
+  }
+}
+
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   lockImportRowMock.mockReset()
+  getImportPrimaryStateByIdMock.mockReset()
   getImportByIdMock.mockReset()
   getWarehouseByIdMock.mockReset()
   getImportLinkStateMock.mockReset()
@@ -64,10 +84,13 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ $queryRaw: vi.fn().mockResolvedValue([]) }),
   )
+  // In-tx merge read (lean scalars) + pool enrich (full record).
+  getImportPrimaryStateByIdMock.mockResolvedValue(currentState())
   getImportByIdMock.mockResolvedValue(currentRecord())
   getWarehouseByIdMock.mockResolvedValue({ id: "wh-1" })
   getImportLinkStateMock.mockResolvedValue(null)
-  updateImportRecordMock.mockResolvedValue(currentRecord())
+  // Lean write returns only the id.
+  updateImportRecordMock.mockResolvedValue({ id: IMPORT_ID })
 })
 
 describe("updateImportUseCase — actor stamping", () => {
@@ -104,10 +127,19 @@ describe("updateImportUseCase — actor stamping", () => {
     )
   })
 
-  it("acquires the FOR UPDATE lock before reading the import", async () => {
+  it("acquires the FOR UPDATE lock before the in-tx merge read", async () => {
     await updateImportUseCase(IMPORT_ID, {}, ACTOR)
     expect(lockImportRowMock).toHaveBeenCalledTimes(1)
     expect(lockImportRowMock.mock.invocationCallOrder[0]!).toBeLessThan(
+      getImportPrimaryStateByIdMock.mock.invocationCallOrder[0]!,
+    )
+  })
+
+  it("enriches the full record on the pool (no client) after the write", async () => {
+    await updateImportUseCase(IMPORT_ID, {}, ACTOR)
+    expect(getImportByIdMock).toHaveBeenCalledWith(IMPORT_ID)
+    expect(getImportByIdMock.mock.calls[0]!).toHaveLength(1)
+    expect(updateImportRecordMock.mock.invocationCallOrder[0]!).toBeLessThan(
       getImportByIdMock.mock.invocationCallOrder[0]!,
     )
   })
@@ -115,7 +147,7 @@ describe("updateImportUseCase — actor stamping", () => {
 
 describe("updateImportUseCase — guards", () => {
   it("throws IMPORT_NOT_FOUND when the import does not exist", async () => {
-    getImportByIdMock.mockResolvedValue(null)
+    getImportPrimaryStateByIdMock.mockResolvedValue(null)
     try {
       await updateImportUseCase(IMPORT_ID, {}, ACTOR)
       expect.fail("expected throw")

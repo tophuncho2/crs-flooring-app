@@ -3,8 +3,10 @@ import { buildFlooringProductDisplayName } from "@builders/domain"
 import type { StagedInventoryRow } from "@builders/domain"
 import { db } from "../../client.js"
 import {
+  stagedInventoryMaterializeSelect,
   stagedInventoryRowSelect,
   type StagedInventoryDbClient,
+  type StagedInventoryMaterializePayload,
   type StagedInventoryRowPayload,
 } from "./shared.js"
 
@@ -82,23 +84,27 @@ export async function getStagedInventoryById(
 }
 
 /**
- * Worker-only read primitive for the materialize-import flow. Returns the raw
- * `StagedInventoryRowPayload` (with the full join graph) instead of the
- * normalized `StagedInventoryRecord` because the materialize use case needs the
- * raw `unitId` FK (carried forward onto the new inventory row) before the
- * normalizer flattens it to display strings.
+ * Worker-only read primitive for the materialize-import flow. Returns the lean
+ * `StagedInventoryMaterializePayload` (raw scalar columns + the parent import's
+ * `warehouseId`) instead of the normalized `StagedInventoryRecord` because the
+ * materialize use case copies the raw values forward onto the new inventory row
+ * before any normalizer flattens them to display strings. The projection is
+ * deliberately single-relation (only `importEntry.warehouseId`): a
+ * multi-relation select on the pinned interactive-transaction connection would
+ * fire concurrent relation sub-queries on one pg connection and wedge it.
  *
  * Filters by `status = QUEUED` so any row that drifted state (raced edit /
  * delete / retry) is silently excluded — the caller compares the returned
  * length to the requested id count and dead-letters on mismatch.
  *
  * Transaction-only — no `client = db` default. The materialize use case is
- * always inside `withDatabaseTransaction`.
+ * always inside `withDatabaseTransaction`, and this read stays under the parent
+ * FOR UPDATE lock so it is consistent with the in-tx status classification read.
  */
 export async function listStagedInventoryForMaterialization(
   tx: Prisma.TransactionClient,
   input: { importEntryId: string; ids: string[] },
-): Promise<StagedInventoryRowPayload[]> {
+): Promise<StagedInventoryMaterializePayload[]> {
   if (input.ids.length === 0) return []
   return tx.flooringImportStagedInventoryRow.findMany({
     where: {
@@ -106,7 +112,7 @@ export async function listStagedInventoryForMaterialization(
       importEntryId: input.importEntryId,
       status: "QUEUED",
     },
-    select: stagedInventoryRowSelect,
+    select: stagedInventoryMaterializeSelect,
   })
 }
 

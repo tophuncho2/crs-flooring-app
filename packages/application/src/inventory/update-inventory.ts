@@ -1,6 +1,5 @@
 import {
   Prisma,
-  getInventoryById,
   getInventoryMutableStateById,
   lockInventoryRow,
   updateInventoryRecord,
@@ -9,19 +8,23 @@ import {
 } from "@builders/db"
 import { assertActorEmail } from "../shared/assert-actor-email.js"
 import { InventoryExecutionError } from "./errors.js"
-import type { InventoryResult, UpdateInventoryInput } from "./types.js"
+import type { UpdateInventoryInput } from "./types.js"
 
 function emptyToNull(value: string): string | null {
   const trimmed = value.trim()
   return trimmed.length === 0 ? null : trimmed
 }
 
+// Returns a lean `{ id }`. The only caller (the primary/section route) needs the
+// full DETAIL record (row + adjustments) for the record-view reconciler, which it
+// reads once via `getInventoryDetailById` at the response boundary — so a row
+// enrich here would be a wasted third multi-relation read over the WAN dev DB.
 export async function updateInventoryUseCase(
   id: string,
   input: UpdateInventoryInput,
   actorEmail: string,
   client?: Prisma.TransactionClient,
-): Promise<InventoryResult> {
+): Promise<{ id: string }> {
   assertActorEmail(actorEmail, "updateInventoryUseCase")
 
   await withDatabaseTransaction(async (tx) => {
@@ -76,15 +79,5 @@ export async function updateInventoryUseCase(
     await updateInventoryRecord(id, dbInput, c)
   })
 
-  // Enrich the full record on the pool after the transaction commits — the
-  // multi-relation read must not run on the pinned tx connection.
-  const record = await getInventoryById(id)
-  if (!record) {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_NOT_FOUND",
-      message: "Inventory row not found.",
-      status: 404,
-    })
-  }
-  return record
+  return { id }
 }

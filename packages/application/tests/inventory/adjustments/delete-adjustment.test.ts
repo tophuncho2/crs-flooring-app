@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   withDatabaseTransactionMock,
-  getAdjustmentWithInventoryForMutationMock,
+  getAdjustmentMutableStateByIdMock,
+  getInventoryParentContextForAdjustmentsMock,
   lockInventoryForAdjustmentMock,
   deleteAdjustmentRowMock,
   recomputeAndPersistNetDeductedMock,
@@ -22,7 +23,8 @@ const {
   }
   return {
     withDatabaseTransactionMock: vi.fn(),
-    getAdjustmentWithInventoryForMutationMock: vi.fn(),
+    getAdjustmentMutableStateByIdMock: vi.fn(),
+    getInventoryParentContextForAdjustmentsMock: vi.fn(),
     lockInventoryForAdjustmentMock: vi.fn(),
     deleteAdjustmentRowMock: vi.fn(),
     recomputeAndPersistNetDeductedMock: vi.fn(),
@@ -35,7 +37,8 @@ const {
 vi.mock("@builders/db", () => ({
   Prisma: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
-  getAdjustmentWithInventoryForMutation: getAdjustmentWithInventoryForMutationMock,
+  getAdjustmentMutableStateById: getAdjustmentMutableStateByIdMock,
+  getInventoryParentContextForAdjustments: getInventoryParentContextForAdjustmentsMock,
   lockInventoryForAdjustment: lockInventoryForAdjustmentMock,
   deleteAdjustmentRow: deleteAdjustmentRowMock,
   recomputeAndPersistNetDeducted: recomputeAndPersistNetDeductedMock,
@@ -66,11 +69,8 @@ function existingRow(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function found(adjustmentOverrides: Record<string, unknown> = {}) {
-  return {
-    adjustment: existingRow(adjustmentOverrides),
-    inventory: { startingStock: "100.00", unitAbbrev: "sf" },
-  }
+function inventoryContext(overrides: Record<string, unknown> = {}) {
+  return { startingStock: "100.00", unitAbbrev: "sf", ...overrides }
 }
 
 function input(overrides: Record<string, unknown> = {}) {
@@ -84,7 +84,8 @@ function input(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  getAdjustmentWithInventoryForMutationMock.mockReset()
+  getAdjustmentMutableStateByIdMock.mockReset()
+  getInventoryParentContextForAdjustmentsMock.mockReset()
   lockInventoryForAdjustmentMock.mockReset()
   deleteAdjustmentRowMock.mockReset()
   recomputeAndPersistNetDeductedMock.mockReset()
@@ -94,7 +95,10 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ tx: true }),
   )
-  getAdjustmentWithInventoryForMutationMock.mockResolvedValue(found())
+  // The fat combined read is gone: the use case reads the lean mutable-state
+  // slice, then the parent inventory context under the lock (sequential).
+  getAdjustmentMutableStateByIdMock.mockResolvedValue(existingRow())
+  getInventoryParentContextForAdjustmentsMock.mockResolvedValue(inventoryContext())
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReturnValue(undefined)
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
   deleteAdjustmentRowMock.mockResolvedValue(undefined)
@@ -132,7 +136,7 @@ describe("deleteAdjustmentUseCase", () => {
 
   describe("guards", () => {
     it("throws INVENTORY_ADJUSTMENT_NOT_FOUND (404) when the adjustment is missing", async () => {
-      getAdjustmentWithInventoryForMutationMock.mockResolvedValue(null)
+      getAdjustmentMutableStateByIdMock.mockResolvedValue(null)
 
       await expect(deleteAdjustmentUseCase(input())).rejects.toMatchObject({
         code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
@@ -154,9 +158,7 @@ describe("deleteAdjustmentUseCase", () => {
     })
 
     it("throws INVENTORY_ADJUSTMENT_SCOPE_MISMATCH (400) when the row belongs to another work order", async () => {
-      getAdjustmentWithInventoryForMutationMock.mockResolvedValue(
-        found({ workOrderId: "wo-other" }),
-      )
+      getAdjustmentMutableStateByIdMock.mockResolvedValue(existingRow({ workOrderId: "wo-other" }))
 
       try {
         await deleteAdjustmentUseCase(input())

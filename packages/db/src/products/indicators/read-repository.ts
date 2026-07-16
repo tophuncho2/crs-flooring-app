@@ -129,6 +129,22 @@ async function normalizeIndicatorRows(
   )
 }
 
+/**
+ * Lean relation-free scope read — `{ id, productId }` only. Safe on the pinned
+ * tx connection (no relation sub-queries), so the section save's delete/modify
+ * loops use it for the existence + scope guard before locking + writing the row.
+ * Use `getIndicatorById` when the full multi-relation record is needed (pool).
+ */
+export async function getIndicatorScopeById(
+  id: string,
+  client: InventoryIndicatorDbClient = db,
+): Promise<{ id: string; productId: string } | null> {
+  return client.flooringInventoryIndicator.findUnique({
+    where: { id },
+    select: { id: true, productId: true },
+  })
+}
+
 export async function getIndicatorById(
   id: string,
   client: InventoryIndicatorDbClient = db,

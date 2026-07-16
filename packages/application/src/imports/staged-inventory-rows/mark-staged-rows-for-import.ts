@@ -1,7 +1,8 @@
 import {
   Prisma,
   createQueueOutboxEvent,
-  getImportById,
+  db,
+  getImportPrimaryStateById,
   listStagedInventoryByImport,
   lockImportRow,
   markStagedRowsForImport,
@@ -26,43 +27,54 @@ export async function markStagedRowsForImportUseCase(
   requestedBy: { userId: string; userEmail: string },
   client?: Prisma.TransactionClient,
 ): Promise<MarkStagedRowsForImportResult> {
+  // Read-only validation work runs BEFORE the transaction, on the pooled client
+  // (`db`) unless composed inside a caller's transaction. The existence read +
+  // the staged-list read (whose 5-relation select would serialize on the single
+  // interactive-transaction connection and wedge it) run out here on the pool;
+  // the transaction below holds only the lock + the writes. The in-tx
+  // `markStagedRowsForImport` re-checks `status = DRAFT` under the parent lock
+  // and returns `skippedRowIds` → STAGED_BATCH_RACE (409), so the read-then-lock
+  // race is already guarded.
+  const reader = client ?? db
+
+  const selectionIssues = validateMarkForImportSelection(stagedRowIds)
+  if (selectionIssues.length > 0) {
+    throw new StagedInventoryExecutionError({
+      code: "STAGED_VALIDATION_FAILED",
+      message: buildMarkForImportSelectionMessage(selectionIssues),
+      status: 400,
+      payload: { issues: selectionIssues },
+    })
+  }
+
+  // Lean existence read on the pool — the payload is unused (existence only).
+  const parent = await getImportPrimaryStateById(importEntryId, reader)
+  if (!parent) {
+    throw new StagedInventoryExecutionError({
+      code: "STAGED_PARENT_NOT_FOUND",
+      message: "Import not found.",
+      status: 404,
+    })
+  }
+
+  const requestedIdSet = new Set(stagedRowIds)
+  const allRows = await listStagedInventoryByImport(importEntryId, reader)
+  const requestedRows = allRows.filter((row) => requestedIdSet.has(row.id))
+
+  const issues = validateStagedImportBatch(requestedRows)
+  if (issues.length > 0) {
+    throw new StagedInventoryExecutionError({
+      code: "STAGED_BATCH_INELIGIBLE",
+      message: buildStagedImportBatchIneligibleMessage(issues),
+      status: 400,
+      payload: { issues },
+    })
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const selectionIssues = validateMarkForImportSelection(stagedRowIds)
-    if (selectionIssues.length > 0) {
-      throw new StagedInventoryExecutionError({
-        code: "STAGED_VALIDATION_FAILED",
-        message: buildMarkForImportSelectionMessage(selectionIssues),
-        status: 400,
-        payload: { issues: selectionIssues },
-      })
-    }
-
     await lockImportRow(c, importEntryId)
-
-    const parent = await getImportById(importEntryId, c)
-    if (!parent) {
-      throw new StagedInventoryExecutionError({
-        code: "STAGED_PARENT_NOT_FOUND",
-        message: "Import not found.",
-        status: 404,
-      })
-    }
-
-    const requestedIdSet = new Set(stagedRowIds)
-    const allRows = await listStagedInventoryByImport(importEntryId, c)
-    const requestedRows = allRows.filter((row) => requestedIdSet.has(row.id))
-
-    const issues = validateStagedImportBatch(requestedRows)
-    if (issues.length > 0) {
-      throw new StagedInventoryExecutionError({
-        code: "STAGED_BATCH_INELIGIBLE",
-        message: buildStagedImportBatchIneligibleMessage(issues),
-        status: 400,
-        payload: { issues },
-      })
-    }
 
     const result = await markStagedRowsForImport(c, { importEntryId, stagedRowIds })
 

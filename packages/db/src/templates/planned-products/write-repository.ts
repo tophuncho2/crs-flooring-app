@@ -1,10 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import type {
-  TemplatePlannedProductForm,
-  TemplatePlannedProductRow,
-} from "@builders/domain"
-import { listTemplatePlannedProducts } from "./read-repository.js"
+import type { TemplatePlannedProductForm } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -39,7 +35,6 @@ export type ApplyTemplatePlannedProductsDiffInput = {
 }
 
 export type ApplyTemplatePlannedProductsDiffResult = {
-  plannedProducts: TemplatePlannedProductRow[]
   tempIdMap: Record<string, string>
 }
 
@@ -86,6 +81,7 @@ export async function applyTemplatePlannedProductsDiff(
     })
   }
 
-  const plannedProducts = await listTemplatePlannedProducts(input.templateId, tx)
-  return { plannedProducts, tempIdMap }
+  // The updated list is read on the pool by the use case after commit — a
+  // relation-rich read here would fire concurrent sub-queries on the pinned tx.
+  return { tempIdMap }
 }

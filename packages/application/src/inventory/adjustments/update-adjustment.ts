@@ -1,7 +1,8 @@
 import {
   Prisma,
   getAdjustmentById,
-  getAdjustmentWithInventoryForMutation,
+  getAdjustmentMutableStateById,
+  getInventoryParentContextForAdjustments,
   lockInventoryForAdjustment,
   recomputeAndPersistNetDeducted,
   updateAdjustmentRow,
@@ -35,18 +36,24 @@ export async function updateAdjustmentUseCase(
 ): Promise<AdjustmentMutationResult> {
   assertActorEmail(actorEmail, "updateAdjustmentUseCase")
 
-  return withDatabaseTransaction(async (tx) => {
+  // The tx holds locks + the lean update + the ledger recompute + the ceiling
+  // assert. It returns a lean carrier (the resolved `netDeducted` differs by
+  // path — snapshot for a metadata-only edit, recomputed for a chain-touching
+  // one); the full record is enriched ONCE on the pool after commit. In-tx reads
+  // stay relation-free (mutable-state slice) or single-relation (parent context)
+  // and are awaited sequentially so no concurrent sub-query hits the pinned
+  // connection.
+  const carrier = await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const found = await getAdjustmentWithInventoryForMutation(c, input.adjustmentId)
-    if (!found) {
+    const existing = await getAdjustmentMutableStateById(input.adjustmentId, c)
+    if (!existing) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
         message: "Inventory adjustment not found",
         status: 404,
       })
     }
-    const { adjustment: existing, inventory } = found
 
     assertAdjustmentScope(input.scope, {
       workOrderId: existing.workOrderId,
@@ -93,6 +100,18 @@ export async function updateAdjustmentUseCase(
 
     await lockInventoryForAdjustment(c, existing.inventoryId)
 
+    // Read the parent inventory context under the lock (single-relation, safe on
+    // the tx) — supplies the ceiling's startingStock/unitAbbrev and the snapshot
+    // currentNetDeducted the metadata-only path returns.
+    const inventory = await getInventoryParentContextForAdjustments(c, existing.inventoryId)
+    if (!inventory) {
+      throw new InventoryAdjustmentExecutionError({
+        code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
+        message: "Parent inventory not found",
+        status: 404,
+      })
+    }
+
     // Stamp the editor unconditionally — the write primitive sets updatedBy
     // before the recompute branch, so even a metadata-only edit (the
     // `!chainTouched` short-circuit below) correctly records its author.
@@ -127,17 +146,17 @@ export async function updateAdjustmentUseCase(
       patch.conversionFormulaId = emptyToNull(input.patch.conversionFormulaId)
     }
 
-    const written = await updateAdjustmentRow(c, { id: existing.id, patch })
+    await updateAdjustmentRow(c, { id: existing.id, patch })
 
     // Only quantity + direction move the running balance. A metadata-only edit
     // (internalNotes / isWaste / location / link) leaves the whole before/after chain
     // and netDeducted untouched, so skip the ledger replay + ceiling re-check
-    // and return the written row with the inventory's existing netDeducted.
+    // and carry the inventory's existing netDeducted out of the tx.
     const chainTouched =
       input.patch.quantity !== undefined || input.patch.adjustmentType !== undefined
     if (!chainTouched) {
       return {
-        adjustment: written,
+        adjustmentId: existing.id,
         inventoryId: existing.inventoryId,
         netDeducted: inventory.currentNetDeducted,
       }
@@ -179,14 +198,28 @@ export async function updateAdjustmentUseCase(
       throw error
     }
 
-    // The recompute rewrote this row's `before`/`after` (and the rest of the
-    // chain); re-read so the response carries the fresh ledger values.
-    const adjustment = (await getAdjustmentById(existing.id, c)) ?? written
-
     return {
-      adjustment,
+      adjustmentId: existing.id,
       inventoryId: result.inventoryId,
       netDeducted: result.netDeducted,
     }
   })
+
+  // ONE pool enrich after commit, serving both paths (the recompute rewrote this
+  // row's `before`/`after` on the chain-touching path, so the fresh full record
+  // carries the up-to-date ledger values).
+  const adjustment = await getAdjustmentById(carrier.adjustmentId)
+  if (!adjustment) {
+    throw new InventoryAdjustmentExecutionError({
+      code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
+      message: "Inventory adjustment not found",
+      status: 404,
+    })
+  }
+
+  return {
+    adjustment,
+    inventoryId: carrier.inventoryId,
+    netDeducted: carrier.netDeducted,
+  }
 }

@@ -2,16 +2,10 @@ import { db } from "../client.js"
 import type { Prisma } from "../generated/prisma/client.js"
 import {
   normalizeMoneyAmount,
-  normalizeWorkOrder,
   type FlooringPaymentDirection,
   type PaletteColor,
-  type WorkOrderDetail,
-  type WorkOrderMaterialItemRow,
-  type WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
-import { workOrderDetailSelect, type WorkOrdersDbClient } from "./shared.js"
-import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
-import { listWorkOrderPlannedPayments } from "./planned-payments/read-repository.js"
+import { type WorkOrdersDbClient } from "./shared.js"
 
 export type CreateWorkOrderRecordInput = {
   // Non-null column (DB default SLATE) — optional on input, never cleared to null.
@@ -45,28 +39,31 @@ export type UpdateWorkOrderRecordInput = Partial<
   Omit<CreateWorkOrderRecordInput, "createdBy" | "updatedBy">
 > & { updatedBy: string }
 
+// Returns a lean `{ id }` — the multi-relation detail read runs on the pool
+// after commit (see `withTxThenEnrich`). A relation-rich select here would fire
+// concurrent sub-queries on the single pinned tx connection.
 export async function createWorkOrderRecord(
   input: CreateWorkOrderRecordInput,
   client: WorkOrdersDbClient = db,
-): Promise<WorkOrderDetail> {
-  const workOrder = await client.flooringWorkOrder.create({
+): Promise<{ id: string }> {
+  return client.flooringWorkOrder.create({
     data: input,
-    select: workOrderDetailSelect,
+    select: { id: true },
   })
-  return normalizeWorkOrder(workOrder)
 }
 
+// Lean `{ id }` (see `createWorkOrderRecord`). The `.update` still throws P2025
+// when the row is gone — the use case maps that to a 404.
 export async function updateWorkOrderRecord(
   id: string,
   input: UpdateWorkOrderRecordInput,
   client: WorkOrdersDbClient = db,
-): Promise<WorkOrderDetail> {
-  const workOrder = await client.flooringWorkOrder.update({
+): Promise<{ id: string }> {
+  return client.flooringWorkOrder.update({
     where: { id },
     data: input,
-    select: workOrderDetailSelect,
+    select: { id: true },
   })
-  return normalizeWorkOrder(workOrder)
 }
 
 export async function deleteWorkOrderRecordById(
@@ -108,12 +105,6 @@ export type CreateWorkOrderFromTemplateRecordInput = {
   }>
 }
 
-export type CreateWorkOrderFromTemplateRecordResult = {
-  workOrder: WorkOrderDetail
-  items: WorkOrderMaterialItemRow[]
-  plannedPayments: WorkOrderPlannedPaymentRow[]
-}
-
 // Sync carries the template item's quantity through verbatim. Quantity is
 // optional, so a blank value (template item with no quantity) is stored as
 // NULL on the new work-order item rather than coerced to 0.
@@ -127,13 +118,16 @@ function toMoney(value: string): string {
   return normalizeMoneyAmount(value)
 }
 
+// Returns a lean `{ id }`; the caller enriches (workOrder + items +
+// plannedPayments) on the pool after commit. The createMany writes stay in the
+// tx; only the relation-rich reads move out.
 export async function createWorkOrderFromTemplateRecord(
   input: CreateWorkOrderFromTemplateRecordInput,
   client: WorkOrdersDbClient = db,
-): Promise<CreateWorkOrderFromTemplateRecordResult> {
+): Promise<{ id: string }> {
   const created = await client.flooringWorkOrder.create({
     data: { ...input.workOrder, createdBy: input.actorEmail, updatedBy: input.actorEmail },
-    select: workOrderDetailSelect,
+    select: { id: true },
   })
 
   if (input.items.length > 0) {
@@ -165,7 +159,5 @@ export async function createWorkOrderFromTemplateRecord(
     })
   }
 
-  const items = await listWorkOrderMaterialItems(created.id, client)
-  const plannedPayments = await listWorkOrderPlannedPayments(created.id, client)
-  return { workOrder: normalizeWorkOrder(created), items, plannedPayments }
+  return { id: created.id }
 }

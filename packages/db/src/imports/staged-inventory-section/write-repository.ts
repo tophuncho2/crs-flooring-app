@@ -1,16 +1,8 @@
 import type { Prisma } from "../../generated/prisma/client.js"
 import {
-  listFilterRowsByImport,
-  type StagedInventoryFilterRecord,
-} from "../staged-inventory-filter-rows/read-repository.js"
-import {
   emptyToNullStockOrdered,
   type WriteStagedInventoryFilterRecordInput,
 } from "../staged-inventory-filter-rows/write-repository.js"
-import {
-  listStagedInventoryByImport,
-  type StagedInventoryRecord,
-} from "../staged-inventory-rows/read-repository.js"
 import type {
   CreateStagedInventoryRecordInput,
   UpdateStagedInventoryRecordInput,
@@ -43,8 +35,13 @@ import type {
  *     (snapshots already resolved by the application layer).
  *  6. Per-row update each `rows.modified` — only the 7 user-editable
  *     fields are honored by the existing update-data builder.
- *  7. Reload post-state for both slices.
- *  8. Return both lists + both tempId maps.
+ *  7. Return both tempId maps.
+ *
+ * Deliberately NO post-state reload here: reloading both relation-heavy lists on
+ * the pinned interactive-transaction connection fired concurrent relation
+ * sub-queries and wedged it. The caller re-reads both lists on the pool AFTER
+ * the transaction commits (mirroring the work-orders section appliers, which
+ * now return only their temp-id maps and let the use case enrich on the pool).
  */
 export type ApplyImportStagedInventorySectionDiffInput = {
   importEntryId: string
@@ -69,8 +66,6 @@ export type ApplyImportStagedInventorySectionDiffInput = {
 }
 
 export type ApplyImportStagedInventorySectionDiffResult = {
-  filterRows: StagedInventoryFilterRecord[]
-  stagedRows: StagedInventoryRecord[]
   filterTempIdMap: Record<string, string>
   rowTempIdMap: Record<string, string>
 }
@@ -215,11 +210,9 @@ export async function applyImportStagedInventorySectionDiff(
     })
   }
 
-  // Step 7 — reload both slices.
-  const [filterRows, stagedRows] = await Promise.all([
-    listFilterRowsByImport(input.importEntryId, tx),
-    listStagedInventoryByImport(input.importEntryId, tx),
-  ])
-
-  return { filterRows, stagedRows, filterTempIdMap, rowTempIdMap }
+  // Step 7 — return the temp-id maps only. The post-state reload of both
+  // relation-heavy lists happens on the pool AFTER commit, in the use case:
+  // running it here on the pinned tx connection fired concurrent relation
+  // sub-queries and wedged the connection.
+  return { filterTempIdMap, rowTempIdMap }
 }

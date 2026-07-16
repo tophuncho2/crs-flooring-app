@@ -1,7 +1,8 @@
 import {
   Prisma,
   deleteAdjustmentRow,
-  getAdjustmentWithInventoryForMutation,
+  getAdjustmentMutableStateById,
+  getInventoryParentContextForAdjustments,
   lockInventoryForAdjustment,
   recomputeAndPersistNetDeducted,
   withDatabaseTransaction,
@@ -31,15 +32,14 @@ export async function deleteAdjustmentUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const found = await getAdjustmentWithInventoryForMutation(c, input.adjustmentId)
-    if (!found) {
+    const existing = await getAdjustmentMutableStateById(input.adjustmentId, c)
+    if (!existing) {
       throw new InventoryAdjustmentExecutionError({
         code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
         message: "Inventory adjustment not found",
         status: 404,
       })
     }
-    const { adjustment: existing, inventory } = found
 
     assertAdjustmentScope(input.scope, {
       workOrderId: existing.workOrderId,
@@ -71,6 +71,17 @@ export async function deleteAdjustmentUseCase(
     }
 
     await lockInventoryForAdjustment(c, existing.inventoryId)
+
+    // Read the parent inventory context under the lock (single-relation, safe on
+    // the tx) — supplies the ceiling's startingStock/unitAbbrev.
+    const inventory = await getInventoryParentContextForAdjustments(c, existing.inventoryId)
+    if (!inventory) {
+      throw new InventoryAdjustmentExecutionError({
+        code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
+        message: "Parent inventory not found",
+        status: 404,
+      })
+    }
 
     await deleteAdjustmentRow(c, { id: existing.id })
 

@@ -150,6 +150,57 @@ export async function getAdjustmentById(
   return row ? normalizeAdjustmentRow(row) : null
 }
 
+/** The relation-free mutable-state slice the update/delete use cases read on the tx. */
+export type AdjustmentMutableState = {
+  id: string
+  /** ISO string — OCC compares it against the client's `expectedUpdatedAt`. */
+  updatedAt: string
+  workOrderId: string | null
+  inventoryId: string
+  /** String — the update use case merges it into `validateAdjustmentForm`. */
+  quantity: string
+  adjustmentType: FlooringInventoryAdjustmentType
+}
+
+/**
+ * Lean, relation-free read of an adjustment's mutable state (+ existence). Used
+ * by the update/delete use cases' in-transaction read: a `select` with 2+
+ * relations (`adjustmentRowSelect` + the inventory join) run on the pinned
+ * interactive-transaction connection fires concurrent relation sub-queries on one
+ * pg connection ("client is already executing a query"), so anything read on a
+ * `tx` client must stay relation-free. The parent inventory context comes from
+ * `getInventoryParentContextForAdjustments` (a separate, sequential read under
+ * the lock), and the full record is enriched on the pool after commit.
+ *
+ * TRAPS mirrored from `normalizeAdjustmentRow`: `updatedAt` MUST surface as an
+ * ISO string (OCC assert) and `quantity` MUST be a string (form-merge).
+ */
+export async function getAdjustmentMutableStateById(
+  id: string,
+  client: InventoryAdjustmentDbClient = db,
+): Promise<AdjustmentMutableState | null> {
+  const row = await client.flooringInventoryAdjustment.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      updatedAt: true,
+      workOrderId: true,
+      inventoryId: true,
+      quantity: true,
+      adjustmentType: true,
+    },
+  })
+  if (!row) return null
+  return {
+    id: row.id,
+    updatedAt: row.updatedAt.toISOString(),
+    workOrderId: row.workOrderId ?? null,
+    inventoryId: row.inventoryId,
+    quantity: row.quantity.toString(),
+    adjustmentType: row.adjustmentType,
+  }
+}
+
 /**
  * Single enriched adjustment read by id. Uses the same enriched select +
  * normalizer as `listInventoryAdjustmentsPage`, so the row carries the
@@ -593,80 +644,3 @@ export async function listAdjustmentsForInventoryIds(
   }))
 }
 
-export type AdjustmentWithInventoryForMutation = {
-  adjustment: InventoryAdjustmentRecord
-  inventory: InventoryAdjustmentParentContext
-}
-
-/**
- * Single-query read powering the per-row update + delete sync use cases.
- * Returns the adjustment (full normalized record) plus the parent
- * inventory's `InventoryAdjustmentParentContext` shape — the use case
- * asserts linkage / OCC against the adjustment, then locks
- * the inventory row FOR UPDATE and applies the patch.
- *
- * Transaction client is required (no `db` default) so the read participates
- * in the same TX that takes the lock.
- */
-export async function getAdjustmentWithInventoryForMutation(
-  tx: Prisma.TransactionClient,
-  adjustmentId: string,
-): Promise<AdjustmentWithInventoryForMutation | null> {
-  const row = await tx.flooringInventoryAdjustment.findUnique({
-    where: { id: adjustmentId },
-    select: {
-      ...adjustmentRowSelect,
-      inventory: {
-        select: {
-          id: true,
-          inventoryNumber: true,
-          rollPrefix: true,
-          rollNumber: true,
-          dyeLot: true,
-          note: true,
-          location: true,
-          startingStock: true,
-          cost: true,
-          freight: true,
-          netDeducted: true,
-          unitId: true,
-          // Unit display derives from the FK join (UoM epic 2B); snapshot
-          // columns fully de-referenced (2D drops them).
-          unit: { select: { name: true, abbreviation: true } },
-          // Conversion trio — stamped onto the child adjustment at create.
-          coverageUnitId: true,
-          coveragePerUnit: true,
-          conversionFormulaId: true,
-          productId: true,
-          warehouseId: true,
-        },
-      },
-    },
-  })
-  if (!row) return null
-  const { inventory: inv, ...adjustmentPayload } = row
-  return {
-    adjustment: normalizeAdjustmentRow(adjustmentPayload),
-    inventory: {
-      inventoryId: inv.id,
-      startingStock: inv.startingStock.toString(),
-      cost: toDecimalStringOrNull(inv.cost),
-      freight: toDecimalStringOrNull(inv.freight),
-      currentNetDeducted: inv.netDeducted.toString(),
-      unitId: inv.unitId,
-      unitName: inv.unit?.name ?? null,
-      unitAbbrev: inv.unit?.abbreviation ?? null,
-      coverageUnitId: inv.coverageUnitId ?? null,
-      coveragePerUnit: toDecimalStringOrNull(inv.coveragePerUnit),
-      conversionFormulaId: inv.conversionFormulaId ?? null,
-      inventoryNumber: inv.inventoryNumber,
-      rollPrefix: inv.rollPrefix,
-      rollNumber: inv.rollNumber ?? null,
-      dyeLot: inv.dyeLot ?? null,
-      inventoryNote: inv.note ?? null,
-      location: inv.location ?? null,
-      productId: inv.productId,
-      warehouseId: inv.warehouseId,
-    },
-  }
-}

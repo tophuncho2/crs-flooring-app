@@ -1,5 +1,4 @@
 import { Prisma } from "../../generated/prisma/client.js"
-import { getIndicatorById, type InventoryIndicatorRecord } from "./read-repository.js"
 
 // Every mutating primitive here requires a caller-managed transaction
 // (`tx: Prisma.TransactionClient`). The application use case opens the
@@ -39,13 +38,15 @@ export type InsertIndicatorRowInput = {
  * Single-row insert. Pure persistence — the use case has already validated the
  * form and (via the DB `@@unique`) the caller surfaces a duplicate-triple
  * violation. `indicatorNumber` is DB-generated via the sequence default. Returns
- * the fully-normalized record (with live currentStock + derived status).
+ * the lean `{ id }` — the use case reads the full multi-relation record on the
+ * POOL after commit (a relation-rich read on the pinned tx connection fires
+ * concurrent sub-queries and blows the tx timeout).
  */
 export async function insertIndicatorRow(
   tx: Prisma.TransactionClient,
   input: InsertIndicatorRowInput,
-): Promise<InventoryIndicatorRecord> {
-  const inserted = await tx.flooringInventoryIndicator.create({
+): Promise<{ id: string }> {
+  return tx.flooringInventoryIndicator.create({
     data: {
       productId: input.productId,
       warehouseId: input.warehouseId,
@@ -58,9 +59,6 @@ export async function insertIndicatorRow(
     },
     select: { id: true },
   })
-  const record = await getIndicatorById(inserted.id, tx)
-  // Just inserted in this TX — always present.
-  return record as InventoryIndicatorRecord
 }
 
 export type UpdateIndicatorRowPatch = {
@@ -83,12 +81,13 @@ export type UpdateIndicatorRowInput = {
  * `internalNotes`, `isActive`). The identity triple (product/warehouse/unit) is
  * never written here. Caller has read the row, asserted OCC, and locked it FOR
  * UPDATE. `updatedBy` is stamped unconditionally so even a metadata-only edit
- * records its editor.
+ * records its editor. Returns the lean `{ id }`; the use case enriches the fresh
+ * list on the POOL after commit.
  */
 export async function updateIndicatorRecord(
   tx: Prisma.TransactionClient,
   input: UpdateIndicatorRowInput,
-): Promise<InventoryIndicatorRecord> {
+): Promise<{ id: string }> {
   const data: Prisma.FlooringInventoryIndicatorUpdateInput = {}
   if (input.patch.lowStockThreshold !== undefined) {
     data.lowStockThreshold = input.patch.lowStockThreshold ? input.patch.lowStockThreshold : null
@@ -99,13 +98,11 @@ export async function updateIndicatorRecord(
   if (input.patch.isActive !== undefined) data.isActive = input.patch.isActive
   data.updatedBy = input.patch.updatedBy
 
-  await tx.flooringInventoryIndicator.update({
+  return tx.flooringInventoryIndicator.update({
     where: { id: input.id },
     data,
     select: { id: true },
   })
-  const record = await getIndicatorById(input.id, tx)
-  return record as InventoryIndicatorRecord
 }
 
 export type DeleteIndicatorRowInput = {

@@ -3,9 +3,7 @@ import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeMoneyAmount,
   type TemplatePlannedPaymentForm,
-  type TemplatePlannedPaymentRow,
 } from "@builders/domain"
-import { listTemplatePlannedPayments } from "./read-repository.js"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -30,7 +28,6 @@ export type ApplyTemplatePlannedPaymentsDiffInput = {
 }
 
 export type ApplyTemplatePlannedPaymentsDiffResult = {
-  plannedPayments: TemplatePlannedPaymentRow[]
   tempIdMap: Record<string, string>
 }
 
@@ -82,6 +79,6 @@ export async function applyTemplatePlannedPaymentsDiff(
     await tx.templatePlannedPayment.update({ where: { id: update.id }, data })
   }
 
-  const plannedPayments = await listTemplatePlannedPayments(input.templateId, tx)
-  return { plannedPayments, tempIdMap }
+  // The updated list is read on the pool by the use case after commit.
+  return { tempIdMap }
 }

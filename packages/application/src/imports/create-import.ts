@@ -2,6 +2,7 @@ import {
   Prisma,
   createImportRecord,
   entityExists,
+  getImportById,
   getWarehouseById,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -22,7 +23,7 @@ export async function createImportUseCase(
 ): Promise<ImportResult> {
   assertActorEmail(actorEmail, "createImportUseCase")
 
-  return withDatabaseTransaction(async (tx) => {
+  const { id } = await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
     // color is metadata-only and unread by the validator; create rows fall to the
@@ -59,6 +60,8 @@ export async function createImportUseCase(
       })
     }
 
+    // Lean write returns only { id }; the full multi-relation record is enriched
+    // on the pool below, after the transaction commits.
     return createImportRecord(
       {
         purchaseOrderNumber: emptyToNull(input.purchaseOrderNumber),
@@ -71,4 +74,12 @@ export async function createImportUseCase(
       c,
     )
   })
+
+  // Enrich the full record on the pool after commit — a multi-relation read must
+  // not run on the pinned interactive-transaction connection.
+  const record = await getImportById(id)
+  if (!record) {
+    throw new Error("createImportUseCase: import disappeared immediately after create")
+  }
+  return record
 }

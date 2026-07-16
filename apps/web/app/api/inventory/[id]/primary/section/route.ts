@@ -34,10 +34,18 @@ export const PATCH = createMutationRoute({
   }),
   status: 200,
   // Client controller expects InventoryDetailRecord (row + adjustments) so the
-  // record view reconciler can re-render the adjustments section after save.
-  // Use case returns the flat row; compose the detail at the route boundary.
+  // record view reconciler can re-render the adjustments section after save. The
+  // use case returns a lean `{ id }`; this is the single post-commit read (the
+  // detail includes the row, so no separate row enrich is needed).
   buildResponseBody: async ({ result }) => {
-    const detail = (await getInventoryDetailById(result.id)) ?? result
+    const detail = await getInventoryDetailById(result.id)
+    if (!detail) {
+      throw new InventoryExecutionError({
+        code: "INVENTORY_NOT_FOUND",
+        message: "Inventory row not found.",
+        status: 404,
+      })
+    }
     return { inventory: detail }
   },
 })

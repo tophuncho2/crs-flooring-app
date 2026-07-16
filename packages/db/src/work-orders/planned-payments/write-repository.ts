@@ -2,9 +2,7 @@ import type { Prisma } from "../../generated/prisma/client.js"
 import {
   normalizeMoneyAmount,
   type WorkOrderPlannedPaymentForm,
-  type WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
-import { listWorkOrderPlannedPayments } from "./read-repository.js"
 
 // Wire-input shape for planned-payment writes. The user-supplied form carries the
 // amount (required) and direction.
@@ -27,7 +25,6 @@ export type ApplyWorkOrderPlannedPaymentsDiffInput = {
 }
 
 export type ApplyWorkOrderPlannedPaymentsDiffResult = {
-  plannedPayments: WorkOrderPlannedPaymentRow[]
   tempIdMap: Record<string, string>
 }
 
@@ -79,6 +76,6 @@ export async function applyWorkOrderPlannedPaymentsDiff(
     await tx.flooringWorkOrderPlannedPayment.update({ where: { id: update.id }, data })
   }
 
-  const plannedPayments = await listWorkOrderPlannedPayments(input.workOrderId, tx)
-  return { plannedPayments, tempIdMap }
+  // The updated list is read on the pool by the use case after commit.
+  return { tempIdMap }
 }

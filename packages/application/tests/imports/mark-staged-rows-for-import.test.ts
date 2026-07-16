@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   withDatabaseTransactionMock,
-  getImportByIdMock,
+  getImportPrimaryStateByIdMock,
   listStagedInventoryByImportMock,
   markStagedRowsForImportMock,
   createQueueOutboxEventMock,
@@ -10,7 +10,7 @@ const {
   stampImportActorMock,
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
-  getImportByIdMock: vi.fn(),
+  getImportPrimaryStateByIdMock: vi.fn(),
   listStagedInventoryByImportMock: vi.fn(),
   markStagedRowsForImportMock: vi.fn(),
   createQueueOutboxEventMock: vi.fn(),
@@ -22,8 +22,12 @@ vi.mock("@builders/db", () => ({
   Prisma: {
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
   },
+  // `db` is the pooled fallback the existence + staged-list reads run on before
+  // the transaction opens; the read mocks ignore the arg, so a stub is enough.
+  db: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
-  getImportById: getImportByIdMock,
+  // Lean pool existence read (the payload is unused — existence only).
+  getImportPrimaryStateById: getImportPrimaryStateByIdMock,
   listStagedInventoryByImport: listStagedInventoryByImportMock,
   markStagedRowsForImport: markStagedRowsForImportMock,
   createQueueOutboxEvent: createQueueOutboxEventMock,
@@ -89,7 +93,7 @@ function importRow(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  getImportByIdMock.mockReset()
+  getImportPrimaryStateByIdMock.mockReset()
   listStagedInventoryByImportMock.mockReset()
   markStagedRowsForImportMock.mockReset()
   createQueueOutboxEventMock.mockReset()
@@ -110,7 +114,7 @@ afterEach(() => {
 describe("markStagedRowsForImportUseCase", () => {
   describe("happy path", () => {
     beforeEach(() => {
-      getImportByIdMock.mockResolvedValue(importRow())
+      getImportPrimaryStateByIdMock.mockResolvedValue(importRow())
       listStagedInventoryByImportMock.mockResolvedValue([
         readyStagedRow({ id: ROW_ID_A }),
         readyStagedRow({ id: ROW_ID_B }),
@@ -186,13 +190,19 @@ describe("markStagedRowsForImportUseCase", () => {
       expect(result.outboxEventId).toBe("outbox-existing")
     })
 
-    it("acquires FOR UPDATE lock before reading the import", async () => {
+    it("reads the import + staged rows on the pool BEFORE acquiring the FOR UPDATE lock", async () => {
+      // The relation-heavy staged-list read moved to the pool ahead of the
+      // transaction (it would serialize on the pinned tx connection and wedge
+      // it). The in-tx `markStagedRowsForImport` re-checks DRAFT under the lock,
+      // so the read-then-lock race is guarded — hence reads precede the lock now.
       await markStagedRowsForImportUseCase(IMPORT_ID, [ROW_ID_A, ROW_ID_B], REQUESTED_BY)
 
       expect(lockImportRowMock).toHaveBeenCalledTimes(1)
       const lockOrder = lockImportRowMock.mock.invocationCallOrder[0]!
-      const fetchOrder = getImportByIdMock.mock.invocationCallOrder[0]!
-      expect(lockOrder).toBeLessThan(fetchOrder)
+      const existenceOrder = getImportPrimaryStateByIdMock.mock.invocationCallOrder[0]!
+      const listOrder = listStagedInventoryByImportMock.mock.invocationCallOrder[0]!
+      expect(existenceOrder).toBeLessThan(lockOrder)
+      expect(listOrder).toBeLessThan(lockOrder)
     })
 
     it("stamps the parent import actor with the requester email", async () => {
@@ -208,7 +218,7 @@ describe("markStagedRowsForImportUseCase", () => {
 
   describe("STAGED_PARENT_NOT_FOUND", () => {
     it("throws 404 when the parent import does not exist", async () => {
-      getImportByIdMock.mockResolvedValue(null)
+      getImportPrimaryStateByIdMock.mockResolvedValue(null)
 
       try {
         await markStagedRowsForImportUseCase(IMPORT_ID, [ROW_ID_A], REQUESTED_BY)
@@ -225,7 +235,7 @@ describe("markStagedRowsForImportUseCase", () => {
 
   describe("STAGED_BATCH_INELIGIBLE — domain readiness gates surfaced to the API", () => {
     beforeEach(() => {
-      getImportByIdMock.mockResolvedValue(importRow())
+      getImportPrimaryStateByIdMock.mockResolvedValue(importRow())
     })
 
     it("rejects a batch containing a QUEUED row (already in flight)", async () => {
@@ -306,7 +316,7 @@ describe("markStagedRowsForImportUseCase", () => {
 
   describe("STAGED_BATCH_RACE", () => {
     beforeEach(() => {
-      getImportByIdMock.mockResolvedValue(importRow())
+      getImportPrimaryStateByIdMock.mockResolvedValue(importRow())
       listStagedInventoryByImportMock.mockResolvedValue([
         readyStagedRow({ id: ROW_ID_A }),
         readyStagedRow({ id: ROW_ID_B }),

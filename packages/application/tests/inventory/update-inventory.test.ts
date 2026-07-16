@@ -4,13 +4,11 @@ const {
   withDatabaseTransactionMock,
   lockInventoryRowMock,
   getInventoryMutableStateByIdMock,
-  getInventoryByIdMock,
   updateInventoryRecordMock,
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
   lockInventoryRowMock: vi.fn(),
   getInventoryMutableStateByIdMock: vi.fn(),
-  getInventoryByIdMock: vi.fn(),
   updateInventoryRecordMock: vi.fn(),
 }))
 
@@ -20,8 +18,6 @@ vi.mock("@builders/db", () => ({
   lockInventoryRow: lockInventoryRowMock,
   // Lean, relation-free in-transaction read (existence + editable text fields).
   getInventoryMutableStateById: getInventoryMutableStateByIdMock,
-  // Full record read on the pool after the transaction commits (the return value).
-  getInventoryById: getInventoryByIdMock,
   updateInventoryRecord: updateInventoryRecordMock,
 }))
 
@@ -40,21 +36,16 @@ function currentState(overrides: Record<string, unknown> = {}) {
   }
 }
 
-// Sentinel the post-commit pool read returns; the use case returns it verbatim.
-const ENRICHED_RECORD = { id: INVENTORY_ID, sentinel: true }
-
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   lockInventoryRowMock.mockReset()
   getInventoryMutableStateByIdMock.mockReset()
-  getInventoryByIdMock.mockReset()
   updateInventoryRecordMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ tx: true }),
   )
   getInventoryMutableStateByIdMock.mockResolvedValue(currentState())
-  getInventoryByIdMock.mockResolvedValue(ENRICHED_RECORD)
   updateInventoryRecordMock.mockResolvedValue({ id: INVENTORY_ID })
 })
 
@@ -71,9 +62,8 @@ describe("updateInventoryUseCase", () => {
     it("writes only the touched fields, stamping updatedBy", async () => {
       const result = await updateInventoryUseCase(INVENTORY_ID, { location: "B2" }, ACTOR)
 
-      // The returned record comes from the post-commit pool read, not the write.
-      expect(result).toBe(ENRICHED_RECORD)
-      expect(getInventoryByIdMock).toHaveBeenCalledWith(INVENTORY_ID)
+      // Returns a lean { id } — the route reads the full detail at its boundary.
+      expect(result).toEqual({ id: INVENTORY_ID })
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
         { location: "B2", updatedBy: ACTOR },
@@ -117,16 +107,6 @@ describe("updateInventoryUseCase", () => {
       const lockOrder = lockInventoryRowMock.mock.invocationCallOrder[0]!
       const readOrder = getInventoryMutableStateByIdMock.mock.invocationCallOrder[0]!
       expect(lockOrder).toBeLessThan(readOrder)
-    })
-
-    it("reads the enriched record on the pool (no client) after the write", async () => {
-      await updateInventoryUseCase(INVENTORY_ID, { location: "X" }, ACTOR)
-
-      // Called with the id only — the default (pooled) client, never a tx client.
-      expect(getInventoryByIdMock).toHaveBeenCalledWith(INVENTORY_ID)
-      const writeOrder = updateInventoryRecordMock.mock.invocationCallOrder[0]!
-      const enrichOrder = getInventoryByIdMock.mock.invocationCallOrder[0]!
-      expect(writeOrder).toBeLessThan(enrichOrder)
     })
   })
 

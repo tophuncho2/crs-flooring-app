@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, applyTemplatePlannedPaymentsDiffMock } = vi.hoisted(() => {
+const {
+  withDatabaseTransactionMock,
+  applyTemplatePlannedPaymentsDiffMock,
+  listTemplatePlannedPaymentsMock,
+} = vi.hoisted(() => {
   return {
     withDatabaseTransactionMock: vi.fn(),
     applyTemplatePlannedPaymentsDiffMock: vi.fn(),
+    listTemplatePlannedPaymentsMock: vi.fn(),
   }
 })
 
@@ -21,8 +26,11 @@ vi.mock("@builders/db", () => {
   }
   return {
     Prisma: { PrismaClientKnownRequestError },
+    // Pool sentinel — the use case enriches on `client ?? db`.
+    db: {},
     withDatabaseTransaction: withDatabaseTransactionMock,
     applyTemplatePlannedPaymentsDiff: applyTemplatePlannedPaymentsDiffMock,
+    listTemplatePlannedPayments: listTemplatePlannedPaymentsMock,
   }
 })
 
@@ -35,9 +43,12 @@ const EMPTY_DIFF = { added: [], modified: [], deleted: [] }
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   applyTemplatePlannedPaymentsDiffMock.mockReset()
+  listTemplatePlannedPaymentsMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  applyTemplatePlannedPaymentsDiffMock.mockResolvedValue({ plannedPayments: [], tempIdMap: {} })
+  // The applier now returns only tempIdMap; the list is enriched on the pool.
+  applyTemplatePlannedPaymentsDiffMock.mockResolvedValue({ tempIdMap: {} })
+  listTemplatePlannedPaymentsMock.mockResolvedValue([])
 })
 
 describe("saveTemplatePlannedPaymentsSectionUseCase", () => {

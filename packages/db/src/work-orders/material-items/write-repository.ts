@@ -1,10 +1,5 @@
-import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import {
-  type WorkOrderMaterialItemCreateForm,
-  type WorkOrderMaterialItemRow,
-} from "@builders/domain"
-import { listWorkOrderMaterialItems } from "./read-repository.js"
+import { type WorkOrderMaterialItemCreateForm } from "@builders/domain"
 
 type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -53,7 +48,6 @@ export type ApplyWorkOrderMaterialItemsDiffInput = {
 }
 
 export type ApplyWorkOrderMaterialItemsDiffResult = {
-  items: WorkOrderMaterialItemRow[]
   tempIdMap: Record<string, string>
 }
 
@@ -108,7 +102,8 @@ export async function applyWorkOrderMaterialItemsDiff(
     })
   }
 
-  const items = await listWorkOrderMaterialItems(input.workOrderId, tx)
-  return { items, tempIdMap }
+  // The updated list is read on the pool by the use case after commit — a
+  // relation-rich read here would fire concurrent sub-queries on the pinned tx.
+  return { tempIdMap }
 }
 

@@ -1,4 +1,10 @@
-import type { ImportDetail, ImportNeighbor, ImportOption, ImportRow } from "@builders/domain"
+import type {
+  ImportDetail,
+  ImportNeighbor,
+  ImportOption,
+  ImportRow,
+  PaletteColor,
+} from "@builders/domain"
 import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
@@ -82,6 +88,47 @@ export async function getImportById(
     select: importRowSelect,
   })
   return row ? normalizeImportRow(row) : null
+}
+
+/**
+ * Lean, relation-free read of an import's editable scalar fields (+ existence).
+ * Used by the update use case's in-transaction merge read and by the staged
+ * mark-for-import existence check: a `select` pulling 2+ relations (or a
+ * `_count`) run on the pinned interactive-transaction connection makes Prisma
+ * fire concurrent relation sub-queries on one pg connection ("client is already
+ * executing a query"), so anything read on a `tx` client must stay relation-free.
+ * The caller enriches the full record on the pool after the transaction commits.
+ * Nullable text/entity columns are coalesced to "" to match the normalized
+ * `ImportPrimaryForm` shape the update merge expects.
+ */
+export async function getImportPrimaryStateById(
+  id: string,
+  client: ImportsDbClient = db,
+): Promise<{
+  purchaseOrderNumber: string
+  internalNotes: string
+  warehouseId: string
+  entityId: string
+  color: PaletteColor
+} | null> {
+  const row = await client.flooringImportEntry.findUnique({
+    where: { id },
+    select: {
+      purchaseOrderNumber: true,
+      internalNotes: true,
+      warehouseId: true,
+      entityId: true,
+      color: true,
+    },
+  })
+  if (!row) return null
+  return {
+    purchaseOrderNumber: row.purchaseOrderNumber ?? "",
+    internalNotes: row.internalNotes ?? "",
+    warehouseId: row.warehouseId,
+    entityId: row.entityId ?? "",
+    color: row.color,
+  }
 }
 
 /**

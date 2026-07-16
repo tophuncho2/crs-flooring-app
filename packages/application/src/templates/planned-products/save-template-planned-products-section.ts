@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto"
 import {
   Prisma,
   applyTemplatePlannedProductsDiff,
+  db,
   getProductById,
+  listTemplatePlannedProducts,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -17,6 +19,17 @@ import type {
   SaveTemplatePlannedProductsSectionUseCaseResult,
 } from "./types.js"
 
+/**
+ * Diff-save use case for the templates' planned-products section:
+ *  1. Validate every draft + update.
+ *  2. Batch-guard every distinct product the diff touches — on the pool.
+ *  3. Assign UUIDs to drafts via `assignDraftIds`.
+ *  4. Apply the diff inside the transaction (lock-free — just the writes).
+ *  5. Enrich the updated list on the pool after commit.
+ *
+ * The reads (guard + enrich) run on the pool — a relation-rich read on the pinned
+ * tx connection fires concurrent sub-queries and blows the tx timeout.
+ */
 export async function saveTemplatePlannedProductsSectionUseCase(
   input: SaveTemplatePlannedProductsSectionUseCaseInput,
   actorEmail: string,
@@ -24,59 +37,60 @@ export async function saveTemplatePlannedProductsSectionUseCase(
 ): Promise<SaveTemplatePlannedProductsSectionUseCaseResult> {
   assertActorEmail(actorEmail, "saveTemplatePlannedProductsSectionUseCase")
 
-  return withDatabaseTransaction(async (tx) => {
+  for (const draft of input.diff.added) {
+    const validationError = validateTemplatePlannedProductForm(draft.form)
+    if (validationError) {
+      throw new TemplatePlannedProductExecutionError({
+        code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
+        message: validationError,
+        status: 400,
+        payload: { refKind: "tempId", ref: draft.tempId },
+      })
+    }
+  }
+
+  for (const update of input.diff.modified) {
+    const validationError = validateTemplatePlannedProductForm(update.form)
+    if (validationError) {
+      throw new TemplatePlannedProductExecutionError({
+        code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
+        message: validationError,
+        status: 400,
+        payload: { refKind: "id", ref: update.id },
+      })
+    }
+  }
+
+  // Batch-fetch every distinct product touched by the diff (added + modified) to
+  // validate it still exists — on the pool (pure validation; the createMany/update
+  // FK backstops the check→write window). The unit FK is NOT seeded here — it's a
+  // user-managed, per-row value the client fills on product select; the server
+  // persists only what the form sends (UoM epic 2C). One query per product.
+  const reader = client ?? db
+  const distinctProductIds = Array.from(
+    new Set([
+      ...input.diff.added.map((d) => d.form.productId),
+      ...input.diff.modified.map((m) => m.form.productId),
+    ]),
+  )
+  await guardProductsExist(
+    distinctProductIds,
+    (productId) => getProductById(productId, reader),
+    (productId) =>
+      new TemplatePlannedProductExecutionError({
+        code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
+        message: "Selected product was not found",
+        status: 400,
+        field: "productId",
+        payload: { productId },
+      }),
+  )
+
+  const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
+
+  const { tempIdMap } = await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
-
-    for (const draft of input.diff.added) {
-      const validationError = validateTemplatePlannedProductForm(draft.form)
-      if (validationError) {
-        throw new TemplatePlannedProductExecutionError({
-          code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
-          message: validationError,
-          status: 400,
-          payload: { refKind: "tempId", ref: draft.tempId },
-        })
-      }
-    }
-
-    for (const update of input.diff.modified) {
-      const validationError = validateTemplatePlannedProductForm(update.form)
-      if (validationError) {
-        throw new TemplatePlannedProductExecutionError({
-          code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
-          message: validationError,
-          status: 400,
-          payload: { refKind: "id", ref: update.id },
-        })
-      }
-    }
-
-    // Batch-fetch every distinct product touched by the diff (added + modified)
-    // to validate it still exists. The unit FK is NOT seeded here — it's a
-    // user-managed, per-row value the client fills on product select; the server
-    // persists only what the form sends (UoM epic 2C). One query per product.
-    const distinctProductIds = Array.from(
-      new Set([
-        ...input.diff.added.map((d) => d.form.productId),
-        ...input.diff.modified.map((m) => m.form.productId),
-      ]),
-    )
-    await guardProductsExist(
-      distinctProductIds,
-      (productId) => getProductById(productId, c),
-      (productId) =>
-        new TemplatePlannedProductExecutionError({
-          code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
-          message: "Selected product was not found",
-          status: 400,
-          field: "productId",
-          payload: { productId },
-        }),
-    )
-
-    const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
-
-    return await applyTemplatePlannedProductsDiff(c, {
+    return applyTemplatePlannedProductsDiff(c, {
       templateId: input.templateId,
       actorEmail,
       added: addedWithIds.map((draft) => ({
@@ -98,4 +112,8 @@ export async function saveTemplatePlannedProductsSectionUseCase(
       deleted: input.diff.deleted.map((d) => ({ id: d.id })),
     })
   })
+
+  // Enrich the updated list on the pool after commit.
+  const plannedProducts = await listTemplatePlannedProducts(input.templateId, reader)
+  return { plannedProducts, tempIdMap }
 }

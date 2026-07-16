@@ -1,26 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, createPaymentRecordMock, PrismaKnownError } = vi.hoisted(() => {
-  class PrismaKnownError extends Error {
-    code: string
-    meta?: Record<string, unknown>
-    constructor(message: string, opts: { code: string; meta?: Record<string, unknown> }) {
-      super(message)
-      this.code = opts.code
-      this.meta = opts.meta
+const { withDatabaseTransactionMock, createPaymentRecordMock, getPaymentByIdWithLinksMock, PrismaKnownError } =
+  vi.hoisted(() => {
+    class PrismaKnownError extends Error {
+      code: string
+      meta?: Record<string, unknown>
+      constructor(message: string, opts: { code: string; meta?: Record<string, unknown> }) {
+        super(message)
+        this.code = opts.code
+        this.meta = opts.meta
+      }
     }
-  }
-  return {
-    withDatabaseTransactionMock: vi.fn(),
-    createPaymentRecordMock: vi.fn(),
-    PrismaKnownError,
-  }
-})
+    return {
+      withDatabaseTransactionMock: vi.fn(),
+      createPaymentRecordMock: vi.fn(),
+      getPaymentByIdWithLinksMock: vi.fn(),
+      PrismaKnownError,
+    }
+  })
 
 vi.mock("@builders/db", () => ({
   Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
   withDatabaseTransaction: withDatabaseTransactionMock,
   createPaymentRecord: createPaymentRecordMock,
+  getPaymentByIdWithLinks: getPaymentByIdWithLinksMock,
 }))
 
 import { createPaymentUseCase } from "../../src/payments/create-payment.js"
@@ -31,9 +34,12 @@ const ACTOR = "user@x.com"
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   createPaymentRecordMock.mockReset()
+  getPaymentByIdWithLinksMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  createPaymentRecordMock.mockResolvedValue({ id: "pay-1", createdBy: ACTOR, updatedBy: ACTOR })
+  // The lean insert returns `{ id }`; the use case enriches with links on the pool.
+  createPaymentRecordMock.mockResolvedValue({ id: "pay-1" })
+  getPaymentByIdWithLinksMock.mockResolvedValue({ id: "pay-1", createdBy: ACTOR, updatedBy: ACTOR })
 })
 
 describe("createPaymentUseCase", () => {
@@ -55,12 +61,15 @@ describe("createPaymentUseCase", () => {
     expect(createPaymentRecordMock).not.toHaveBeenCalled()
   })
 
-  it("returns the created record on success", async () => {
-    const created = { id: "pay-9", createdBy: ACTOR, updatedBy: ACTOR }
-    createPaymentRecordMock.mockResolvedValue(created)
+  it("returns the links-enriched pool record on success (not the lean insert result)", async () => {
+    createPaymentRecordMock.mockResolvedValue({ id: "pay-9" })
+    const enriched = { id: "pay-9", entityName: "Acme", createdBy: ACTOR, updatedBy: ACTOR }
+    getPaymentByIdWithLinksMock.mockResolvedValue(enriched)
     expect(await createPaymentUseCase({ amount: "10.00", direction: "REVENUE" } as never, ACTOR)).toBe(
-      created,
+      enriched,
     )
+    // Enriched off the id the lean insert returned.
+    expect(getPaymentByIdWithLinksMock).toHaveBeenCalledWith("pay-9")
   })
 
   it("stamps the actor email as createdBy and updatedBy on insert", async () => {

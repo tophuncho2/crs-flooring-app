@@ -62,3 +62,36 @@ export const stagedInventoryRowSelect = {
 export type StagedInventoryRowPayload = Prisma.FlooringImportStagedInventoryRowGetPayload<{
   select: typeof stagedInventoryRowSelect
 }>
+
+/**
+ * Lean projection for the worker materialize read. The materialize use case
+ * copies only scalar columns forward onto the new inventory row plus the parent
+ * import's `warehouseId` (warehouse is parent-owned) — it never touches the
+ * product / unit / coverageUnit / conversionFormula relation objects. Reducing
+ * the 5-relation `stagedInventoryRowSelect` to this single-relation projection
+ * keeps the read safe on the pinned interactive-transaction connection: a
+ * multi-relation select on a `tx` client fires concurrent relation sub-queries
+ * on one pg connection and wedges it ("client is already executing a query").
+ */
+export const stagedInventoryMaterializeSelect = {
+  id: true,
+  productId: true,
+  unitId: true,
+  coverageUnitId: true,
+  coveragePerUnit: true,
+  conversionFormulaId: true,
+  rollPrefix: true,
+  rollNumber: true,
+  dyeLot: true,
+  location: true,
+  startingStock: true,
+  cost: true,
+  freight: true,
+  note: true,
+  importEntry: { select: { warehouseId: true } },
+} as const satisfies Prisma.FlooringImportStagedInventoryRowSelect
+
+export type StagedInventoryMaterializePayload =
+  Prisma.FlooringImportStagedInventoryRowGetPayload<{
+    select: typeof stagedInventoryMaterializeSelect
+  }>

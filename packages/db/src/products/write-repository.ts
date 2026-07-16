@@ -1,8 +1,7 @@
 import { normalizeMoneyAmount, type PaletteColor } from "@builders/domain"
 import type { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
-import { productRowSelect, type ProductsDbClient } from "./shared.js"
-import { normalizeProductRow, type ProductRecord } from "./read-repository.js"
+import type { ProductsDbClient } from "./shared.js"
 
 // --- Input types ---
 //
@@ -56,11 +55,14 @@ export type UpdateProductInput = Partial<
 
 // --- Writes ---
 
+// Lean write — returns only `{ id }`. The full multi-relation record is read on
+// the POOL by the use case after the tx commits (a relation-rich read on the
+// pinned tx connection fires concurrent sub-queries and blows the tx timeout).
 export async function createProduct(
   input: CreateProductInput,
   client: ProductsDbClient = db,
-): Promise<ProductRecord> {
-  const row = await client.flooringProduct.create({
+): Promise<{ id: string }> {
+  return client.flooringProduct.create({
     data: {
       name: input.name,
       categoryId: input.categoryId,
@@ -77,16 +79,16 @@ export async function createProduct(
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
     },
-    select: productRowSelect,
+    select: { id: true },
   })
-  return normalizeProductRow(row)
 }
 
+// Lean write — returns only `{ id }`; the use case enriches on the POOL post-commit.
 export async function updateProduct(
   id: string,
   input: UpdateProductInput,
   client: ProductsDbClient = db,
-): Promise<ProductRecord> {
+): Promise<{ id: string }> {
   const data: Prisma.FlooringProductUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.name !== undefined) data.name = input.name
   if (input.categoryId !== undefined) data.categoryId = input.categoryId
@@ -104,12 +106,11 @@ export async function updateProduct(
   if (input.productNamingAddon !== undefined) data.productNamingAddon = input.productNamingAddon
   if (input.paletteColor !== undefined) data.paletteColor = input.paletteColor
 
-  const row = await client.flooringProduct.update({
+  return client.flooringProduct.update({
     where: { id },
     data,
-    select: productRowSelect,
+    select: { id: true },
   })
-  return normalizeProductRow(row)
 }
 
 export async function deleteProductById(

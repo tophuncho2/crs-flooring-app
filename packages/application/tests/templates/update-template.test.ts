@@ -1,26 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, updateTemplateRecordMock, PrismaKnownError } = vi.hoisted(() => {
-  class PrismaKnownError extends Error {
-    code: string
-    meta?: { target?: string[] }
-    constructor(message: string, opts: { code: string; meta?: { target?: string[] } }) {
-      super(message)
-      this.code = opts.code
-      this.meta = opts.meta
+const { withDatabaseTransactionMock, updateTemplateRecordMock, getTemplateByIdMock, PrismaKnownError } =
+  vi.hoisted(() => {
+    class PrismaKnownError extends Error {
+      code: string
+      meta?: { target?: string[] }
+      constructor(message: string, opts: { code: string; meta?: { target?: string[] } }) {
+        super(message)
+        this.code = opts.code
+        this.meta = opts.meta
+      }
     }
-  }
-  return {
-    withDatabaseTransactionMock: vi.fn(),
-    updateTemplateRecordMock: vi.fn(),
-    PrismaKnownError,
-  }
-})
+    return {
+      withDatabaseTransactionMock: vi.fn(),
+      updateTemplateRecordMock: vi.fn(),
+      getTemplateByIdMock: vi.fn(),
+      PrismaKnownError,
+    }
+  })
 
 vi.mock("@builders/db", () => ({
   Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
   withDatabaseTransaction: withDatabaseTransactionMock,
   updateTemplateRecord: updateTemplateRecordMock,
+  // Full record read on the pool after the tx commits (the return value).
+  getTemplateById: getTemplateByIdMock,
 }))
 
 import { updateTemplateUseCase } from "../../src/templates/update-template.js"
@@ -35,9 +39,12 @@ function detail(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   updateTemplateRecordMock.mockReset()
+  getTemplateByIdMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  updateTemplateRecordMock.mockResolvedValue(detail())
+  // Lean write returns just the id; the pool enrich returns the full record.
+  updateTemplateRecordMock.mockResolvedValue({ id: ID })
+  getTemplateByIdMock.mockResolvedValue(detail())
 })
 
 describe("updateTemplateUseCase", () => {
@@ -86,9 +93,11 @@ describe("updateTemplateUseCase", () => {
     })
   })
 
-  it("returns the updated record on success", async () => {
-    const updated = detail({ templateNumber: "TP-2" })
-    updateTemplateRecordMock.mockResolvedValue(updated)
-    expect(await updateTemplateUseCase(ID, { description: "x" } as never, ACTOR)).toBe(updated)
+  it("returns the pool-enriched record on success", async () => {
+    const enriched = detail({ templateNumber: "TP-2" })
+    getTemplateByIdMock.mockResolvedValue(enriched)
+    expect(await updateTemplateUseCase(ID, { description: "x" } as never, ACTOR)).toBe(enriched)
+    // Enrich reads the full record on the pool by id.
+    expect(getTemplateByIdMock).toHaveBeenCalledWith(ID, { withNeighbors: false })
   })
 })

@@ -3,6 +3,7 @@ import {
   entityExists,
   getImportById,
   getImportLinkState,
+  getImportPrimaryStateById,
   getWarehouseById,
   lockImportRow,
   updateImportRecord,
@@ -42,12 +43,16 @@ export async function updateImportUseCase(
 ): Promise<ImportResult> {
   assertActorEmail(actorEmail, "updateImportUseCase")
 
-  return withDatabaseTransaction(async (tx) => {
+  await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
     await lockImportRow(c, id)
 
-    const current = await getImportById(id, c)
+    // Lean, relation-free merge read on the tx connection (existence + the
+    // scalar fields the merge needs). A multi-relation read here would trip
+    // Prisma's concurrent relation sub-queries on the single pinned connection;
+    // the full record is enriched on the pool after commit (below).
+    const current = await getImportPrimaryStateById(id, c)
     if (!current) {
       throw new ImportExecutionError({
         code: "IMPORT_NOT_FOUND",
@@ -56,13 +61,7 @@ export async function updateImportUseCase(
       })
     }
 
-    const merged = toPrimaryForm(input, {
-      purchaseOrderNumber: current.purchaseOrderNumber,
-      internalNotes: current.internalNotes,
-      warehouseId: current.warehouseId,
-      entityId: current.entityId,
-      color: current.color,
-    })
+    const merged = toPrimaryForm(input, current)
 
     const issues = validateImportPrimaryForm(merged)
     if (issues.length > 0) {
@@ -123,6 +122,20 @@ export async function updateImportUseCase(
     // Palette tag rides through unread — metadata-only, no recompute.
     if (input.color !== undefined) dbInput.color = input.color
 
-    return updateImportRecord(id, dbInput, c)
+    // Lean write returns only { id }; the full record is enriched on the pool
+    // after the transaction commits (below).
+    await updateImportRecord(id, dbInput, c)
   })
+
+  // Enrich the full record on the pool after commit — a multi-relation read must
+  // not run on the pinned interactive-transaction connection.
+  const record = await getImportById(id)
+  if (!record) {
+    throw new ImportExecutionError({
+      code: "IMPORT_NOT_FOUND",
+      message: "Import not found.",
+      status: 404,
+    })
+  }
+  return record
 }

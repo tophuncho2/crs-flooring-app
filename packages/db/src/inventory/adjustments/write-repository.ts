@@ -6,12 +6,7 @@ import {
   type PaletteColor,
   type AdjustmentInventorySnapshot,
 } from "@builders/domain"
-import {
-  listAdjustmentsForInventoryIds,
-  normalizeAdjustmentRow,
-  type InventoryAdjustmentRecord,
-} from "./read-repository.js"
-import { adjustmentRowSelect } from "./shared.js"
+import { listAdjustmentsForInventoryIds } from "./read-repository.js"
 
 // Every mutating primitive in this file requires a caller-managed
 // transaction (`tx: Prisma.TransactionClient` as the first argument). The
@@ -100,12 +95,18 @@ export type InsertAdjustmentRowInput = {
  * `recomputeAndPersistNetDeducted`, which replays the inventory's whole chain
  * in `createdAt` order and stamps `before`/`after` on every row (including this
  * one). `adjustmentNumber` is DB-generated via the sequence default.
+ *
+ * Lean write: returns only `{ id }`. A `select`/`include` pulling the
+ * multi-relation `adjustmentRowSelect` (product + unit + coverage + formula) on
+ * the pinned interactive-transaction connection fires concurrent relation
+ * sub-queries on that one pg connection. The caller re-reads the full record on
+ * the pool after commit (via `getAdjustmentById`).
  */
 export async function insertAdjustmentRow(
   tx: Prisma.TransactionClient,
   input: InsertAdjustmentRowInput,
-): Promise<InventoryAdjustmentRecord> {
-  const inserted = await tx.flooringInventoryAdjustment.create({
+): Promise<{ id: string }> {
+  return tx.flooringInventoryAdjustment.create({
     data: {
       inventoryId: input.inventoryId,
       workOrderId: input.workOrderId,
@@ -133,9 +134,8 @@ export async function insertAdjustmentRow(
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
     },
-    select: adjustmentRowSelect,
+    select: { id: true },
   })
-  return normalizeAdjustmentRow(inserted)
 }
 
 export type UpdateAdjustmentRowPatch = {
@@ -201,11 +201,14 @@ export type UpdateAdjustmentRowInput = {
  * Never written here: `inventoryId`, `before`, `after`, `adjustmentNumber`,
  * `createdAt`, the 5 inventory-identity snapshot primitives, and the
  * stock unit-snapshot fields. Empty-patch calls return the row as-is.
+ *
+ * Lean write: returns only `{ id }` (see `insertAdjustmentRow`); the caller
+ * re-reads the full record on the pool after commit.
  */
 export async function updateAdjustmentRow(
   tx: Prisma.TransactionClient,
   input: UpdateAdjustmentRowInput,
-): Promise<InventoryAdjustmentRecord> {
+): Promise<{ id: string }> {
   const data: Prisma.FlooringInventoryAdjustmentUpdateInput = {}
   if (input.patch.quantity !== undefined) data.quantity = input.patch.quantity
   if (input.patch.adjustmentType !== undefined) {
@@ -241,18 +244,16 @@ export async function updateAdjustmentRow(
   // metadata-only edit (internalNotes/color/location) stamps updatedBy. This also means
   // the write branch below always fires.
   data.updatedBy = input.patch.updatedBy
-  const updated =
-    Object.keys(data).length > 0
-      ? await tx.flooringInventoryAdjustment.update({
-          where: { id: input.id },
-          data,
-          select: adjustmentRowSelect,
-        })
-      : await tx.flooringInventoryAdjustment.findUniqueOrThrow({
-          where: { id: input.id },
-          select: adjustmentRowSelect,
-        })
-  return normalizeAdjustmentRow(updated)
+  return Object.keys(data).length > 0
+    ? await tx.flooringInventoryAdjustment.update({
+        where: { id: input.id },
+        data,
+        select: { id: true },
+      })
+    : await tx.flooringInventoryAdjustment.findUniqueOrThrow({
+        where: { id: input.id },
+        select: { id: true },
+      })
 }
 
 export type DeleteAdjustmentRowInput = {
@@ -310,13 +311,17 @@ export async function recomputeAndPersistNetDeducted(
 ): Promise<Array<{ inventoryId: string; netDeducted: string }>> {
   if (inventoryIds.length === 0) return []
 
-  const [rows, inventories] = await Promise.all([
-    listAdjustmentsForInventoryIds(inventoryIds, tx),
-    tx.flooringInventory.findMany({
-      where: { id: { in: inventoryIds } },
-      select: { id: true, startingStock: true },
-    }),
-  ])
+  // Sequential, NOT `Promise.all`: these two reads run on the pinned
+  // interactive-transaction connection (single pg connection). Firing them
+  // concurrently makes node-postgres reject the second with "client is already
+  // executing a query". They have no data dependency, so ordering is irrelevant
+  // to correctness — awaiting one then the other keeps the work transactional
+  // while removing the concurrent-query trigger.
+  const rows = await listAdjustmentsForInventoryIds(inventoryIds, tx)
+  const inventories = await tx.flooringInventory.findMany({
+    where: { id: { in: inventoryIds } },
+    select: { id: true, startingStock: true },
+  })
 
   const startingStockById = new Map<string, string>()
   for (const inv of inventories) {

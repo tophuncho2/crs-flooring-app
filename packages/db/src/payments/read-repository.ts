@@ -118,6 +118,26 @@ export async function getPaymentById(
 }
 
 /**
+ * Single payment by id, hydrated with the same `paymentLinksInclude` display
+ * fields (entity name + type chips, work-order label, purpose name/color) the
+ * create/update writes used to return inline. The create/update use cases call
+ * this on the POOL after their lean transaction commits — the multi-relation
+ * include must not run on the pinned tx connection. Unlike `getPaymentDetailById`
+ * it resolves NO stepper neighbors, so its return type stays a plain `Payment`
+ * (the use-case result contract) with no extra fields. `null` when absent.
+ */
+export async function getPaymentByIdWithLinks(
+  id: string,
+  client: PaymentsDbClient = db,
+): Promise<Payment | null> {
+  const payment = await client.flooringPayment.findUnique({
+    where: { id },
+    include: paymentLinksInclude,
+  })
+  return payment ? normalizePayment({ ...payment, ...projectPaymentLinks(payment) }) : null
+}
+
+/**
  * Resolve the payment rows immediately before/after the given numeric sort key
  * in the global payment-number order (`paymentNumberInt`). Powers the
  * record-view shell stepper — deliberately global: no filter scoping, it walks

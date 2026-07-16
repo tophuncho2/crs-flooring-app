@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   withDatabaseTransactionMock,
-  getAdjustmentWithInventoryForMutationMock,
+  getAdjustmentMutableStateByIdMock,
+  getInventoryParentContextForAdjustmentsMock,
   getAdjustmentByIdMock,
   lockInventoryForAdjustmentMock,
   updateAdjustmentRowMock,
@@ -25,7 +26,8 @@ const {
   }
   return {
     withDatabaseTransactionMock: vi.fn(),
-    getAdjustmentWithInventoryForMutationMock: vi.fn(),
+    getAdjustmentMutableStateByIdMock: vi.fn(),
+    getInventoryParentContextForAdjustmentsMock: vi.fn(),
     getAdjustmentByIdMock: vi.fn(),
     lockInventoryForAdjustmentMock: vi.fn(),
     updateAdjustmentRowMock: vi.fn(),
@@ -41,7 +43,8 @@ const {
 vi.mock("@builders/db", () => ({
   Prisma: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
-  getAdjustmentWithInventoryForMutation: getAdjustmentWithInventoryForMutationMock,
+  getAdjustmentMutableStateById: getAdjustmentMutableStateByIdMock,
+  getInventoryParentContextForAdjustments: getInventoryParentContextForAdjustmentsMock,
   getAdjustmentById: getAdjustmentByIdMock,
   lockInventoryForAdjustment: lockInventoryForAdjustmentMock,
   updateAdjustmentRow: updateAdjustmentRowMock,
@@ -104,17 +107,12 @@ function input(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function found(
-  over: { adjustment?: Record<string, unknown>; inventory?: Record<string, unknown> } = {},
-) {
-  return { adjustment: existingRow(over.adjustment), inventory: inventoryRow(over.inventory) }
-}
-
 const UPDATED = { id: ADJUSTMENT_ID, quantity: "3.00" }
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  getAdjustmentWithInventoryForMutationMock.mockReset()
+  getAdjustmentMutableStateByIdMock.mockReset()
+  getInventoryParentContextForAdjustmentsMock.mockReset()
   getAdjustmentByIdMock.mockReset()
   lockInventoryForAdjustmentMock.mockReset()
   updateAdjustmentRowMock.mockReset()
@@ -127,7 +125,10 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ tx: true }),
   )
-  getAdjustmentWithInventoryForMutationMock.mockResolvedValue(found())
+  // The fat combined read is gone: the use case reads the lean mutable-state
+  // slice, then the parent inventory context under the lock (sequential).
+  getAdjustmentMutableStateByIdMock.mockResolvedValue(existingRow())
+  getInventoryParentContextForAdjustmentsMock.mockResolvedValue(inventoryRow())
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReturnValue(undefined)
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
   validateAdjustmentFormMock.mockReturnValue([])
@@ -222,7 +223,9 @@ describe("updateAdjustmentUseCase", () => {
 
       expect(recomputeAndPersistNetDeductedMock).not.toHaveBeenCalled()
       expect(assertNetDeductedWithinStartingStockMock).not.toHaveBeenCalled()
-      expect(getAdjustmentByIdMock).not.toHaveBeenCalled()
+      // Metadata-only still enriches on the pool (ONE post-commit read serves
+      // both paths); it just skips the ledger replay + ceiling check.
+      expect(getAdjustmentByIdMock).toHaveBeenCalledWith(ADJUSTMENT_ID)
       expect(result).toEqual({
         adjustment: UPDATED,
         inventoryId: INVENTORY_ID,
@@ -263,7 +266,7 @@ describe("updateAdjustmentUseCase", () => {
 
   describe("guards", () => {
     it("throws INVENTORY_ADJUSTMENT_NOT_FOUND (404) when the adjustment is missing", async () => {
-      getAdjustmentWithInventoryForMutationMock.mockResolvedValue(null)
+      getAdjustmentMutableStateByIdMock.mockResolvedValue(null)
 
       await expect(
         updateAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR),
@@ -272,8 +275,8 @@ describe("updateAdjustmentUseCase", () => {
     })
 
     it("allows a link patch on an INCREASE row (an INCREASE may link a work order)", async () => {
-      getAdjustmentWithInventoryForMutationMock.mockResolvedValue(
-        found({ adjustment: { adjustmentType: "INCREASE", workOrderId: null } }),
+      getAdjustmentMutableStateByIdMock.mockResolvedValue(
+        existingRow({ adjustmentType: "INCREASE", workOrderId: null }),
       )
 
       await updateAdjustmentUseCase(
@@ -319,9 +322,7 @@ describe("updateAdjustmentUseCase", () => {
     })
 
     it("throws INVENTORY_ADJUSTMENT_SCOPE_MISMATCH (400) when the row belongs to another work order", async () => {
-      getAdjustmentWithInventoryForMutationMock.mockResolvedValue(
-        found({ adjustment: { workOrderId: "wo-other" } }),
-      )
+      getAdjustmentMutableStateByIdMock.mockResolvedValue(existingRow({ workOrderId: "wo-other" }))
 
       try {
         await updateAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR)

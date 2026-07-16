@@ -1,19 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, applyTemplatePlannedProductsDiffMock, getProductByIdMock } =
-  vi.hoisted(() => {
-    return {
-      withDatabaseTransactionMock: vi.fn(),
-      applyTemplatePlannedProductsDiffMock: vi.fn(),
-      getProductByIdMock: vi.fn(),
-    }
-  })
+const {
+  withDatabaseTransactionMock,
+  applyTemplatePlannedProductsDiffMock,
+  getProductByIdMock,
+  listTemplatePlannedProductsMock,
+} = vi.hoisted(() => {
+  return {
+    withDatabaseTransactionMock: vi.fn(),
+    applyTemplatePlannedProductsDiffMock: vi.fn(),
+    getProductByIdMock: vi.fn(),
+    listTemplatePlannedProductsMock: vi.fn(),
+  }
+})
 
 vi.mock("@builders/db", () => ({
   Prisma: {},
+  // Pool sentinel — the use case guards + enriches on `client ?? db`.
+  db: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
   applyTemplatePlannedProductsDiff: applyTemplatePlannedProductsDiffMock,
   getProductById: getProductByIdMock,
+  listTemplatePlannedProducts: listTemplatePlannedProductsMock,
 }))
 
 import { saveTemplatePlannedProductsSectionUseCase } from "../../src/templates/planned-products/save-template-planned-products-section.js"
@@ -25,9 +33,12 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   applyTemplatePlannedProductsDiffMock.mockReset()
   getProductByIdMock.mockReset()
+  listTemplatePlannedProductsMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  applyTemplatePlannedProductsDiffMock.mockResolvedValue({ plannedProducts: [], tempIdMap: {} })
+  // The applier now returns only tempIdMap; the list is enriched on the pool.
+  applyTemplatePlannedProductsDiffMock.mockResolvedValue({ tempIdMap: {} })
+  listTemplatePlannedProductsMock.mockResolvedValue([])
 })
 
 describe("saveTemplatePlannedProductsSectionUseCase", () => {

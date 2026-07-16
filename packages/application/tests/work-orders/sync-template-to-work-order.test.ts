@@ -4,11 +4,17 @@ const {
   withDatabaseTransactionMock,
   getTemplateByIdMock,
   createWorkOrderFromTemplateRecordMock,
+  getWorkOrderDetailByIdMock,
+  listWorkOrderMaterialItemsMock,
+  listWorkOrderPlannedPaymentsMock,
 } = vi.hoisted(() => {
   return {
     withDatabaseTransactionMock: vi.fn(),
     getTemplateByIdMock: vi.fn(),
     createWorkOrderFromTemplateRecordMock: vi.fn(),
+    getWorkOrderDetailByIdMock: vi.fn(),
+    listWorkOrderMaterialItemsMock: vi.fn(),
+    listWorkOrderPlannedPaymentsMock: vi.fn(),
   }
 })
 
@@ -17,6 +23,10 @@ vi.mock("@builders/db", () => ({
   withDatabaseTransaction: withDatabaseTransactionMock,
   getTemplateById: getTemplateByIdMock,
   createWorkOrderFromTemplateRecord: createWorkOrderFromTemplateRecordMock,
+  // Pool enrich reads after the tx commits (Promise.all on the pool).
+  getWorkOrderDetailById: getWorkOrderDetailByIdMock,
+  listWorkOrderMaterialItems: listWorkOrderMaterialItemsMock,
+  listWorkOrderPlannedPayments: listWorkOrderPlannedPaymentsMock,
 }))
 
 import { syncTemplateToWorkOrderUseCase } from "../../src/work-orders/sync-template-to-work-order.js"
@@ -47,10 +57,17 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   getTemplateByIdMock.mockReset()
   createWorkOrderFromTemplateRecordMock.mockReset()
+  getWorkOrderDetailByIdMock.mockReset()
+  listWorkOrderMaterialItemsMock.mockReset()
+  listWorkOrderPlannedPaymentsMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
   getTemplateByIdMock.mockResolvedValue(template())
-  createWorkOrderFromTemplateRecordMock.mockResolvedValue({ workOrder: { id: "wo-1" }, items: [] })
+  // Lean write returns just the id; the pool enrich returns the full result.
+  createWorkOrderFromTemplateRecordMock.mockResolvedValue({ id: "wo-1" })
+  getWorkOrderDetailByIdMock.mockResolvedValue({ id: "wo-1" })
+  listWorkOrderMaterialItemsMock.mockResolvedValue([])
+  listWorkOrderPlannedPaymentsMock.mockResolvedValue([])
 })
 
 describe("syncTemplateToWorkOrderUseCase", () => {

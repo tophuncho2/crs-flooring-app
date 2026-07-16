@@ -1,13 +1,10 @@
 import { db } from "../client.js"
-import { paymentLinksInclude, projectPaymentLinks } from "./payment-links.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeMoneyAmount,
-  normalizePayment,
   normalizePhoneNumber,
   type FlooringPaymentDirection,
   type PaletteColor,
-  type Payment,
 } from "@builders/domain"
 
 type PaymentsDbClient = PrismaClient | Prisma.TransactionClient
@@ -57,11 +54,17 @@ function optionalDate(value: string | undefined): Date | null | undefined {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+// Lean write: returns only `{ id }`. A `create`/`update` whose `include` pulls
+// the multi-relation `paymentLinksInclude` (entity + workOrder + purpose) run on
+// the pinned interactive-transaction connection fires concurrent relation
+// sub-queries on that one pg connection ("client is already executing a query").
+// The full links-hydrated record is read on the pool after commit via
+// `getPaymentByIdWithLinks`.
 export async function createPaymentRecord(
   input: CreatePaymentRecordInput,
   client: PaymentsDbClient = db,
-): Promise<Payment> {
-  const payment = await client.flooringPayment.create({
+): Promise<{ id: string }> {
+  return client.flooringPayment.create({
     data: {
       amount: normalizeMoneyAmount(input.amount),
       direction: input.direction,
@@ -78,16 +81,15 @@ export async function createPaymentRecord(
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
     },
-    include: paymentLinksInclude,
+    select: { id: true },
   })
-  return normalizePayment({ ...payment, ...projectPaymentLinks(payment) })
 }
 
 export async function updatePaymentRecord(
   id: string,
   input: UpdatePaymentRecordInput,
   client: PaymentsDbClient = db,
-): Promise<Payment> {
+): Promise<{ id: string }> {
   // Unchecked input so the scalar FK columns can be set/cleared directly.
   const data: Prisma.FlooringPaymentUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.amount !== undefined) data.amount = normalizeMoneyAmount(input.amount)
@@ -104,12 +106,14 @@ export async function updatePaymentRecord(
   if (input.workOrderId !== undefined) data.workOrderId = input.workOrderId
   if (input.paymentPurposeId !== undefined) data.paymentPurposeId = input.paymentPurposeId
 
-  const payment = await client.flooringPayment.update({
+  // Lean write (see `createPaymentRecord`) — `{ id }` only; the caller enriches
+  // on the pool. `where: { id }` still throws P2025 when the row is gone, which
+  // the update use case maps to a 404 (kept, wrapping this call).
+  return client.flooringPayment.update({
     where: { id },
     data,
-    include: paymentLinksInclude,
+    select: { id: true },
   })
-  return normalizePayment({ ...payment, ...projectPaymentLinks(payment) })
 }
 
 export async function deletePaymentRecordById(

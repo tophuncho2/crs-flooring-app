@@ -6,6 +6,8 @@ import {
   getImportById,
   getProductById,
   getUnitOfMeasureById,
+  listFilterRowsByImport,
+  listStagedInventoryByImport,
   listStagedInventoryRowDiffSummariesByImport,
   lockImportRow,
   stampImportActor,
@@ -205,10 +207,12 @@ export async function saveImportStagedInventorySectionUseCase(
   })
 
   // The transaction now holds only the lock + the writes. A generous timeout
-  // guards the write burst (a large import can carry ~1000 rows) + the final
-  // reload against the slow shared dev DB, now that the reads above no longer
-  // eat the interactive-transaction budget.
-  return withDatabaseTransaction(
+  // guards the write burst (a large import can carry ~1000 rows) against the slow
+  // shared dev DB, now that the reads above no longer eat the
+  // interactive-transaction budget. The applier returns only the temp-id maps —
+  // the relation-heavy post-state reload runs on the pool after commit (below),
+  // never on the pinned tx connection.
+  const { filterTempIdMap, rowTempIdMap } = await withDatabaseTransaction(
     async (tx) => {
       const c = client ?? tx
 
@@ -283,4 +287,16 @@ export async function saveImportStagedInventorySectionUseCase(
     },
     { timeout: 15_000, maxWait: 10_000 },
   )
+
+  // Reload both relation-heavy slices on the pool after the transaction commits.
+  // The response contract (`SaveImportStagedInventorySectionResult`) carries the
+  // FULL records — the client reconciles its local state off them — so this
+  // reload must produce full records, which is exactly why it runs on the pool
+  // and not on the pinned tx connection (mirrors the work-orders section save).
+  const [filterRows, stagedRows] = await Promise.all([
+    listFilterRowsByImport(input.importEntryId, reader),
+    listStagedInventoryByImport(input.importEntryId, reader),
+  ])
+
+  return { filterRows, stagedRows, filterTempIdMap, rowTempIdMap }
 }

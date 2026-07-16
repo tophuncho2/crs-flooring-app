@@ -1,7 +1,6 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
-import { normalizeTemplate, type PaletteColor, type TemplateDetail } from "@builders/domain"
-import { entityTypesSelect } from "../entities/read-repository.js"
+import { type PaletteColor } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -25,101 +24,31 @@ export type UpdateTemplateRecordInput = Partial<
   Omit<CreateTemplateRecordInput, "createdBy" | "updatedBy">
 > & { updatedBy: string; color?: PaletteColor }
 
-const templateDetailSelect = {
-  id: true,
-  templateNumber: true,
-  color: true,
-  unitType: true,
-  customerName: true,
-  description: true,
-  internalNotes: true,
-  installerInstructions: true,
-  propertyId: true,
-  property: {
-    select: {
-      name: true,
-      entity: { select: { id: true, entity: true } },
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      instructions: true,
-    },
-  },
-  jobTypeId: true,
-  jobType: { select: { id: true, name: true } },
-  warehouseId: true,
-  warehouse: { select: { name: true } },
-  _count: { select: { plannedProducts: true } },
-  createdAt: true,
-  updatedAt: true,
-  createdBy: true,
-  updatedBy: true,
-  plannedProducts: {
-    select: {
-      id: true,
-      productId: true,
-      // `cost` is a LIVE read-join off the product; create/update return through
-      // this select, so it must join the product's cost + category for the row's
-      // productCost to come back populated.
-      product: { select: { name: true, cost: true, category: { select: { name: true } } } },
-      quantity: true,
-      // Item's own unit FK + resolved unit (UoM epic 2C) — create/update return
-      // through this select, so it must join `unit` or the returned item's unit
-      // comes back blank. Snapshot columns fully de-referenced (2D drops them).
-      unitId: true,
-      unit: { select: { name: true, abbreviation: true } },
-      notes: true,
-      createdAt: true,
-      updatedAt: true,
-      createdBy: true,
-      updatedBy: true,
-    },
-    orderBy: { createdAt: "asc" as const },
-  },
-  // Planned payments mirror the product blocks — the create/update detail return
-  // carries them too (empty on a freshly-created template).
-  plannedPayments: {
-    select: {
-      id: true,
-      amount: true,
-      direction: true,
-      notes: true,
-      entityId: true,
-      entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
-      paymentPurposeId: true,
-      paymentPurpose: { select: { id: true, name: true, color: true } },
-      createdAt: true,
-      updatedAt: true,
-      createdBy: true,
-      updatedBy: true,
-    },
-    orderBy: { createdAt: "asc" as const },
-  },
-} as const
-
+// Returns a lean `{ id }` — the multi-relation detail read (5-6 relations) runs
+// on the pool after commit (see `withTxThenEnrich`). A relation-rich select here
+// would fire concurrent sub-queries on the single pinned tx connection.
 export async function createTemplateRecord(
   input: CreateTemplateRecordInput,
   client: TemplatesDbClient = db,
-): Promise<TemplateDetail> {
-  const template = await client.template.create({
+): Promise<{ id: string }> {
+  return client.template.create({
     data: input,
-    select: templateDetailSelect,
+    select: { id: true },
   })
-  return normalizeTemplate(template)
 }
 
+// Lean `{ id }` (see `createTemplateRecord`). The `.update` still throws P2025
+// when the row is gone — the use case maps that to a 404.
 export async function updateTemplateRecord(
   id: string,
   input: UpdateTemplateRecordInput,
   client: TemplatesDbClient = db,
-): Promise<TemplateDetail> {
-  const template = await client.template.update({
+): Promise<{ id: string }> {
+  return client.template.update({
     where: { id },
     data: input,
-    select: templateDetailSelect,
+    select: { id: true },
   })
-  return normalizeTemplate(template)
 }
 
 export async function deleteTemplateRecordById(
