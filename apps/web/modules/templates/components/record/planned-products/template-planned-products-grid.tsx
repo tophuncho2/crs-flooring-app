@@ -1,6 +1,6 @@
 "use client"
 
-import { MoneyCell, NumberCell, PercentCell, TextCell } from "@/engines/record-view"
+import { NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
@@ -14,16 +14,13 @@ import {
 import type { TemplatePlannedProductLocal } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
 
 const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductLocal>[] = [
-  // Product carries the wide 360 floor + sole grow; the pricing group (Quantity,
-  // Unit, Cost, Margin, Subtotal — all pinned) sits right of it, Notes is the
-  // pinned tail. Cost is a read-only live join off the product; Margin + Subtotal
-  // are the interdependent editable pair.
+  // Product carries the wide 360 floor + sole grow; Quantity, Unit, Cost sit
+  // right of it, Notes is the pinned tail. Cost is a read-only live join off the
+  // product.
   { key: "product", label: "Product", minWidth: 360, grow: 1 },
   { key: "quantity", label: "Quantity", width: 130, align: "end" },
   { key: "unit", label: "Unit", width: 140 },
   { key: "cost", label: "Cost", width: 120, align: "end" },
-  { key: "margin", label: "Margin", width: 130, align: "end" },
-  { key: "subtotal", label: "Subtotal", width: 140, align: "end" },
   { key: "notes", label: "Notes", width: 280 },
 ]
 
@@ -35,8 +32,6 @@ export function TemplatePlannedProductsGrid({
   editable,
   onChangeField,
   onChangeQuantity,
-  onChangeMargin,
-  onChangeSubtotal,
   onChangeCategoryFilter,
   onSetProductSnapshot,
   onSetUnit,
@@ -46,8 +41,6 @@ export function TemplatePlannedProductsGrid({
   editable: boolean
   onChangeField: (itemId: string, field: keyof TemplatePlannedProductLocal, value: string) => void
   onChangeQuantity: (itemId: string, value: string) => void
-  onChangeMargin: (itemId: string, value: string) => void
-  onChangeSubtotal: (itemId: string, value: string) => void
   onChangeCategoryFilter: (itemId: string, categoryId: string | null) => void
   onSetProductSnapshot: (itemId: string, option: ProductOption | null) => void
   onSetUnit: (itemId: string, option: UnitOfMeasureOption | null) => void
@@ -115,36 +108,6 @@ export function TemplatePlannedProductsGrid({
                 align="end"
                 value={item.productCost ? formatMoney(item.productCost) : "—"}
                 ariaLabel="Planned product cost (from product)"
-              />
-            )
-          case "margin":
-            return (
-              <PercentCell
-                editable={editable}
-                value={item.estimatedGrossProfitMargin}
-                onChange={(next) => onChangeMargin(item.id, next)}
-                ariaLabel="Planned product gross profit margin"
-              />
-            )
-          case "subtotal":
-            // Derived from cost + margin; editable back-solves the margin. When
-            // the product has no cost there's nothing to solve against → "—".
-            if (!item.productCost) {
-              return (
-                <NumberCell
-                  editable={false}
-                  align="end"
-                  value="—"
-                  ariaLabel="Planned product subtotal"
-                />
-              )
-            }
-            return (
-              <MoneyCell
-                editable={editable}
-                value={item.subtotal}
-                onChange={(next) => onChangeSubtotal(item.id, next)}
-                ariaLabel="Planned product subtotal"
               />
             )
           case "notes":

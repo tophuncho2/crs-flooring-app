@@ -1,6 +1,5 @@
 import { toIsoTimestamp } from "../../shared/date-format.js"
 import { normalizeMoneyAmount } from "../../shared/money.js"
-import { computePlannedProductSubtotal, normalizeMarginPercent } from "./math.js"
 import type { TemplatePlannedProductRow } from "./types.js"
 
 type TemplatePlannedProductInput = {
@@ -13,7 +12,6 @@ type TemplatePlannedProductInput = {
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
   notes: string | null
-  estimatedGrossProfitMargin: { toString(): string } | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -25,10 +23,6 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
   // Live product cost (read-join). Normalize on read to a canonical "X.XX" so the
   // subtotal and any dirty-check compare against a stable string. "" = no cost.
   const productCost = item.product.cost == null ? "" : normalizeMoneyAmount(item.product.cost.toString())
-  // Margin is the only stored pricing input. Normalize on read (Decimal.toString
-  // drops trailing zeros) so the FE's itemsDiffer never flags a saved row dirty.
-  const estimatedGrossProfitMargin =
-    item.estimatedGrossProfitMargin == null ? "" : normalizeMarginPercent(item.estimatedGrossProfitMargin.toString())
   return {
     id: item.id,
     productId: item.productId,
@@ -42,9 +36,6 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     unitAbbrev: item.unit?.abbreviation ?? "",
     notes: item.notes ?? "",
     productCost,
-    estimatedGrossProfitMargin,
-    // Derived from the live cost + margin — the single source of truth in math.ts.
-    subtotal: computePlannedProductSubtotal({ quantity, cost: productCost, margin: estimatedGrossProfitMargin }),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

@@ -1,32 +1,28 @@
 import { describe, expect, it } from "vitest"
 import { validateTemplatePlannedProductsDiffInput } from "@/app/api/templates/_validators"
 
-// Covers the planned-product margin at the API edge (via optionalPercent). The
-// data layer normalizes cost/margin through the same domain rule, so a bad margin
-// must fail 400 here rather than round-trip oddly.
-function diffWith(margin: unknown) {
+// Covers the planned-product form at the API edge: productId is required, unit +
+// quantity + notes are optional. Margin/subtotal were removed (job costing
+// deferred), so the row carries no pricing input the wire must validate.
+function diffWith(form: Record<string, unknown>) {
   return {
-    added: [
-      { tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", estimatedGrossProfitMargin: margin } },
-    ],
+    added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", ...form } }],
     modified: [],
     deleted: [],
   }
 }
 
-describe("validateTemplatePlannedProductsDiffInput — margin", () => {
-  it("canonicalizes a valid margin to fixed scale 2", () => {
-    const diff = validateTemplatePlannedProductsDiffInput(diffWith("30"))
-    expect(diff.added[0].form.estimatedGrossProfitMargin).toBe("30.00")
+describe("validateTemplatePlannedProductsDiffInput — planned product form", () => {
+  it("accepts a well-formed row and passes the fields through", () => {
+    const diff = validateTemplatePlannedProductsDiffInput(diffWith({ quantity: "5", notes: "rush" }))
+    expect(diff.added[0].form).toMatchObject({ productId: "prod-1", quantity: "5", notes: "rush" })
   })
 
-  it("treats blank / missing margin as unset ('')", () => {
-    expect(validateTemplatePlannedProductsDiffInput(diffWith("")).added[0].form.estimatedGrossProfitMargin).toBe("")
-    expect(validateTemplatePlannedProductsDiffInput(diffWith(undefined)).added[0].form.estimatedGrossProfitMargin).toBe("")
+  it("requires a productId", () => {
+    expect(() => validateTemplatePlannedProductsDiffInput(diffWith({ productId: "" }))).toThrow()
   })
 
-  it("rejects a margin at/above 100 or non-numeric", () => {
-    expect(() => validateTemplatePlannedProductsDiffInput(diffWith("100"))).toThrow(/below 100/)
-    expect(() => validateTemplatePlannedProductsDiffInput(diffWith("abc"))).toThrow(/below 100/)
+  it("treats a blank quantity as unset ('')", () => {
+    expect(validateTemplatePlannedProductsDiffInput(diffWith({ quantity: "" })).added[0].form.quantity).toBe("")
   })
 })

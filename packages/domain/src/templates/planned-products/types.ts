@@ -15,15 +15,8 @@ export type TemplatePlannedProductRow = {
   notes: string
   // LIVE cost read-joined off the linked product (`product.cost`), NOT stored on
   // this row. Canonical money string ("10.00"); "" when the product has no cost.
-  // Display + subtotal input only — never sent in the diff (like productName).
+  // Display only — never sent in the diff (like productName).
   productCost: string
-  // Estimated gross-profit margin percent ("30.00"; "" = unset). The only stored
-  // pricing input; sent in the diff. Negative = loss.
-  estimatedGrossProfitMargin: string
-  // Derived: quantity × productCost ÷ (1 − margin/100), canonical money string
-  // ("" when uncomputable). NOT stored, NOT in the diff — recomputed on read and
-  // in the draft; editing it back-solves the margin.
-  subtotal: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -39,7 +32,4 @@ export type TemplatePlannedProductForm = {
   unitId: string
   quantity: string
   notes: string
-  // Estimated gross-profit margin percent; "" = unset. Normalized at the write
-  // boundaries. The only new persisted field (cost + subtotal are not stored).
-  estimatedGrossProfitMargin: string
 }

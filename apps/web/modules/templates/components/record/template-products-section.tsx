@@ -52,8 +52,6 @@ export function TemplateProductsSection({ planned }: { planned: PlannedControlle
         editable={editable}
         onChangeField={planned.changeField}
         onChangeQuantity={planned.changeQuantity}
-        onChangeMargin={planned.changeMargin}
-        onChangeSubtotal={planned.changeSubtotal}
         onChangeCategoryFilter={planned.changeCategoryFilter}
         onSetProductSnapshot={planned.setProductSnapshot}
         onSetUnit={planned.setUnit}

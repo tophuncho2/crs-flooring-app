@@ -102,7 +102,6 @@ const templateDetailSelect = {
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
       notes: true,
-      estimatedGrossProfitMargin: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,

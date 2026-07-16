@@ -807,11 +807,6 @@ model TemplatePlannedProduct {
   unitId         String?
   unit           FlooringUnitOfMeasure? @relation("TemplatePlannedProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
   notes          String?          @db.VarChar(30)
-  // Estimated gross-profit margin as a percent value (e.g. 30.00 = 30%). The
-  // single stored pricing input: the displayed cost is a live read-join off
-  // `product.cost`, and the row's subtotal derives from quantity × product.cost
-  // ÷ (1 − margin/100). Nullable = unset; negatives allowed (selling at a loss).
-  estimatedGrossProfitMargin Decimal? @db.Decimal(5, 2)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   createdBy      String?
