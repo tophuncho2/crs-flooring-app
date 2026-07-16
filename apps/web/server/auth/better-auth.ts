@@ -67,15 +67,16 @@ export const auth = betterAuth({
       clientId: authEnv.googleClientId,
       clientSecret: authEnv.googleClientSecret,
       hd: COMPANY_GOOGLE_DOMAIN,
-      // Beyond SSO identity, the app writes list exports into the user's own Drive
-      // as Google Sheets. `drive.file` is per-file (only files WE create) and
-      // non-sensitive, so an internal Workspace app needs no Google verification.
-      // `offline` + `consent` are what make Google return a refresh token (stored on
-      // the linked Account row) so the server can mint a Sheet on demand later, and
-      // re-prompt existing users once so they grant the newly-added scope.
-      scope: ["https://www.googleapis.com/auth/drive.file"],
+      // Sign-in requests IDENTITY ONLY (Better Auth's default openid/email/profile) —
+      // no `scope` array and no `prompt: "consent"`, so login never surfaces a Google
+      // consent screen after the first identity grant. The Drive `drive.file` scope
+      // the app needs to write list exports as Sheets is requested LATER, on demand,
+      // the first time a user actually exports (incremental authorization — see
+      // `modules/auth/reconnect-google.ts`). `accessType: "offline"` stays: it never
+      // triggers a consent screen by itself, and it's what makes Google return a
+      // refresh token (stored on the linked Account row) when that incremental Drive
+      // grant happens, so the server can refresh and mint Sheets silently thereafter.
       accessType: "offline",
-      prompt: "consent",
     },
   },
 

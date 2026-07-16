@@ -6,10 +6,11 @@ const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 /**
  * A valid, Drive-scoped Google access token for the current session user, or
  * `null` when the linked Google account can't produce one — i.e. the user hasn't
- * re-consented since the `drive.file` scope was added (no refresh token, or a
- * token that predates the scope). Better Auth's `getAccessToken` auto-refreshes
- * using the stored refresh token; a `null` return is the signal the route uses to
- * ask the client to reconnect Google, not an error.
+ * granted the `drive.file` scope yet (sign-in requests identity only, so Drive is
+ * an on-demand incremental grant — no refresh token, or a token that predates the
+ * scope). Better Auth's `getAccessToken` auto-refreshes using the stored refresh
+ * token; a `null` return is the signal the route uses to ask the client to connect
+ * Google Drive, not an error.
  */
 export async function getGoogleAccessToken(): Promise<string | null> {
   try {

@@ -6,7 +6,7 @@ import { getGoogleAccessToken } from "./google-access-token"
 
 /**
  * Protocol code the client checks for on a failed Sheets export to swap its error
- * message for a "Reconnect Google" action. Mirrored verbatim in the export button
+ * message for a "Connect Google Drive" action. Mirrored verbatim in the export button
  * (`engines/list-view/toolbar/export/list-export-button.tsx`) — keep the two in sync.
  */
 export const GOOGLE_REAUTH_CODE = "google_reauth_required"
@@ -14,8 +14,9 @@ export const GOOGLE_REAUTH_CODE = "google_reauth_required"
 /**
  * Turn an already-serialized CSV into a Google Sheet in the caller's Drive and
  * respond with `{ url, total, count }`. When the user has no Drive-scoped token
- * yet, returns a 409 carrying {@link GOOGLE_REAUTH_CODE} so the client prompts a
- * reconnect. A Drive failure propagates to the route's `catch` → `routeError`.
+ * yet, returns a 409 carrying {@link GOOGLE_REAUTH_CODE} so the client prompts the
+ * user to connect Drive (incremental auth — most users hit this on first export).
+ * A Drive failure propagates to the route's `catch` → `routeError`.
  */
 export async function respondWithSheet(
   access: AuthorizedRouteContext,
@@ -24,7 +25,7 @@ export async function respondWithSheet(
   const accessToken = await getGoogleAccessToken()
   if (!accessToken) {
     return jsonWithRequestId(
-      { error: "Reconnect Google to export to Sheets.", code: GOOGLE_REAUTH_CODE },
+      { error: "Connect Google Drive to export to Sheets.", code: GOOGLE_REAUTH_CODE },
       access.requestId,
       { status: 409 },
     )

@@ -18,7 +18,7 @@ type ExportFormat = "sheet" | "csv"
 type ExportStatus =
   | { kind: "idle" }
   | { kind: "loading"; format: ExportFormat }
-  | { kind: "done"; message: string }
+  | { kind: "done"; message: string; url?: string }
   | { kind: "error"; message: string }
   | { kind: "reauth"; message: string }
 
@@ -42,8 +42,9 @@ export type ListExportButtonProps = {
   selectedIds: ReadonlyArray<string>
   /**
    * Called when a Sheets export fails because the user hasn't granted the Google
-   * Drive scope yet — the consumer re-runs Google sign-in (which re-consents).
-   * Optional: without it the reconnect message shows but has no action button.
+   * Drive scope yet — the consumer requests it on demand (incremental auth). This
+   * is the first-export path for most users, since sign-in asks for identity only.
+   * Optional: without it the connect message shows but has no action button.
    */
   onReauthRequired?: () => void
 }
@@ -129,16 +130,18 @@ export function ListExportButton({
 
       if (format === "sheet") {
         const data = (await response.json()) as { url?: string; total?: number; count?: number }
+        // Best-effort auto-open. It fires after the await, so the browser no longer
+        // sees it as tied to the click and may block it — and `noopener` makes the
+        // return value `null` even on success, so we can't tell. The success state
+        // always renders the link below as the reliable, gesture-safe way in.
         if (data.url) window.open(data.url, "_blank", "noopener")
         const total = data.total ?? 0
         const count = data.count ?? 0
-        setStatus({
-          kind: "done",
-          message:
-            total > count
-              ? `Opened first ${count.toLocaleString()} of ${total.toLocaleString()} rows in Google Sheets`
-              : `Opened ${count.toLocaleString()} ${count === 1 ? "row" : "rows"} in Google Sheets`,
-        })
+        const scope =
+          total > count
+            ? `first ${count.toLocaleString()} of ${total.toLocaleString()} rows`
+            : `${count.toLocaleString()} ${count === 1 ? "row" : "rows"}`
+        setStatus({ kind: "done", message: `Exported ${scope} to Google Sheets`, url: data.url })
         return
       }
 
@@ -277,12 +280,24 @@ export function ListExportButton({
               onClick={onReauthRequired}
               className="self-start text-xs font-semibold text-sky-600 hover:underline"
             >
-              Reconnect Google
+              Connect Google Drive
             </button>
           ) : null}
         </div>
       ) : status.kind === "done" ? (
-        <p className="text-xs text-emerald-600">{status.message}</p>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xs text-emerald-600">{status.message}</p>
+          {status.url ? (
+            <a
+              href={status.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="self-start text-xs font-semibold text-sky-600 hover:underline"
+            >
+              Open in Google Sheets ↗
+            </a>
+          ) : null}
+        </div>
       ) : null}
     </ToolbarMenuButton>
   )
