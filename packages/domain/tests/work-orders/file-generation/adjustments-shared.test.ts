@@ -87,6 +87,16 @@ describe("both sections — summed totals are identical (shared sumItemTotals)",
     })
     expect(slip([item])).toContain('<td class="cl-num subtotal-cell">3 boxes</td>')
   })
+
+  it("the Converted subtotal sums per group with its target-unit suffix", () => {
+    const item = makeMaterialItem({
+      inventoryAdjustments: [
+        makeAdjustment({ id: "a1", convertedBalance: "120", conversionUnitAbbrev: "SF" }),
+        makeAdjustment({ id: "a2", convertedBalance: "80", conversionUnitAbbrev: "SF" }),
+      ],
+    })
+    expect(picking([item])).toContain('<td class="cl-num subtotal-cell">200 SF</td>')
+  })
 })
 
 describe("both sections — sumDecimalStrings formatting (via rendered totals)", () => {

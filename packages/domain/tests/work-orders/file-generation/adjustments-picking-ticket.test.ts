@@ -46,8 +46,8 @@ describe("picking ticket — one row per adjustment (not collapsed)", () => {
     // <tr> count = 1 header + 3 detail + 1 subtotal = 5
     // (prefix needle: the subtotal row carries class="group-end")
     expect(count(html, "<tr")).toBe(5)
-    // exactly one subtotal row (one subtotal cell — Quantity only)
-    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(1)
+    // one subtotal row with two subtotal cells — Quantity + Converted
+    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(2)
   })
 })
 
@@ -165,6 +165,25 @@ describe("picking ticket — per-group subtotal row", () => {
     const html = pickingTable([item])
     expect(html).toContain('<td class="cl-num subtotal-cell">15 rolls</td>')
   })
+
+  it("sums Converted under a subtotal-cell rule with its target-unit suffix", () => {
+    const item = makeMaterialItem({
+      inventoryAdjustments: [
+        makeAdjustment({ id: "a1", convertedBalance: "250", conversionUnitAbbrev: "SF" }),
+        makeAdjustment({ id: "a2", convertedBalance: "250", conversionUnitAbbrev: "SF" }),
+      ],
+    })
+    const html = pickingTable([item])
+    expect(html).toContain('<td class="cl-num subtotal-cell">500 SF</td>')
+  })
+
+  it("renders the — placeholder in the Converted subtotal when no group has a formula", () => {
+    const item = makeMaterialItem({
+      inventoryAdjustments: [makeAdjustment({ convertedBalance: "", conversionUnitAbbrev: "" })],
+    })
+    const html = pickingTable([item])
+    expect(html).toContain(`<td class="cl-num subtotal-cell">${EMPTY_CELL}</td>`)
+  })
 })
 
 describe("picking ticket — grouping across material items (no grand total)", () => {
@@ -176,7 +195,8 @@ describe("picking ticket — grouping across material items (no grand total)", (
     const html = pickingTable(items)
     expect(html).toContain("<td>Carpet A</td>")
     expect(html).toContain("<td>Carpet B</td>")
-    // two subtotal rows → two subtotal cells, and no third (grand-total) row
-    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(2)
+    // two subtotal rows × two subtotal cells (Quantity + Converted) = 4, and no
+    // fifth/sixth (grand-total) row
+    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(4)
   })
 })

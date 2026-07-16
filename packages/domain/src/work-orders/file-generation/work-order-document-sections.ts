@@ -505,12 +505,23 @@ function renderSubtotalRow(
   columns: WorkOrderAdjustmentColumnVisibility,
 ): string {
   const { quantity, unitAbbrev } = sumAdjustmentQuantities(adjustments)
+  // The Converted subtotal reuses the same summer, mapping each adjustment onto
+  // its derived converted balance + target-unit suffix (mirrors the Quantity
+  // total and the Plan File subtotal). Empty groups render "—" via renderUnitValue.
+  const convertedTotal = sumAdjustmentQuantities(
+    adjustments.map((adj) => ({
+      quantity: adj.convertedBalance,
+      unitAbbrev: adj.conversionUnitAbbrev,
+    })),
+  )
   const leadDetailCells = [
     columns.dyeLot ? "\n  <td></td>" : "",
     columns.rollNumber ? "\n  <td></td>" : "",
   ].join("")
   const trailDetailCells = [
-    columns.converted ? "\n  <td></td>" : "",
+    columns.converted
+      ? `\n  <td class="cl-num subtotal-cell">${renderUnitValue(convertedTotal.quantity, convertedTotal.unitAbbrev)}</td>`
+      : "",
     columns.adjustment ? "\n  <td></td>" : "",
     columns.location ? "\n  <td></td>" : "",
     columns.area ? "\n  <td></td>" : "",
