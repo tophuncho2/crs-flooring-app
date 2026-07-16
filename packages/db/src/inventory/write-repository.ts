@@ -2,7 +2,6 @@ import { Prisma } from "../generated/prisma/client.js"
 import type { PaletteColor } from "@builders/domain"
 import { db } from "../client.js"
 import { type InventoryDbClient } from "./shared.js"
-import { getInventoryById, type InventoryRecord } from "./read-repository.js"
 
 /**
  * Acquire a row-level lock on a single inventory row for the duration of the
@@ -111,7 +110,7 @@ export async function updateInventoryRecord(
   id: string,
   input: UpdateInventoryRecordInput,
   client: InventoryDbClient = db,
-): Promise<InventoryRecord> {
+): Promise<{ id: string }> {
   const data = buildUpdateData(input)
   if (Object.keys(data).length > 0) {
     await client.flooringInventory.update({
@@ -120,9 +119,11 @@ export async function updateInventoryRecord(
       select: { id: true },
     })
   }
-  const record = await getInventoryById(id, client)
-  if (!record) throw new Error(`updateInventoryRecord: inventory ${id} not found after update`)
-  return record
+  // Return lean — the caller enriches the full record on the pool after the
+  // transaction commits. Re-reading the multi-relation record here on a `tx`
+  // client trips Prisma's concurrent relation sub-queries on the single pinned
+  // connection ("client is already executing a query").
+  return { id }
 }
 
 export async function deleteInventoryRecordById(
@@ -171,13 +172,15 @@ export type InsertInventoryRowInput = {
 }
 
 /**
- * Insert a single inventory row and return the normalized record. The caller
- * must provide a transaction client.
+ * Insert a single inventory row and return its id (lean). The caller must
+ * provide a transaction client and enriches the full record on the pool after
+ * the transaction commits — a multi-relation read on the `tx` client trips
+ * Prisma's concurrent relation sub-queries on the single pinned connection.
  */
 export async function insertInventoryRow(
   tx: Prisma.TransactionClient,
   input: InsertInventoryRowInput,
-): Promise<InventoryRecord> {
+): Promise<{ id: string }> {
   const created = await tx.flooringInventory.create({
     data: {
       importEntryId: input.importEntryId,
@@ -205,11 +208,7 @@ export async function insertInventoryRow(
     select: { id: true },
   })
 
-  const record = await getInventoryById(created.id, tx)
-  if (!record) {
-    throw new Error(`insertInventoryRow: inventory ${created.id} not found after insert`)
-  }
-  return record
+  return created
 }
 
 // --- Worker materialization primitive ---

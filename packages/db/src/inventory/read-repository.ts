@@ -224,6 +224,24 @@ export async function getInventoryById(
 }
 
 /**
+ * Lean, relation-free read of a row's editable text fields (+ existence). Used by
+ * the update use case's in-transaction read: a `select` with 2+ relations run on
+ * the pinned interactive-transaction connection makes Prisma fire concurrent
+ * relation sub-queries on one pg connection ("client is already executing a
+ * query"), so anything read on a `tx` client must stay relation-free. The caller
+ * enriches the full record on the pool after the transaction commits.
+ */
+export async function getInventoryMutableStateById(
+  id: string,
+  client: InventoryDbClient = db,
+): Promise<{ location: string | null; internalNotes: string | null } | null> {
+  return client.flooringInventory.findUnique({
+    where: { id },
+    select: { location: true, internalNotes: true },
+  })
+}
+
+/**
  * Read the full inventory detail (row + adjustments). By default it also
  * resolves the adjacent rows for the record-view shell stepper; pass
  * `{ withNeighbors: false }` on paths that only navigate/invalidate off the

@@ -1,6 +1,7 @@
 import {
   Prisma,
   getInventoryById,
+  getInventoryMutableStateById,
   lockInventoryRow,
   updateInventoryRecord,
   withDatabaseTransaction,
@@ -23,12 +24,16 @@ export async function updateInventoryUseCase(
 ): Promise<InventoryResult> {
   assertActorEmail(actorEmail, "updateInventoryUseCase")
 
-  return withDatabaseTransaction(async (tx) => {
+  await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
     await lockInventoryRow(c, id)
 
-    const current = await getInventoryById(id, c)
+    // Lean, relation-free read on the tx connection (existence + the two text
+    // fields). A multi-relation read here would trip Prisma's concurrent relation
+    // sub-queries on the single pinned connection; the full record is read on the
+    // pool after commit (below).
+    const current = await getInventoryMutableStateById(id, c)
     if (!current) {
       throw new InventoryExecutionError({
         code: "INVENTORY_NOT_FOUND",
@@ -68,6 +73,18 @@ export async function updateInventoryUseCase(
       dbInput.conversionFormulaId = emptyToNull(input.conversionFormulaId)
     }
 
-    return updateInventoryRecord(id, dbInput, c)
+    await updateInventoryRecord(id, dbInput, c)
   })
+
+  // Enrich the full record on the pool after the transaction commits — the
+  // multi-relation read must not run on the pinned tx connection.
+  const record = await getInventoryById(id)
+  if (!record) {
+    throw new InventoryExecutionError({
+      code: "INVENTORY_NOT_FOUND",
+      message: "Inventory row not found.",
+      status: 404,
+    })
+  }
+  return record
 }

@@ -6,6 +6,7 @@ const {
   getWarehouseByIdMock,
   getUnitOfMeasureByIdMock,
   insertInventoryRowMock,
+  getInventoryByIdMock,
   buildCreatedInventoryInsertMock,
   validateCreateInventoryEditsMock,
   describeInventoryCreateIssuesMock,
@@ -15,6 +16,7 @@ const {
   getWarehouseByIdMock: vi.fn(),
   getUnitOfMeasureByIdMock: vi.fn(),
   insertInventoryRowMock: vi.fn(),
+  getInventoryByIdMock: vi.fn(),
   buildCreatedInventoryInsertMock: vi.fn(),
   validateCreateInventoryEditsMock: vi.fn(),
   describeInventoryCreateIssuesMock: vi.fn(),
@@ -27,6 +29,8 @@ vi.mock("@builders/db", () => ({
   getWarehouseById: getWarehouseByIdMock,
   getUnitOfMeasureById: getUnitOfMeasureByIdMock,
   insertInventoryRow: insertInventoryRowMock,
+  // Full record read on the pool after the transaction commits (the return value).
+  getInventoryById: getInventoryByIdMock,
 }))
 
 vi.mock("@builders/domain", () => ({
@@ -66,7 +70,9 @@ const PRODUCT = {
 const WAREHOUSE = { id: "wh-1", name: "Main" }
 const UNIT = { id: "u-1", name: "Square Feet", abbreviation: "SF" }
 const BUILT_FIELDS = { productId: "p-1", netDeducted: "0", isArchived: false }
-const CREATED_RECORD = { id: "22222222-2222-4222-8222-222222222222", sentinel: true }
+const NEW_ID = "22222222-2222-4222-8222-222222222222"
+// The lean insert returns just the id; the post-commit pool read returns the record.
+const CREATED_RECORD = { id: NEW_ID, sentinel: true }
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
@@ -74,6 +80,7 @@ beforeEach(() => {
   getWarehouseByIdMock.mockReset()
   getUnitOfMeasureByIdMock.mockReset()
   insertInventoryRowMock.mockReset()
+  getInventoryByIdMock.mockReset()
   buildCreatedInventoryInsertMock.mockReset()
   validateCreateInventoryEditsMock.mockReset()
   describeInventoryCreateIssuesMock.mockReset()
@@ -86,7 +93,9 @@ beforeEach(() => {
   getWarehouseByIdMock.mockResolvedValue(WAREHOUSE)
   getUnitOfMeasureByIdMock.mockResolvedValue(UNIT)
   buildCreatedInventoryInsertMock.mockReturnValue(BUILT_FIELDS)
-  insertInventoryRowMock.mockResolvedValue(CREATED_RECORD)
+  // The insert returns the lean id; the record is read on the pool afterward.
+  insertInventoryRowMock.mockResolvedValue({ id: NEW_ID })
+  getInventoryByIdMock.mockResolvedValue(CREATED_RECORD)
   describeInventoryCreateIssuesMock.mockReturnValue("bad")
 })
 
@@ -101,9 +110,12 @@ describe("createInventoryUseCase", () => {
     it("reads product + warehouse, builds the insert, and stamps createdAt + actor", async () => {
       const result = await createInventoryUseCase(input(), ACTOR)
 
+      // The returned record comes from the post-commit pool read, not the insert.
       expect(result).toBe(CREATED_RECORD)
-      expect(getProductByIdMock).toHaveBeenCalledWith("p-1", expect.anything())
-      expect(getWarehouseByIdMock).toHaveBeenCalledWith("wh-1", expect.anything())
+      expect(getInventoryByIdMock).toHaveBeenCalledWith(NEW_ID)
+      // Existence guards read on the pool — bare id, never a tx client.
+      expect(getProductByIdMock).toHaveBeenCalledWith("p-1")
+      expect(getWarehouseByIdMock).toHaveBeenCalledWith("wh-1")
 
       // The form (incl. its unit FK) is passed straight to the domain builder —
       // the unit is no longer derived from the product's retiring snapshot.
