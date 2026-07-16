@@ -48,22 +48,26 @@ ALTER TABLE "flooring_work_order_document_type"
   GENERATED ALWAYS AS (CAST(SUBSTRING("work_order_document_type_number" FROM 5) AS INTEGER)) STORED;
 
 -- CreateIndex
-CREATE UNIQUE INDEX "flooring_work_order_document_type_work_order_document_type_number_key" ON "flooring_work_order_document_type"("work_order_document_type_number");
+-- NOTE: short index names (fwodt_*) — the default names built from the table +
+-- the long `work_order_document_type_number` column exceed Postgres' 63-byte
+-- identifier limit, and the UNIQUE + btree would truncate to the SAME name and
+-- collide (42P07). These names match the schema's `map:` values.
+CREATE UNIQUE INDEX "fwodt_number_key" ON "flooring_work_order_document_type"("work_order_document_type_number");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "flooring_work_order_document_type_name_key" ON "flooring_work_order_document_type"("name");
+CREATE UNIQUE INDEX "fwodt_name_key" ON "flooring_work_order_document_type"("name");
 
 -- CreateIndex
-CREATE INDEX "flooring_work_order_document_type_work_order_document_type_number_idx" ON "flooring_work_order_document_type"("work_order_document_type_number");
+CREATE INDEX "fwodt_number_idx" ON "flooring_work_order_document_type"("work_order_document_type_number");
 
 -- CreateIndex
-CREATE INDEX "flooring_work_order_document_type_workOrderDocumentTypeNumberInt_idx" ON "flooring_work_order_document_type"("workOrderDocumentTypeNumberInt");
+CREATE INDEX "fwodt_number_int_idx" ON "flooring_work_order_document_type"("workOrderDocumentTypeNumberInt");
 
 -- CreateIndex
-CREATE INDEX "flooring_work_order_document_type_name_idx" ON "flooring_work_order_document_type"("name");
+CREATE INDEX "fwodt_name_idx" ON "flooring_work_order_document_type"("name");
 
 -- CreateIndex (trgm GIN backs the free-text `name` search bar)
-CREATE INDEX "flooring_work_order_document_type_name_trgm_idx" ON "flooring_work_order_document_type" USING GIN ("name" gin_trgm_ops);
+CREATE INDEX "fwodt_name_trgm_idx" ON "flooring_work_order_document_type" USING GIN ("name" gin_trgm_ops);
 
 -- Seed the two doc types the client already exposed. Empty '{}' printConfig ⇒
 -- resolves to the full-on base defaults (no behavior change until operators tune).

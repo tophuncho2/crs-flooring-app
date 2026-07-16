@@ -1122,9 +1122,13 @@ model FlooringPaymentPurpose {
 // the printed document tag.
 model FlooringWorkOrderDocumentType {
   id                             String       @id @default(uuid())
-  workOrderDocumentTypeNumber    String       @unique @default(dbgenerated("('ROW-'::text || (nextval('flooring_work_order_document_type_number_seq'::regclass))::text)")) @map("work_order_document_type_number")
+  // Explicit short index/constraint names (map:) — the default Prisma names
+  // (table + long `work_order_document_type_number` column) exceed Postgres'
+  // 63-byte identifier limit and the UNIQUE + btree would truncate to the SAME
+  // name and collide. `fwodt_` = flooring_work_order_document_type.
+  workOrderDocumentTypeNumber    String       @unique(map: "fwodt_number_key") @default(dbgenerated("('ROW-'::text || (nextval('flooring_work_order_document_type_number_seq'::regclass))::text)")) @map("work_order_document_type_number")
   workOrderDocumentTypeNumberInt Int?         @default(dbgenerated("(SUBSTRING(work_order_document_type_number FROM 5))::integer"))
-  name                           String       @unique @db.VarChar(40)
+  name                           String       @unique(map: "fwodt_name_key") @db.VarChar(40)
   color                          PaletteColor @default(SLATE)
   printConfig                    Json         @default(dbgenerated("'{}'::jsonb"))
   createdAt                      DateTime     @default(now())
@@ -1134,10 +1138,10 @@ model FlooringWorkOrderDocumentType {
 
   printEvents FlooringWorkOrderPrintEvent[]
 
-  @@index([name])
-  @@index([workOrderDocumentTypeNumber])
-  @@index([workOrderDocumentTypeNumberInt])
-  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_document_type_name_trgm_idx")
+  @@index([name], map: "fwodt_name_idx")
+  @@index([workOrderDocumentTypeNumber], map: "fwodt_number_idx")
+  @@index([workOrderDocumentTypeNumberInt], map: "fwodt_number_int_idx")
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "fwodt_name_trgm_idx")
   @@map("flooring_work_order_document_type")
 }
 
