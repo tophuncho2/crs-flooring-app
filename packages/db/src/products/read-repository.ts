@@ -63,6 +63,8 @@ export type ProductRecord = {
   conversionFormulaId: string
   conversionFormulaName: string
   productNamingAddon: string
+  // Archive flag (mirrors FlooringInventory). Non-null boolean, DB default false.
+  isArchived: boolean
   createdAt: string
   updatedAt: string
   createdBy: string | null
@@ -171,6 +173,7 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     conversionFormulaId: product.conversionFormulaId ?? "",
     conversionFormulaName: product.conversionFormula?.name ?? "",
     productNamingAddon: product.productNamingAddon ?? "",
+    isArchived: product.isArchived,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
     createdBy: product.createdBy ?? null,
@@ -366,6 +369,11 @@ export type ProductListViewOptions = {
     style?: string
     namingAddon?: string
     categoryId?: ReadonlyArray<string>
+    /**
+     * Archive filter. `true` shows archived-only; `false` OR `undefined` both
+     * hide archived (default-hide) — mirrors the inventory list contract.
+     */
+    isArchived?: boolean
   }
   sort?: ProductListViewSort
   skip: number
@@ -410,6 +418,11 @@ function buildListViewWhere(
   if (categoryIds && categoryIds.length > 0) {
     clauses.push({ categoryId: { in: [...categoryIds] } })
   }
+
+  // Default-hide archived: only an explicit `true` shows archived-only; `false`
+  // and `undefined` both hide. Always emits one clause (mirrors inventory), so
+  // the list hides archived even with no other filter set.
+  clauses.push({ isArchived: options.filters?.isArchived === true })
 
   return combineAnd(clauses)
 }
@@ -460,6 +473,10 @@ export async function searchProductOptions(
   if (args.categoryId) {
     clauses.push({ categoryId: args.categoryId })
   }
+  // Archived products are never selectable in any picker — exclude them at the
+  // single options seam so all picker render paths inherit it (Phase 2 will
+  // parameterize this into an opt-in "include archived" toggle).
+  clauses.push({ isArchived: false })
   const where = combineAnd(clauses)
 
   // Fetch take+1 to detect a next page without a separate count query.

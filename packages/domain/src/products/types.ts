@@ -64,6 +64,10 @@ export type ProductRow = {
   conversionFormulaId: string
   conversionFormulaName: string
   productNamingAddon: string
+  // Archive flag (mirrors inventory). Default-hidden from the products list and
+  // excluded from every product picker's options. Metadata-only — no name/cost/
+  // coverage recompute depends on it.
+  isArchived: boolean
   createdAt: string
   updatedAt: string
   // Actor-email snapshots: WHO created / last-updated the row. Plain nullable
@@ -108,6 +112,10 @@ export type ProductCreateForm = {
   // edit form can re-pick it; the create flow never renders a picker and the
   // create API validator ignores it, so new rows fall to the DB default SLATE.
   paletteColor: PaletteColor
+  // Archive flag. Carried on the shared draft so the record-view edit form can
+  // toggle it; the create flow never renders the control and the create API
+  // validator ignores it, so new rows fall to the DB default `false`.
+  isArchived: boolean
 }
 
 // Update form — carries the same fields as create. `categoryId` is now MUTABLE
@@ -161,6 +169,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   conversionFormulaId: "",
   productNamingAddon: "",
   paletteColor: DEFAULT_PALETTE_COLOR,
+  isArchived: false,
 }
 
 export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
@@ -177,5 +186,6 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     conversionFormulaId: row.conversionFormulaId,
     productNamingAddon: row.productNamingAddon,
     paletteColor: row.paletteColor,
+    isArchived: row.isArchived,
   }
 }

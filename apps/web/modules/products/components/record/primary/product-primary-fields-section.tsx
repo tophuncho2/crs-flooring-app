@@ -14,6 +14,7 @@ import {
   TextCell,
 } from "@/engines/record-view"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
+import { ProductArchiveChip } from "./controls/product-archive-chip"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import { ConversionFormulaPicker } from "@/modules/conversion-formulas/components/picker/conversion-formula-picker"
@@ -73,7 +74,7 @@ export function ProductPrimaryFieldsSection({
   fieldsReadOnly?: boolean
   /** Linked-row counts shown in the detail view's right flank; omit in the create flow. */
   stats?: ProductStats
-  onFieldChange: (field: keyof ProductCreateForm, value: string | PaletteColor) => void
+  onFieldChange: (field: keyof ProductCreateForm, value: string | PaletteColor | boolean) => void
 }) {
   // Category is editable in both flows now (UoM epic 2A) — the label always
   // resolves off the draft against the flat `categoryOptions` pass-through list.
@@ -168,6 +169,19 @@ export function ProductPrimaryFieldsSection({
               editable={editable}
               onChange={(next) => onFieldChange("paletteColor", next)}
               ariaLabel="Product palette color"
+            />
+          </FormField>
+        </CellAt>
+      ) : null}
+      {/* Archive status — detail-only (create can't archive; new rows default
+          to Active). Full-width under the PROD # + Palette row. */}
+      {categoryReadOnly ? (
+        <CellAt col={1} colSpan={8}>
+          <FormField label="Status">
+            <ProductArchiveChip
+              value={draft.isArchived}
+              onChange={(next) => onFieldChange("isArchived", next)}
+              disabled={!editable}
             />
           </FormField>
         </CellAt>

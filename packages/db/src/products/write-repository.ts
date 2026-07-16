@@ -48,10 +48,11 @@ export type CreateProductInput = {
 // `updatedBy` is required on every update (always stamped with the actor email),
 // so it's carried explicitly rather than left optional in the `Partial<…>`.
 // `paletteColor` is update-only (the non-semantic tag) — never on create
-// (`CreateProductInput`), so new rows fall to the DB default SLATE.
+// (`CreateProductInput`), so new rows fall to the DB default SLATE. `isArchived`
+// is likewise update-only (new rows fall to the DB default `false`).
 export type UpdateProductInput = Partial<
   Omit<CreateProductInput, "createdBy" | "updatedBy">
-> & { updatedBy: string; paletteColor?: PaletteColor }
+> & { updatedBy: string; paletteColor?: PaletteColor; isArchived?: boolean }
 
 // --- Writes ---
 
@@ -105,6 +106,7 @@ export async function updateProduct(
   }
   if (input.productNamingAddon !== undefined) data.productNamingAddon = input.productNamingAddon
   if (input.paletteColor !== undefined) data.paletteColor = input.paletteColor
+  if (input.isArchived !== undefined) data.isArchived = input.isArchived
 
   return client.flooringProduct.update({
     where: { id },

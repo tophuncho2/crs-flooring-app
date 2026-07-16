@@ -82,6 +82,10 @@ export function parseProductsListInputFromSearchParams(
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
+  const archivedRaw = readSearchParam(searchParams, "archived")
+  const isArchived =
+    archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
+
   const categoryId = Array.from(
     new Set(readSearchParamArray(searchParams, "categoryId")),
   )
@@ -94,13 +98,19 @@ export function parseProductsListInputFromSearchParams(
   return {
     search: searchRaw || undefined,
     filters:
-      prodNumberRaw || colorRaw || styleRaw || namingAddonRaw || categoryId.length > 0
+      prodNumberRaw ||
+      colorRaw ||
+      styleRaw ||
+      namingAddonRaw ||
+      categoryId.length > 0 ||
+      isArchived !== undefined
         ? {
             ...(prodNumberRaw ? { prodNumber: prodNumberRaw } : {}),
             ...(colorRaw ? { color: colorRaw } : {}),
             ...(styleRaw ? { style: styleRaw } : {}),
             ...(namingAddonRaw ? { namingAddon: namingAddonRaw } : {}),
             ...(categoryId.length > 0 ? { categoryId } : {}),
+            ...(isArchived !== undefined ? { isArchived } : {}),
           }
         : undefined,
     ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
@@ -123,6 +133,10 @@ export function buildProductsListSearchString(
   for (const id of input.filters?.categoryId ?? []) {
     params.append("categoryId", id)
   }
+  // Default-hide archived: only emit `archived` when explicitly set. Server
+  // treats absent as "hide archived".
+  if (input.filters?.isArchived === true) params.set("archived", "true")
+  else if (input.filters?.isArchived === false) params.set("archived", "false")
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

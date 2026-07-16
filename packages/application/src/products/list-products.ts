@@ -12,6 +12,8 @@ export type ProductsListFilters = {
   style?: string
   namingAddon?: string
   categoryId?: ReadonlyArray<string>
+  /** Archive filter. `true` = archived-only; `false`/`undefined` = hide archived. */
+  isArchived?: boolean
 }
 
 /** Cap on user-selected sort columns — mirrors the engine + request + API. */
@@ -40,15 +42,17 @@ export async function listProductsUseCase(
   const style = input.filters?.style?.trim() || undefined
   const namingAddon = input.filters?.namingAddon?.trim() || undefined
   const categoryId = normalizeCategoryIds(input.filters?.categoryId)
+  const isArchived = input.filters?.isArchived
 
   const filters =
-    prodNumber || color || style || namingAddon || categoryId
+    prodNumber || color || style || namingAddon || categoryId || isArchived !== undefined
       ? {
           ...(prodNumber ? { prodNumber } : {}),
           ...(color ? { color } : {}),
           ...(style ? { style } : {}),
           ...(namingAddon ? { namingAddon } : {}),
           ...(categoryId ? { categoryId } : {}),
+          ...(isArchived !== undefined ? { isArchived } : {}),
         }
       : undefined
 

@@ -47,6 +47,7 @@ const EMPTY_PRODUCT: ProductRecord = {
   conversionFormulaId: "",
   conversionFormulaName: "",
   productNamingAddon: "",
+  isArchived: false,
   createdAt: "",
   updatedAt: "",
   createdBy: null,

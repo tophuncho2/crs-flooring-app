@@ -121,6 +121,9 @@ export async function updateProductUseCase(
         // Non-semantic palette tag — metadata-only passthrough. Never read here: it
         // does not affect the stored name, coverage, or any recompute.
         if ("paletteColor" in input) patch.paletteColor = input.paletteColor
+        // Archive flag — metadata-only passthrough. Does not affect the stored
+        // name, coverage, or any recompute; only gates list visibility + picker options.
+        if ("isArchived" in input) patch.isArchived = input.isArchived
 
         if (nameAffected) {
           const name = buildStoredFlooringProductName({

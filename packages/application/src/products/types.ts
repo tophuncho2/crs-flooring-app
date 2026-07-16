@@ -33,8 +33,10 @@ export type CreateProductInput = {
 // change recomposes the stored product name in `update-product`.
 // `paletteColor` is the non-semantic palette tag — update-only (create never
 // carries it; new rows default to SLATE in the DB). Metadata-only passthrough.
+// `isArchived` is likewise update-only (new rows default to `false` in the DB).
 export type UpdateProductInput = Partial<CreateProductInput> & {
   paletteColor?: PaletteColor
+  isArchived?: boolean
 }
 
 export type ProductResult = ProductRecord

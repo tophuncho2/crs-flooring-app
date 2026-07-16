@@ -23,6 +23,7 @@ import {
   type ProductSearchKey,
 } from "@builders/domain"
 import { ProductSearchControls } from "./product-search-controls"
+import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import {
   PRODUCTS_LIST_QUERY_KEY,
   listProductsRequest,
@@ -41,6 +42,7 @@ const PRODUCTS_FILTERABLE_FIELDS = [
   "style",
   "namingAddon",
   "categoryId",
+  "isArchived",
 ] as const
 
 // The list-view engine stores every filter value as `string[]`. The app filter
@@ -53,6 +55,9 @@ type EngineProductsFilters = {
   style?: ReadonlyArray<string>
   namingAddon?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
+  // Boolean archive flag boxed as a 1-element string array (the engine filter
+  // map only carries `string[]`), same as inventory.
+  isArchived?: ReadonlyArray<string>
 }
 
 function toEngineFilters(app: ProductsListFilters): EngineProductsFilters {
@@ -62,6 +67,7 @@ function toEngineFilters(app: ProductsListFilters): EngineProductsFilters {
   if (app.style && app.style.length > 0) out.style = [app.style]
   if (app.namingAddon && app.namingAddon.length > 0) out.namingAddon = [app.namingAddon]
   if (app.categoryId?.length) out.categoryId = app.categoryId
+  if (app.isArchived !== undefined) out.isArchived = [app.isArchived ? "true" : "false"]
   return out
 }
 
@@ -76,6 +82,9 @@ function toAppFilters(engine: EngineProductsFilters): ProductsListFilters {
   const namingAddon = engine.namingAddon?.[0]?.trim()
   if (namingAddon) out.namingAddon = namingAddon
   if (engine.categoryId?.length) out.categoryId = engine.categoryId
+  const arch = engine.isArchived?.[0]
+  if (arch === "true") out.isArchived = true
+  else if (arch === "false") out.isArchived = false
   return out
 }
 
@@ -203,6 +212,17 @@ export default function ProductsClient({
     [onFilterChange],
   )
 
+  // Archive status — absent/`false` both render as Active (the default); only an
+  // explicit `true` shows archived-only. Boxed as a 1-element string array.
+  const isArchivedValue = filters.isArchived?.[0] === "true"
+
+  const handleArchivedChange = useCallback(
+    (next: boolean) => {
+      onFilterChange("isArchived", [next ? "true" : "false"])
+    },
+    [onFilterChange],
+  )
+
   // An active user sort folds into the single "Clear all" signal; the Sort menu
   // no longer carries its own Clear.
   const hasActiveSortTool = hasNonDefaultSort
@@ -214,6 +234,7 @@ export default function ProductsClient({
     if (styleValue.trim().length > 0) return true
     if (namingAddonValue.trim().length > 0) return true
     if (selectedCategoryId) return true
+    if (isArchivedValue) return true
     if (hasActiveSortTool) return true
     return false
   }, [
@@ -223,6 +244,7 @@ export default function ProductsClient({
     styleValue,
     namingAddonValue,
     selectedCategoryId,
+    isArchivedValue,
     hasActiveSortTool,
   ])
 
@@ -235,8 +257,8 @@ export default function ProductsClient({
   // ListActionBar clear-all signal. Filter = the Category attribute; Search =
   // full-text + PROD # + the color/style/naming free-text bars.
   const hasActiveFilterTool = useMemo(
-    () => Boolean(selectedCategoryId),
-    [selectedCategoryId],
+    () => Boolean(selectedCategoryId) || isArchivedValue,
+    [selectedCategoryId, isArchivedValue],
   )
 
   const hasActiveSearchTool = useMemo(
@@ -277,8 +299,8 @@ export default function ProductsClient({
           />
         </ToolbarMenuButton>
 
-        {/* Filter — products HAS one. The Category attribute picker, composed
-            directly (NOT the self-triggering FilterControl). */}
+        {/* Filter — the Category attribute picker + the archive status control.
+            Category composed directly (NOT the self-triggering FilterControl). */}
         <ToolbarMenuButton
           label="Filter"
           icon={SlidersHorizontal}
@@ -297,6 +319,10 @@ export default function ProductsClient({
               <CategoryPicker {...chrome} initialOptions={initialCategoryOptions} />
             )}
           </FilterPickerChip>
+          <div className="mt-3">
+            <p className="mb-1.5 text-xs font-medium text-[var(--foreground)]/60">Status</p>
+            <ArchiveSegmentedControl value={isArchivedValue} onChange={handleArchivedChange} />
+          </div>
         </ToolbarMenuButton>
 
         {/* Search — full-text + PROD # exact number + the color/style/naming

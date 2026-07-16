@@ -70,6 +70,12 @@ function requireId(value: unknown, field: string): string {
   return id
 }
 
+// Strict boolean guard for the edit-only `isArchived` flag (mirrors inventory).
+function requireBoolean(value: unknown, field: string): boolean {
+  if (typeof value !== "boolean") fail(`${field} must be true or false`, field)
+  return value as boolean
+}
+
 function parseSharedFields(body: Record<string, unknown>) {
   return {
     entityId: parseOptionalString(body.entityId),
@@ -118,7 +124,7 @@ export function validateCreateProductInput(body: Record<string, unknown>): Creat
  */
 export function validateUpdateProductInput(
   body: Record<string, unknown>,
-): CreateProductInput & { paletteColor?: PaletteColor } {
+): CreateProductInput & { paletteColor?: PaletteColor; isArchived?: boolean } {
   return {
     categoryId: requireId(body.categoryId, "categoryId"),
     unitId: requireId(body.unitId, "unitId"),
@@ -127,6 +133,11 @@ export function validateUpdateProductInput(
     // left unchanged. Create has no equivalent (defaults to SLATE in the DB).
     ...(body.paletteColor !== undefined
       ? { paletteColor: requireColor(body.paletteColor, "paletteColor", fail) }
+      : {}),
+    // Edit-only archive flag — strict boolean when present, else left unchanged.
+    // Create has no equivalent (new rows default to `false` in the DB).
+    ...(body.isArchived !== undefined
+      ? { isArchived: requireBoolean(body.isArchived, "isArchived") }
       : {}),
   }
 }
@@ -139,6 +150,8 @@ const listProductsQuerySchema = z.object({
   color: z.string().optional(),
   style: z.string().optional(),
   namingAddon: z.string().optional(),
+  // Archive filter: "true" = archived-only, "false"/absent = hide archived.
+  archived: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -204,6 +217,8 @@ export function validateListProductsQuery(
   const color = parsed.color?.trim() || undefined
   const style = parsed.style?.trim() || undefined
   const namingAddon = parsed.namingAddon?.trim() || undefined
+  const isArchived =
+    parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
 
   const categoryIdRaw = searchParams.getAll("categoryId")
   const categoryId = Array.from(
@@ -223,13 +238,14 @@ export function validateListProductsQuery(
     search,
     ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     filters:
-      prodNumber || color || style || namingAddon || categoryId.length > 0
+      prodNumber || color || style || namingAddon || categoryId.length > 0 || isArchived !== undefined
         ? {
             ...(prodNumber ? { prodNumber } : {}),
             ...(color ? { color } : {}),
             ...(style ? { style } : {}),
             ...(namingAddon ? { namingAddon } : {}),
             ...(categoryId.length > 0 ? { categoryId } : {}),
+            ...(isArchived !== undefined ? { isArchived } : {}),
           }
         : undefined,
     page: parsed.page,

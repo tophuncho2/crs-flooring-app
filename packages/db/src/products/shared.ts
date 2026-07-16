@@ -55,6 +55,10 @@ export const productRowSelect = {
   conversionFormulaId: true,
   conversionFormula: { select: { id: true, name: true } },
   productNamingAddon: true,
+  // Archive flag — surfaced on the record view (archive toggle) + carried on the
+  // list row. The skinny `productOptionSelect` omits it (pickers filter archived
+  // out in the where-clause, so they never need to read the flag per row).
+  isArchived: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,
