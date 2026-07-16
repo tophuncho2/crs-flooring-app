@@ -77,10 +77,18 @@ export default async function InventoryCreatePage({
       startingStock: isSplitOff ? (splitQty ?? "") : source.stockBalance,
       location: source.location,
       internalNotes: source.internalNotes,
+      // Conversion trio — carry the source's coverage/formula setup into the copy
+      // (all editable). Ids drive the write; the *Name labels below drive the
+      // picker triggers.
+      coverageUnitId: source.coverageUnitId ?? "",
+      coveragePerUnit: source.coveragePerUnit ?? "",
+      conversionFormulaId: source.conversionFormulaId ?? "",
     },
     productLabel: source.productName,
     warehouseLabel: source.warehouseName,
     unitLabel: source.unitName,
+    coverageUnitLabel: source.coverageUnitName ?? null,
+    conversionFormulaLabel: source.conversionFormulaName ?? null,
   }
 
   return (
