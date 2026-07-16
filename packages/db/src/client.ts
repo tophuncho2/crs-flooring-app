@@ -15,11 +15,22 @@ function getPoolMax(): number {
 
 export function createPrismaClient() {
   const { DATABASE_URL } = getDatabaseEnvironment()
+  // Local dev connects to the shared Railway Postgres over the WAN proxy: a cold
+  // connection costs ~1s (TLS over WAN) and every round-trip ~150ms. The 10s idle
+  // timeout closed connections during normal think-time, so a developer paid the
+  // ~1s cold-connect tax on nearly every click. Locally we keep a couple of
+  // connections warm, never idle-close them, and keep the TCP socket alive. Prod
+  // is in-network (reconnect ~1ms) with steady traffic, so its behavior is left
+  // exactly as it was.
+  const isDev = process.env.NODE_ENV === "development"
   const adapter = new PrismaPg({
     connectionString: DATABASE_URL,
     application_name: process.env.RAILWAY_SERVICE_NAME ?? "crs-flooring-local",
     max: getPoolMax(),
-    idleTimeoutMillis: 10_000,
+    min: isDev ? 2 : 0,
+    idleTimeoutMillis: isDev ? 0 : 10_000,
+    keepAlive: isDev,
+    keepAliveInitialDelayMillis: isDev ? 5_000 : 0,
   })
 
   return new PrismaClient({
