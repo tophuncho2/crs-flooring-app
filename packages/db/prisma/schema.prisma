@@ -914,6 +914,7 @@ model FlooringWorkOrder {
   installerInstructions String?                   @db.VarChar(500)
   installer            String?                    @db.VarChar(100)
   purchaseOrderNumber  String?                    @db.VarChar(50)
+  return               String?                    @db.VarChar(100)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   createdBy            String?
