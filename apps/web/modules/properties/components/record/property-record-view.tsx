@@ -180,6 +180,32 @@ export function PropertyRecordView({
           <div className="flex flex-col gap-4">
             <RecordColumnBreak
               left={
+                <EntityPickerSection
+                  value={selectedEntityId}
+                  onChange={(id) =>
+                    primary.setLocalValue((previous) => ({
+                      ...previous,
+                      entityId: id ?? "",
+                    }))
+                  }
+                  onOptionSelected={selectEntity}
+                  selectedLabel={entityLabel}
+                  display={entityDisplay}
+                  typeRefs={entityTypeRefs}
+                  entityNumber={entityNumber}
+                  entityColor={entityColor}
+                  editable={!primary.isSaving}
+                  onOpen={openEntity}
+                  onCreate={() =>
+                    router.push(
+                      buildRecordCreateHref("/dashboard/entities", {
+                        returnTo: buildCurrentRecordEntryPath(pathname, searchParams),
+                      }),
+                    )
+                  }
+                />
+              }
+              right={
                 <PropertyFieldsSection
                   draft={primary.localValue}
                   editable={!primary.isSaving}
@@ -204,32 +230,6 @@ export function PropertyRecordView({
                         ariaLabel="Property color"
                       />
                     </FormField>
-                  }
-                />
-              }
-              right={
-                <EntityPickerSection
-                  value={selectedEntityId}
-                  onChange={(id) =>
-                    primary.setLocalValue((previous) => ({
-                      ...previous,
-                      entityId: id ?? "",
-                    }))
-                  }
-                  onOptionSelected={selectEntity}
-                  selectedLabel={entityLabel}
-                  display={entityDisplay}
-                  typeRefs={entityTypeRefs}
-                  entityNumber={entityNumber}
-                  entityColor={entityColor}
-                  editable={!primary.isSaving}
-                  onOpen={openEntity}
-                  onCreate={() =>
-                    router.push(
-                      buildRecordCreateHref("/dashboard/entities", {
-                        returnTo: buildCurrentRecordEntryPath(pathname, searchParams),
-                      }),
-                    )
                   }
                 />
               }
