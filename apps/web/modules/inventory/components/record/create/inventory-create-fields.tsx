@@ -137,16 +137,18 @@ export function InventoryCreateFields({
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
       </CellAt>
 
+      {/* Conversion feature — the formula picker leads, above the paired
+          Coverage / Unit + Coverage Unit (mirrors the record view's order). */}
       <CellAt col={1} row={8} colSpan={4}>
-        <InternalNotesField
-          editable={editable}
-          value={form.internalNotes}
-          onChange={(value) => setField("internalNotes", value)}
+        <ConversionFormulaPickerField
+          value={form.conversionFormulaId || null}
+          selectedLabel={conversionFormulaLabel}
+          onChange={(id) => setField("conversionFormulaId", id ?? "")}
+          onOptionSelected={onFormulaSelected}
+          disabled={!editable}
+          ariaLabel="Select a conversion formula"
         />
       </CellAt>
-
-      {/* Conversion feature — Coverage / Unit + Coverage Unit paired, then the
-          formula picker and the read-only derived converted balance. */}
       <CellAt col={1} row={9} colSpan={2}>
         <CoveragePerUnitField
           editable={editable}
@@ -165,14 +167,13 @@ export function InventoryCreateFields({
           ariaLabel="Select a coverage unit"
         />
       </CellAt>
+
+      {/* Internal Notes closes the form, beneath the conversion cluster. */}
       <CellAt col={1} row={10} colSpan={4}>
-        <ConversionFormulaPickerField
-          value={form.conversionFormulaId || null}
-          selectedLabel={conversionFormulaLabel}
-          onChange={(id) => setField("conversionFormulaId", id ?? "")}
-          onOptionSelected={onFormulaSelected}
-          disabled={!editable}
-          ariaLabel="Select a conversion formula"
+        <InternalNotesField
+          editable={editable}
+          value={form.internalNotes}
+          onChange={(value) => setField("internalNotes", value)}
         />
       </CellAt>
     </InventoryFieldGrid>
