@@ -30,6 +30,7 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     internalNotes: workOrder.internalNotes,
     installerInstructions: workOrder.installerInstructions,
     purchaseOrderNumber: workOrder.purchaseOrderNumber,
+    return: workOrder.return,
     scheduledFor: toDateInputValue(workOrder.scheduledFor),
     vacancy: workOrder.vacancy ?? "",
     timeOfDay: workOrder.timeOfDay ?? "",

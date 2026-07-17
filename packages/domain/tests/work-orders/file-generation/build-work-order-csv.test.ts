@@ -55,6 +55,19 @@ describe("buildWorkOrderCsv — top section", () => {
     )
   })
 
+  it("emits the return field when checked", () => {
+    const config = buildWorkOrderPrintConfig("pickingTicket") // all top fields visible
+    const { top } = blocks(buildWorkOrderCsv(makeFileGenInput({ return: "RET-77" }), config))
+    expect(top).toContain("Return,RET-77")
+  })
+
+  it("drops the return field when its checkbox is off", () => {
+    const config = buildWorkOrderPrintConfig("pickingTicket")
+    config.topFields.return = false
+    const { top } = blocks(buildWorkOrderCsv(makeFileGenInput({ return: "RET-77" }), config))
+    expect(top).not.toContain("Return,")
+  })
+
   it("drops a top field when its checkbox is off", () => {
     const config = buildWorkOrderPrintConfig("pickingTicket")
     config.topFields.jobType = false

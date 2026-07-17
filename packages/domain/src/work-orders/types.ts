@@ -29,6 +29,7 @@ export type WorkOrderListRow = {
   state: string
   zip: string
   purchaseOrderNumber: string
+  return: string
   createdAt: string
   updatedAt: string
   createdBy: string | null
@@ -89,6 +90,7 @@ export type WorkOrderForm = {
   installer: string
   installerInstructions: string
   purchaseOrderNumber: string
+  return: string
   scheduledFor: string
   vacancy: "VACANT" | "OCCUPIED" | ""
   timeOfDay: "AM" | "PM" | ""
@@ -112,6 +114,7 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   installer: "",
   installerInstructions: "",
   purchaseOrderNumber: "",
+  return: "",
   scheduledFor: "",
   vacancy: "",
   timeOfDay: "",

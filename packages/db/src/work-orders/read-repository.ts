@@ -414,6 +414,7 @@ export async function getWorkOrderForFileGeneration(
       description: true,
       installer: true,
       installerInstructions: true,
+      return: true,
       property: {
         select: {
           name: true,
@@ -609,6 +610,7 @@ export async function getWorkOrderForFileGeneration(
     description: workOrder.description ?? "",
     installer: workOrder.installer ?? "",
     installerInstructions: workOrder.installerInstructions ?? "",
+    return: workOrder.return ?? "",
     property: {
       name: workOrder.property?.name ?? "",
       instructions: workOrder.property?.instructions ?? "",

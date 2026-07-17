@@ -34,6 +34,7 @@ export const WORK_ORDER_COLUMNS: ReadonlyArray<ColumnCatalogEntry<WorkOrderListR
   { key: "description", label: "Description", value: (row) => row.description },
   { key: "installer", label: "Installer", value: (row) => row.installer },
   { key: "purchaseOrderNumber", label: "PO #", value: (row) => row.purchaseOrderNumber },
+  { key: "return", label: "Return", value: (row) => row.return },
   { key: "createdAt", label: "Created", value: (row) => formatEasternDateTime(row.createdAt) },
   { key: "updatedAt", label: "Updated", value: (row) => formatEasternDateTime(row.updatedAt) },
   { key: "createdBy", label: "Created by", value: (row) => row.createdBy ?? "" },

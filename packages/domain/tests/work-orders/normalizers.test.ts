@@ -29,6 +29,7 @@ describe("normalizeWorkOrderListRow entity", () => {
     state: null,
     postalCode: null,
     purchaseOrderNumber: null,
+    return: null,
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
   }
@@ -54,6 +55,11 @@ describe("normalizeWorkOrderListRow entity", () => {
     expect(normalizeWorkOrderListRow({ ...base, purchaseOrderNumber: "PO-4821" }).purchaseOrderNumber).toBe(
       "PO-4821",
     )
+  })
+
+  it("passes the return through, defaulting null to empty string", () => {
+    expect(normalizeWorkOrderListRow(base).return).toBe("")
+    expect(normalizeWorkOrderListRow({ ...base, return: "RET-77" }).return).toBe("RET-77")
   })
 
   it("passes the customer name through, defaulting null to empty string", () => {

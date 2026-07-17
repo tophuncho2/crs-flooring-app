@@ -12,3 +12,4 @@ export const WO_INTERNAL_NOTES_MAX = 250
 export const WO_INSTALLER_INSTRUCTIONS_MAX = 500
 export const WO_INSTALLER_MAX = 100
 export const WO_PURCHASE_ORDER_NUMBER_MAX = 50
+export const WO_RETURN_MAX = 100

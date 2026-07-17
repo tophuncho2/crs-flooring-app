@@ -101,6 +101,7 @@ export const WORK_ORDER_TOP_FIELD_KEYS = [
   "unitType",
   "unitNumber",
   "vacancy",
+  "return",
 ] as const
 
 export type WorkOrderTopFieldKey = (typeof WORK_ORDER_TOP_FIELD_KEYS)[number]
@@ -121,6 +122,7 @@ export const WORK_ORDER_TOP_FIELD_LABELS: Record<WorkOrderTopFieldKey, string> =
   unitType: "Unit Type",
   unitNumber: "Unit Number",
   vacancy: "Vacancy",
+  return: "Return",
 }
 
 /** Which top-section values render. `true` ⇒ shown. */
@@ -206,6 +208,7 @@ export type WorkOrderFileGenerationInput = {
   description: string
   installer: string
   installerInstructions: string
+  return: string
   property: {
     name: string
     instructions: string

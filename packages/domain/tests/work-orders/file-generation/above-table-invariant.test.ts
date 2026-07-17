@@ -142,6 +142,7 @@ describe("work-order documents — above the adjustments table", () => {
             <tr><th>Unit Type</th><td>2 Bed / 1 Bath</td></tr>
             <tr><th>Unit Number</th><td>12B</td></tr>
             <tr><th>Vacancy</th><td>Vacant</td></tr>
+            <tr><th>Return</th><td><span class="empty-cell">—</span></td></tr>
           </tbody>
         </table>
       </div>

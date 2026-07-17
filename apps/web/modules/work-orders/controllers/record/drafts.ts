@@ -61,6 +61,7 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     internalNotes: form.internalNotes,
     installerInstructions: form.installerInstructions,
     purchaseOrderNumber: form.purchaseOrderNumber,
+    return: form.return,
     scheduledFor,
     vacancy: form.vacancy === "" ? null : form.vacancy,
     timeOfDay: form.timeOfDay === "" ? null : form.timeOfDay,

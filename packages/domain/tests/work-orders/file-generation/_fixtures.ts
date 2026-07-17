@@ -26,6 +26,7 @@ const BASE: WorkOrderFileGenerationInput = {
   description: "",
   installer: "",
   installerInstructions: "",
+  return: "",
   property: {
     name: "Maple Court Apartments",
     instructions: "",

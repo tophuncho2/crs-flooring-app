@@ -41,6 +41,7 @@ type WorkOrderListInput = {
   state: string | null
   postalCode: string | null
   purchaseOrderNumber: string | null
+  return: string | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -84,6 +85,7 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     state: workOrder.state ?? "",
     zip: workOrder.postalCode ?? "",
     purchaseOrderNumber: workOrder.purchaseOrderNumber ?? "",
+    return: workOrder.return ?? "",
     createdAt: toIsoTimestamp(workOrder.createdAt),
     updatedAt: toIsoTimestamp(workOrder.updatedAt),
     createdBy: workOrder.createdBy ?? null,

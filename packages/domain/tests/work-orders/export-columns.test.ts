@@ -29,6 +29,7 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     state: "TX",
     zip: "78701",
     purchaseOrderNumber: "PO-4821",
+    return: "RET-77",
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
     createdBy: "creator@example.com",
@@ -87,6 +88,19 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     const poIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "purchaseOrderNumber")
     expect(installerIndex).toBeGreaterThan(descriptionIndex)
     expect(installerIndex).toBeLessThan(poIndex)
+  })
+
+  it("exports the return, positioned between PO # and Created", () => {
+    const column = WORK_ORDER_EXPORT_COLUMNS.find((c) => c.key === "return")
+    expect(column).toBeDefined()
+    expect(column?.label).toBe("Return")
+    expect(column?.value(row)).toBe("RET-77")
+
+    const poIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "purchaseOrderNumber")
+    const returnIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "return")
+    const createdIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "createdAt")
+    expect(returnIndex).toBeGreaterThan(poIndex)
+    expect(returnIndex).toBeLessThan(createdIndex)
   })
 
   it("includes the actor columns", () => {

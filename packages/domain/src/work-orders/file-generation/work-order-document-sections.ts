@@ -228,6 +228,9 @@ export function renderWorkOrderInfo(
     topFields.vacancy
       ? `<tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>`
       : "",
+    topFields.return
+      ? `<tr><th>Return</th><td>${escapeOrEmpty(input.return)}</td></tr>`
+      : "",
   ].filter(Boolean)
   const leftTable = leftRows.length
     ? `

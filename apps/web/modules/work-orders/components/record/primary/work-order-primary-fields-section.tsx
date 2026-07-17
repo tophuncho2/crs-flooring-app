@@ -37,6 +37,7 @@ import {
   WO_INSTALLER_INSTRUCTIONS_MAX,
   WO_INTERNAL_NOTES_MAX,
   WO_PURCHASE_ORDER_NUMBER_MAX,
+  WO_RETURN_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   type PropertyOption,
@@ -524,6 +525,20 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             <CellAt col={1} row={8} colSpan={8}>
+              <FormField
+                label="Return"
+                currentLength={editable ? draft.return.length : undefined}
+                maxLength={editable ? WO_RETURN_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.return}
+                  onChange={(value) => onFieldChange("return", value)}
+                  maxLength={WO_RETURN_MAX}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={9} colSpan={8}>
               <FormField
                 label="Internal Notes"
                 currentLength={editable ? draft.internalNotes.length : undefined}

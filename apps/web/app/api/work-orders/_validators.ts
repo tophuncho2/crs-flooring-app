@@ -22,6 +22,7 @@ import {
   WO_CUSTOMER_NAME_MAX,
   WO_INTERNAL_NOTES_MAX,
   WO_PURCHASE_ORDER_NUMBER_MAX,
+  WO_RETURN_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
@@ -172,6 +173,7 @@ export function validateCreateWorkOrderInput(
       "purchaseOrderNumber",
       failWorkOrder,
     ),
+    return: optionalBoundedText(body.return, WO_RETURN_MAX, "return", failWorkOrder),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
     vacancy: optionalVacancy(body.vacancy),
     timeOfDay: optionalTimeOfDay(body.timeOfDay),
@@ -221,6 +223,9 @@ export function validateUpdateWorkOrderInput(
       "purchaseOrderNumber",
       failWorkOrder,
     )
+  }
+  if ("return" in body) {
+    input.return = optionalBoundedText(body.return, WO_RETURN_MAX, "return", failWorkOrder)
   }
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
   if ("vacancy" in body) input.vacancy = optionalVacancy(body.vacancy)

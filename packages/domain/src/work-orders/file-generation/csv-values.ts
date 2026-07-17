@@ -86,5 +86,7 @@ export function resolveWorkOrderTopFieldValue(
       return input.unitNumber
     case "vacancy":
       return formatVacancy(input.vacancy)
+    case "return":
+      return input.return
   }
 }
