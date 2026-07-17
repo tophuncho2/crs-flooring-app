@@ -5,6 +5,7 @@ import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
+  ListOptionsMenu,
   ListPageShell,
   ToolbarMenuButton,
   DebouncedSearchControl,
@@ -141,6 +142,17 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
             ariaLabel="Search payments by amount"
           />
         </ToolbarMenuButton>
+
+        {/* Options — module-level management actions. Routes to the
+            payment-purposes lookup list (reached only here, not from the nav). */}
+        <ListOptionsMenu
+          items={[
+            {
+              href: "/dashboard/payment-purposes",
+              label: "Manage Payment Purposes",
+            },
+          ]}
+        />
       </ListActionBar>
 
       <PaymentsTable

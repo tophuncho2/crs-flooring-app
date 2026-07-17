@@ -60,7 +60,6 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     href: "/dashboard/entities",
     group: "management",
   },
-  { slug: "flooring-entity-types", name: "Entity Types", href: "/dashboard/entity-types", group: "catalog", minRank: "TIER_1" },
   { slug: "flooring-adjustments", name: "Adjustments", href: "/dashboard/adjustments", group: "operations" },
   { slug: "flooring-payments", name: "Payments", href: "/dashboard/payments", group: "accounting", minRank: "TIER_2" },
   {
@@ -70,7 +69,6 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     group: "accounting",
     minRank: "TIER_1",
   },
-  { slug: "flooring-payment-purposes", name: "Payment Purposes", href: "/dashboard/payment-purposes", group: "catalog", minRank: "TIER_1" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", group: "operations" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", group: "operations" },
   { slug: "flooring-inventory-indicators", name: "Inventory Indicators", href: "/dashboard/inventory-indicators", group: "operations" },

@@ -6,6 +6,7 @@ import {
   DebouncedSearchControl,
   ListActionBar,
   ListCreateButtonPortal,
+  ListOptionsMenu,
   ListPageShell,
   ListPageFeedback,
   SortMenuBody,
@@ -238,6 +239,17 @@ export default function EntitiesClient({
             ariaLabel="Filter entities by state"
           />
         </ToolbarMenuButton>
+
+        {/* Options — module-level management actions. Routes to the entity-types
+            lookup list (reached only here, not from the nav rail). */}
+        <ListOptionsMenu
+          items={[
+            {
+              href: "/dashboard/entity-types",
+              label: "Manage Entity Types",
+            },
+          ]}
+        />
       </ListActionBar>
 
       <EntitiesTable
