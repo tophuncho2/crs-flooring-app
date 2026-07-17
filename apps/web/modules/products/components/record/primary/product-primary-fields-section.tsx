@@ -39,8 +39,8 @@ const PRODUCT_NAMING_ADDON_MAX = 80
  * terminates the section above a read-only metadata band (Created / Updated /
  * Created by / Updated by), with the read-only linked-row stat counts (Planned
  * Products / Work Order Items / Inventory / Adjustments) in a 2×2 band beneath it.
- * The create flow renders both flanks' spec fields as a single column (no stats,
- * no metadata band).
+ * The create flow renders the SAME centered two-flank split (no stats, no
+ * metadata band) so the create form matches the detail record layout.
  *
  * `categoryReadOnly` is the detail-vs-create discriminator (the record panel sets
  * it; the create flow leaves it false) — it drives the detail-only layout (PROD #,
@@ -142,10 +142,9 @@ export function ProductPrimaryFieldsSection({
     setPickedFormulaLabel(null)
   }
 
-  // Left-flank spec fields, shared by both flows. Detail puts these in the left
-  // flank; create renders the right group first, then these (see create return).
-  // Top down: PROD # + Palette paired (detail-only) / Style / Color / Naming
-  // Add-on / Entity.
+  // Left-flank spec fields, shared by both flows — both put these in the left
+  // flank of the centered split. Top down: PROD # + Palette paired (detail-only) /
+  // Style / Color / Naming Add-on / Entity.
   const leftSpecFields = (
     <>
       {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
@@ -251,9 +250,8 @@ export function ProductPrimaryFieldsSection({
     </>
   )
 
-  // Right-flank spec fields — the category + unit pricing group. Detail puts
-  // these opposite the left flank across the centered column break; create
-  // renders them FIRST (above the left group) in the single column. Top down:
+  // Right-flank spec fields — the category + unit pricing group. Both flows put
+  // these opposite the left flank across the centered column break. Top down:
   // Category + Unit paired / Conversion Formula / Coverage·Unit + Coverage Unit
   // paired / Cost + Cost Unit paired.
   const rightSpecFields = (
@@ -382,22 +380,18 @@ export function ProductPrimaryFieldsSection({
     </>
   )
 
-  // Create flow: no stats / no metadata / no column rule / no divider. The spec
-  // fields sit at the SAME width as the detail view's left flank — the 7fr side
-  // of the right-narrow split — instead of stretching the full panel width. Both
-  // flanks' fields stack in the single column, right group (Category / Unit / …)
-  // first, then the left group's descriptive fields (PROD # + Palette are null
-  // on create), so the create order stays Category-first.
+  // Create flow: no stats / no metadata / no divider — but the SAME centered
+  // (`even`) two-flank split as the detail view so the form matches the record
+  // layout: identity + descriptive left, category + unit pricing right. PROD # /
+  // Palette / Status are null on create, so the left flank shows only Style /
+  // Color / Naming Add-on / Entity.
   if (!categoryReadOnly) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,7fr)_auto_minmax(0,3fr)] md:gap-x-8">
-        <div className="min-w-0">
-          <FieldSection>
-            {rightSpecFields}
-            {leftSpecFields}
-          </FieldSection>
-        </div>
-      </div>
+      <RecordColumnBreak
+        split="even"
+        left={<FieldSection>{leftSpecFields}</FieldSection>}
+        right={<FieldSection>{rightSpecFields}</FieldSection>}
+      />
     )
   }
 
