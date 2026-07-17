@@ -117,6 +117,7 @@ export function buildCreateForm(seed: AdjustmentCreateSeed): AdjustmentEditForm 
     isWaste: seed.isWaste ?? EMPTY_FORM.isWaste,
     internalNotes: seed.internalNotes ?? EMPTY_FORM.internalNotes,
     color: seed.color ?? EMPTY_FORM.color,
+    area: seed.area ?? EMPTY_FORM.area,
   }
 }
 

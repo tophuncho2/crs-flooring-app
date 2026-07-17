@@ -188,6 +188,7 @@ export function WorkOrderAdjustmentCreateModal({
       adjustmentType: dup?.adjustmentType,
       isWaste: dup?.isWaste,
       internalNotes: dup?.internalNotes,
+      area: dup?.area,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picked])

@@ -38,7 +38,10 @@ export type AdjustmentEditForm = {
    * text, fully editable for the rest of its lifecycle.
    */
   location: string
-  /** User-owned free-text area label. Freely editable in create + edit (not seeded). */
+  /**
+   * User-owned free-text area label. Freely editable in create + edit; seeded
+   * from the source row on the duplicate flow (otherwise blank on create).
+   */
   area: string
   workOrderId: string | null
   /**
@@ -112,6 +115,7 @@ export type AdjustmentCreateSeed = {
   isWaste?: boolean
   internalNotes?: string
   color?: PaletteColor
+  area?: string | null
 }
 
 /**

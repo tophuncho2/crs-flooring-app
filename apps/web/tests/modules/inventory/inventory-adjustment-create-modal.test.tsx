@@ -117,7 +117,7 @@ describe("InventoryAdjustmentCreateModal", () => {
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
   })
 
-  it("duplicate: seeds the source work-order link + adjustment values (qty / type / internalNotes / waste)", async () => {
+  it("duplicate: seeds the source work-order link + adjustment values (qty / type / internalNotes / waste / area)", async () => {
     createAdjustmentRequestMock.mockResolvedValue({
       adjustment: {},
       inventoryId: "inv-1",
@@ -131,14 +131,18 @@ describe("InventoryAdjustmentCreateModal", () => {
       adjustmentType: "INCREASE",
       isWaste: true,
       internalNotes: "scrap from cut",
+      area: "Master Bedroom",
     } as EnrichedInventoryAdjustmentRow
     const { onCreated } = renderModal(source)
 
     expect(screen.getByText("Duplicate adjustment")).toBeTruthy()
-    // Quantity + internal notes are pre-seeded from the source (not blank).
+    // Quantity + internal notes + area are pre-seeded from the source (not blank).
     expect((screen.getByLabelText("Adjustment quantity") as HTMLInputElement).value).toBe("7")
     expect((screen.getByLabelText("Adjustment internal notes") as HTMLInputElement).value).toBe(
       "scrap from cut",
+    )
+    expect((screen.getByLabelText("Adjustment area") as HTMLInputElement).value).toBe(
+      "Master Bedroom",
     )
 
     // Create straight away — the seeded quantity already makes the form valid.
@@ -153,6 +157,7 @@ describe("InventoryAdjustmentCreateModal", () => {
         adjustmentType: "INCREASE",
         isWaste: true,
         internalNotes: "scrap from cut",
+        area: "Master Bedroom",
       }),
     )
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
