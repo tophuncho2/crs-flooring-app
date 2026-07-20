@@ -66,10 +66,10 @@ describe("renderInventoryPrimaryBlock — roll-tag heading + cell gating", () =>
 describe("renderInventoryWriteInGrid — blank hand-write form", () => {
   const html = renderInventoryWriteInGrid()
 
-  it("renders the three rotated header labels", () => {
-    expect(html).toContain('<span class="rot">Date</span>')
-    expect(html).toContain('<span class="rot">Adjustment</span>')
-    expect(html).toContain('<span class="rot">Balance</span>')
+  it("renders the three header labels", () => {
+    expect(html).toContain("<th>Date</th>")
+    expect(html).toContain("<th>Adjustment</th>")
+    expect(html).toContain("<th>Balance</th>")
   })
 
   it("renders exactly INVENTORY_PRINT_LEDGER_ROW_COUNT empty rows and no data", () => {

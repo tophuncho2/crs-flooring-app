@@ -32,12 +32,11 @@ export const INV_PRINT_STYLE_BLOCK = `
   .inv-print-root .inv-roll-number .empty-cell { color: #999; }
   .inv-print-root .inv-cell-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; row-gap: 6px; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid #ddd; }
   .inv-print-root .inv-cell { display: flex; gap: 10px; align-items: baseline; overflow-wrap: break-word; }
-  .inv-print-root .inv-cell-label { font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.4px; color: #444; white-space: nowrap; min-width: 92px; }
-  .inv-print-root .inv-cell-value { font-size: 13px; }
+  .inv-print-root .inv-cell-label { font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 0.4px; color: #444; white-space: nowrap; min-width: 108px; }
+  .inv-print-root .inv-cell-value { font-size: 17px; }
   .inv-print-root .inv-writein { table-layout: fixed; margin: 0; }
   .inv-print-root .inv-writein th, .inv-print-root .inv-writein td { border: 1px solid #333; padding: 0; }
-  .inv-print-root .inv-writein thead th { height: 0.95in; vertical-align: bottom; text-align: center; }
-  .inv-print-root .inv-writein .rot { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; padding: 4px 0; }
+  .inv-print-root .inv-writein thead th { padding: 6px 4px; vertical-align: middle; text-align: center; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
   .inv-print-root .inv-writein tbody td { height: 0.4in; }
   .inv-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
   .inv-print-root .page-header > span { font-size: 16px; font-weight: 600; }
@@ -128,14 +127,14 @@ export function renderInventoryPrimaryBlock(
 
 /**
  * The blank write-in grid printed below the primary block — a three-column table
- * (Date · Adjustment · Balance) with SIDEWAYS (rotated) header labels and
+ * (Date · Adjustment · Balance) with plain horizontal header labels and
  * {@link INVENTORY_PRINT_LEDGER_ROW_COUNT} EMPTY ruled rows. It carries NO data:
  * the operator hand-writes each cut's date/adjustment/remaining-balance onto the
  * physical tag. (The adjustments DATA ledger is CSV-only and never printed.)
  */
 export function renderInventoryWriteInGrid(): string {
   const header = ["Date", "Adjustment", "Balance"]
-    .map((label) => `<th><span class="rot">${escapeHtml(label)}</span></th>`)
+    .map((label) => `<th>${escapeHtml(label)}</th>`)
     .join("")
   const emptyRow = "<tr><td></td><td></td><td></td></tr>"
   const rows = Array.from({ length: INVENTORY_PRINT_LEDGER_ROW_COUNT }, () => emptyRow).join("\n    ")

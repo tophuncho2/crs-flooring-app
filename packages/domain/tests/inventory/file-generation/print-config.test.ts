@@ -36,7 +36,7 @@ describe("buildInventoryPrintHtml — roll tag, never adjustment data", () => {
     expect(html).toContain('<div class="inv-roll-number">ROLL#88</div>')
     expect(html).toContain('class="inv-cell-grid"')
     expect(html).toContain('<table class="inv-writein">')
-    expect(html).toContain('<span class="rot">Adjustment</span>')
+    expect(html).toContain("<th>Adjustment</th>")
   })
 
   it("never renders adjustment DATA, even when adjustments exist (the grid prints blank)", () => {
