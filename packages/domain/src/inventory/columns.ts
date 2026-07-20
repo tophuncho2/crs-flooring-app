@@ -17,13 +17,6 @@ import type { InventoryRow } from "./types.js"
  */
 export const INVENTORY_COLUMNS: ReadonlyArray<ColumnCatalogEntry<InventoryRow>> = [
   { key: "stockBalance", label: "Stock", value: (row) => row.stockBalance },
-  { key: "converted", label: "Converted", value: (row) => row.convertedStockBalance ?? "" },
-  {
-    key: "convertedUnit",
-    label: "Converted Unit",
-    value: (row) => row.conversionUnitAbbrev ?? "",
-    exportOnly: true,
-  },
   { key: "netDeducted", label: "Deducted", value: (row) => row.netDeducted },
   { key: "productName", label: "Product", value: (row) => row.productName },
   { key: "inventoryNumber", label: "Inv #", value: (row) => row.inventoryNumber },
@@ -35,6 +28,13 @@ export const INVENTORY_COLUMNS: ReadonlyArray<ColumnCatalogEntry<InventoryRow>> 
   { key: "dyeLot", label: "Dye Lot", value: (row) => row.dyeLot },
   { key: "note", label: "Note", value: (row) => row.note },
   { key: "location", label: "Location", value: (row) => row.location },
+  { key: "converted", label: "Converted", value: (row) => row.convertedStockBalance ?? "" },
+  {
+    key: "convertedUnit",
+    label: "Converted Unit",
+    value: (row) => row.conversionUnitAbbrev ?? "",
+    exportOnly: true,
+  },
   { key: "warehouseName", label: "Warehouse", value: (row) => row.warehouseName },
   { key: "purchaseOrderNumber", label: "PO #", value: (row) => row.purchaseOrderNumber },
   {
@@ -48,6 +48,11 @@ export const INVENTORY_COLUMNS: ReadonlyArray<ColumnCatalogEntry<InventoryRow>> 
   { key: "freight", label: "Freight", value: (row) => row.freight, exportOnly: true },
   { key: "createdAt", label: "Created", value: (row) => formatEasternDateTime(row.createdAt) },
   { key: "updatedAt", label: "Updated", value: (row) => formatEasternDateTime(row.updatedAt) },
+  {
+    key: "balanceLastChangedAt",
+    label: "Balance Changed",
+    value: (row) => (row.balanceLastChangedAt ? formatEasternDateTime(row.balanceLastChangedAt) : ""),
+  },
   { key: "createdBy", label: "Created by", value: (row) => row.createdBy ?? "" },
   { key: "updatedBy", label: "Updated by", value: (row) => row.updatedBy ?? "" },
 ]

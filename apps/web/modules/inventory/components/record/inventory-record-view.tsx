@@ -102,6 +102,11 @@ export function InventoryRecordView({
     adjustmentId: string
   } | null>(null)
 
+  // After a regular adjustment commits, offer "Stay here" or "View adjustment".
+  // Unlike a return, the new row lands on THIS record, so "View" opens it in place
+  // (the embedded edit view) rather than navigating to another record.
+  const [adjustmentCreated, setAdjustmentCreated] = useState<{ id: string } | null>(null)
+
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
   // so backing out of a (clean or discarded) adjustment doesn't leave the
   // inventory page falsely dirty (mirrors the entity `handleSelectProperty` reset).
@@ -395,9 +400,10 @@ export function InventoryRecordView({
           inventory={record}
           source={createModal.source}
           onClose={() => setCreateModal(null)}
-          onCreated={() => {
+          onCreated={(adjustment) => {
             setCreateModal(null)
             handleAdjustmentMutated()
+            setAdjustmentCreated({ id: adjustment.id })
           }}
         />
       ) : null}
@@ -457,6 +463,19 @@ export function InventoryRecordView({
           }
         }}
         onCancel={() => setReturnCreated(null)}
+      />
+      <ConfirmDialog
+        open={adjustmentCreated !== null}
+        title="Adjustment created"
+        message="The new adjustment is on this inventory row. Open it to review, or stay here."
+        confirmLabel="View adjustment"
+        cancelLabel="Stay here"
+        onConfirm={() => {
+          const target = adjustmentCreated
+          setAdjustmentCreated(null)
+          if (target) handleSelectAdjustment(target.id)
+        }}
+        onCancel={() => setAdjustmentCreated(null)}
       />
       <ConfirmDialog {...stepDialogProps} />
     </>

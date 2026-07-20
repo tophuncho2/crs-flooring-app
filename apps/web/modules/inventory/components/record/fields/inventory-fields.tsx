@@ -387,6 +387,15 @@ export function UpdatedAtField({ value }: { value: string }) {
   return <ReadonlyField label="Updated" value={formatEasternDateTime(value)} />
 }
 
+export function BalanceLastChangedAtField({ value }: { value: string | null }) {
+  return (
+    <ReadonlyField
+      label="Balance Changed"
+      value={value ? formatEasternDateTime(value) : "—"}
+    />
+  )
+}
+
 export function CreatedByField({ value }: { value: string | null }) {
   return <ReadonlyField label="Created by" value={value ?? "—"} />
 }

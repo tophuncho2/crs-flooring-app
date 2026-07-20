@@ -32,6 +32,11 @@ export type InventoryRow = {
   cost: string
   freight: string
   netDeducted: string
+  // When the stock balance last changed (ISO), stamped only by the adjustment
+  // recompute — null until the row's first adjustment. Optional so the sacred
+  // WO-adjustment create modal's synthesized row literal still satisfies the type
+  // (mirrors the conversion fields below); the normalizer always populates it.
+  balanceLastChangedAt?: string | null
   stockBalance: string
   // Conversion feature (editable, seeded from the product). All optional so the
   // sacred WO-adjustment synthesized row literal still satisfies the type; the

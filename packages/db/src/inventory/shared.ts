@@ -55,6 +55,7 @@ export const inventoryRowSelect = {
   cost: true,
   freight: true,
   netDeducted: true,
+  balanceLastChangedAt: true,
   isArchived: true,
   note: true,
   internalNotes: true,

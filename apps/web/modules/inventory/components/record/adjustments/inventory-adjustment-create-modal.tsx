@@ -2,7 +2,11 @@
 
 import { useMemo } from "react"
 import { QuickCreateModal } from "@/engines/record-view"
-import type { EnrichedInventoryAdjustmentRow, InventoryDetail } from "@builders/domain"
+import type {
+  EnrichedInventoryAdjustmentRow,
+  InventoryAdjustmentRow,
+  InventoryDetail,
+} from "@builders/domain"
 import { useAdjustmentCreateForm } from "../../../controllers/record/adjustments/use-adjustment-create-form"
 import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustments/form"
 import type { AdjustmentCreateSeed } from "../../../controllers/record/adjustments/types"
@@ -20,8 +24,11 @@ export type InventoryAdjustmentCreateModalProps = {
   source?: EnrichedInventoryAdjustmentRow | null
   /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
   onClose: () => void
-  /** Fired after a successful create — the host closes the modal and reconciles. */
-  onCreated: () => void
+  /**
+   * Fired after a successful create with the new row — the host closes the modal,
+   * reconciles, and can route/prompt to the created adjustment.
+   */
+  onCreated: (adjustment: InventoryAdjustmentRow) => void
 }
 
 /**

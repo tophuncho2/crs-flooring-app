@@ -114,6 +114,9 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     cost: toDecimalString(payload.cost),
     freight: toDecimalString(payload.freight),
     netDeducted: toDecimalString(payload.netDeducted),
+    balanceLastChangedAt: payload.balanceLastChangedAt
+      ? payload.balanceLastChangedAt.toISOString()
+      : null,
     stockBalance,
     coverageUnitId: payload.coverageUnitId ?? "",
     coverageUnitName: payload.coverageUnit?.name ?? "",

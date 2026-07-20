@@ -4,7 +4,11 @@ import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { QuickCreateModal } from "@/engines/record-view"
 import { DEFAULT_PALETTE_COLOR } from "@builders/domain"
-import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
+import type {
+  EnrichedInventoryAdjustmentRow,
+  InventoryAdjustmentRow,
+  InventoryRow,
+} from "@builders/domain"
 import { useAdjustmentCreateForm } from "../../../controllers/record/adjustments/use-adjustment-create-form"
 import { useInventoryModalSelection } from "../../../controllers/record/adjustments/use-inventory-modal-selection"
 import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustments/form"
@@ -89,8 +93,11 @@ export type WorkOrderAdjustmentCreateModalProps = {
   source?: EnrichedInventoryAdjustmentRow | null
   /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
   onClose: () => void
-  /** Fired after a successful create — the host closes the modal and reconciles (router.refresh). */
-  onCreated: () => void
+  /**
+   * Fired after a successful create with the new row — the host closes the modal,
+   * reconciles (router.refresh), and can route/prompt to the created adjustment.
+   */
+  onCreated: (adjustment: InventoryAdjustmentRow) => void
 }
 
 /**

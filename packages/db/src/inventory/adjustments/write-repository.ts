@@ -336,15 +336,22 @@ export async function recomputeAndPersistNetDeducted(
     grouped.get(row.inventoryId)?.push(row)
   }
 
+  // One instant for the whole pass — every inventory whose balance we rewrite in
+  // this recompute shares the same "balance last changed" stamp.
+  const balanceChangedAt = new Date()
+
   const results: Array<{ inventoryId: string; netDeducted: string }> = []
   for (const [inventoryId, group] of grouped) {
-    // 1. netDeducted (order-independent sum).
+    // 1. netDeducted (order-independent sum). Stamp balanceLastChangedAt alongside
+    // it — this recompute IS the balance-change event (create/edit/delete/return),
+    // so the stamp means specifically "stock balance last changed" (vs updatedAt,
+    // which also bumps on location/note/color edits).
     const netDeducted = computeNetDeducted(
       group.map((r) => ({ quantity: r.quantity, adjustmentType: r.adjustmentType })),
     )
     await tx.flooringInventory.update({
       where: { id: inventoryId },
-      data: { netDeducted },
+      data: { netDeducted, balanceLastChangedAt: balanceChangedAt },
       select: { id: true },
     })
 

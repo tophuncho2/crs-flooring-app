@@ -4,6 +4,7 @@ import { useState } from "react"
 import type { InventoryForm, InventoryRow, PaletteColor } from "@builders/domain"
 import { CellAt, RecordColumnBreak, RecordSectionDivider } from "@/engines/record-view"
 import {
+  BalanceLastChangedAtField,
   ColorField,
   ConversionFormulaPickerField,
   ConvertedBalanceField,
@@ -205,7 +206,8 @@ export function InventoryPrimaryFieldsSection({
 
       <RecordSectionDivider />
 
-      {/* Read-only metadata band: Created · Updated · Created by · Updated by */}
+      {/* Read-only metadata band: Created · Updated · Created by · Updated by,
+          then Balance Changed (when the stock balance last moved). */}
       <InventoryFieldGrid>
         <CellAt col={1} row={1} colSpan={4}>
           <CreatedAtField value={record.createdAt} />
@@ -218,6 +220,9 @@ export function InventoryPrimaryFieldsSection({
         </CellAt>
         <CellAt col={5} row={2} colSpan={4}>
           <UpdatedByField value={record.updatedBy} />
+        </CellAt>
+        <CellAt col={1} row={3} colSpan={4}>
+          <BalanceLastChangedAtField value={record.balanceLastChangedAt ?? null} />
         </CellAt>
       </InventoryFieldGrid>
     </div>

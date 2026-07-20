@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 import type { AdjustmentScopeUrl } from "@/modules/adjustments/data/mutations"
 import { useAdjustmentEditController } from "./use-adjustment-edit-controller"
 import type { AdjustmentCreateSeed, AdjustmentPickerConfig } from "./types"
@@ -27,8 +28,11 @@ export function useAdjustmentCreateForm({
   /** Memoized create seed, or null while nothing is selected (panel stays closed). */
   seed: AdjustmentCreateSeed | null
   pickerConfig: AdjustmentPickerConfig
-  /** Fired after a successful create — the shell closes the modal and reconciles. */
-  onCreated: () => void
+  /**
+   * Fired after a successful create with the new row — the shell closes the modal,
+   * reconciles, and can route/prompt to the created adjustment.
+   */
+  onCreated: (adjustment: InventoryAdjustmentRow) => void
 }) {
   const controller = useAdjustmentEditController({
     scope,

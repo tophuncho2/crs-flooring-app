@@ -89,6 +89,13 @@ export function WorkOrderMaterialItemsSection({
     inventoryId: string
     adjustmentId: string
   } | null>(null)
+  // After a regular adjustment commits, offer "Stay here" or "View adjustment".
+  // The adjustment can touch any inventory row, so "View" jumps to that row (with
+  // the new adjustment opened) and back-links to this WO.
+  const [adjustmentCreated, setAdjustmentCreated] = useState<{
+    inventoryId: string
+    adjustmentId: string
+  } | null>(null)
   const [pendingDelete, setPendingDelete] = useState<EnrichedInventoryAdjustmentRow | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -289,7 +296,7 @@ export function WorkOrderMaterialItemsSection({
           product={modalRequest.product}
           source={modalRequest.source}
           onClose={() => setModalRequest(null)}
-          onCreated={() => {
+          onCreated={(adjustment) => {
             // Close immediately, then strong-reconcile: refreshes this WO's
             // Adjustments grid plus the inventory balances + ledger the new row
             // touches, wherever they're mounted.
@@ -302,6 +309,10 @@ export function WorkOrderMaterialItemsSection({
             section.discard()
             setMode("adjustments")
             reconcileAdjustments()
+            setAdjustmentCreated({
+              inventoryId: adjustment.inventoryId,
+              adjustmentId: adjustment.id,
+            })
           }}
         />
       ) : null}
@@ -376,6 +387,24 @@ export function WorkOrderMaterialItemsSection({
           }
         }}
         onCancel={() => setReturnCreated(null)}
+      />
+
+      <ConfirmDialog
+        open={adjustmentCreated !== null}
+        title="Adjustment created"
+        message="Open the inventory row this adjustment touched to review it, or stay on the work order."
+        confirmLabel="View adjustment"
+        cancelLabel="Stay here"
+        onConfirm={() => {
+          const target = adjustmentCreated
+          setAdjustmentCreated(null)
+          if (target) {
+            router.push(
+              buildInventoryAdjustmentHref(target.inventoryId, target.adjustmentId, returnTo),
+            )
+          }
+        }}
+        onCancel={() => setAdjustmentCreated(null)}
       />
     </>
   )

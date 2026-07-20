@@ -21,7 +21,6 @@ export const ADJUSTMENTS_COLUMNS: ReadonlyArray<ColumnCatalogEntry<EnrichedInven
     value: (row) =>
       formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.unitAbbrev ?? ""),
   },
-  { key: "converted", label: "Converted", value: (row) => row.convertedBalance ?? "" },
   {
     key: "adjustment",
     label: "Adjustment",
@@ -33,6 +32,7 @@ export const ADJUSTMENTS_COLUMNS: ReadonlyArray<ColumnCatalogEntry<EnrichedInven
   { key: "inventoryNumber", label: "Inv #", value: (row) => row.inventoryNumber ?? "" },
   { key: "inventoryNote", label: "Note", value: (row) => row.inventoryNote ?? "" },
   { key: "location", label: "Location", value: (row) => row.location ?? "" },
+  { key: "converted", label: "Converted", value: (row) => row.convertedBalance ?? "" },
   { key: "isWaste", label: "Waste", value: (row) => (row.isWaste ? "Waste" : "") },
   { key: "area", label: "Area", value: (row) => row.area ?? "" },
   { key: "workOrderNumber", label: "WO #", value: (row) => row.workOrderNumber ?? "" },
