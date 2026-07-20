@@ -41,6 +41,8 @@
     "db:upsert-owner": "npm run db:upsert-owner --workspace @builders/db --",
     "db:seed:uoms": "npm run db:seed:uoms --workspace @builders/db",
     "db:seed:categories": "npm run db:seed:categories --workspace @builders/db",
+    "db:seed:formulas": "npm run db:seed:formulas --workspace @builders/db",
+    "db:backfill:conversion-formulas": "npm run db:backfill:conversion-formulas --workspace @builders/db",
     "upload:brand-logo": "npm run upload:brand-logo --workspace @builders/db --"
   },
   "overrides": {

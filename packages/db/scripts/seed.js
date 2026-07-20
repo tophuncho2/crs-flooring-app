@@ -3,10 +3,12 @@ async function main() {
     { createPrismaClient },
     { seedUnitOfMeasures },
     { seedCategories },
+    { seedConversionFormulas },
   ] = await Promise.all([
     import("@builders/db"),
     import("./seed-unit-of-measures.js"),
     import("./seed-categories.js"),
+    import("./seed-conversion-formulas.js"),
   ])
 
   const prisma = createPrismaClient()
@@ -18,6 +20,11 @@ async function main() {
 
     console.log("Seeding categories...")
     await seedCategories({ prisma })
+    console.log("Done.")
+
+    // After units (formulas FK units by name).
+    console.log("Seeding conversion formulas...")
+    await seedConversionFormulas({ prisma })
     console.log("Done.")
   } finally {
     await prisma.$disconnect()
