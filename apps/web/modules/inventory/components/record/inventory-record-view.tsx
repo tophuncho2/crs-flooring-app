@@ -85,8 +85,13 @@ export function InventoryRecordView({
   } | null>(null)
 
   // "+ Return" / row ⋮ "Create return" open the Create Return modal seeded from
-  // THIS inventory row (same product/warehouse/unit/identity as a duplicate).
-  const [returnModalOpen, setReturnModalOpen] = useState(false)
+  // THIS inventory row (same product/warehouse/unit/identity as a duplicate). A
+  // row-launched return also seeds the WO link off the triggering adjustment;
+  // the toolbar entry leaves it blank. Null while closed.
+  const [returnModal, setReturnModal] = useState<{
+    workOrderId: string | null
+    workOrderLabel: string | null
+  } | null>(null)
 
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
   // so backing out of a (clean or discarded) adjustment doesn't leave the
@@ -320,7 +325,7 @@ export function InventoryRecordView({
                     {
                       key: "create-return",
                       label: "+ Return",
-                      onClick: () => setReturnModalOpen(true),
+                      onClick: () => setReturnModal({ workOrderId: null, workOrderLabel: null }),
                     },
                   ],
                 }
@@ -345,7 +350,9 @@ export function InventoryRecordView({
                   confirmSplitOff({ inventoryId: row.inventoryId, quantity: row.quantity })
                 }
                 onDuplicate={(row) => setCreateModal({ source: row })}
-                onCreateReturn={() => setReturnModalOpen(true)}
+                onCreateReturn={(row) =>
+                  setReturnModal({ workOrderId: row.workOrderId, workOrderLabel: row.workOrderNumber })
+                }
                 onDeleted={handleAdjustmentMutated}
               />
             )}
@@ -385,7 +392,7 @@ export function InventoryRecordView({
           }}
         />
       ) : null}
-      {returnModalOpen ? (
+      {returnModal ? (
         <CreateReturnModal
           open
           seed={{
@@ -400,16 +407,19 @@ export function InventoryRecordView({
               coverageUnitId: record.coverageUnitId ?? "",
               coveragePerUnit: record.coveragePerUnit ?? "",
               conversionFormulaId: record.conversionFormulaId ?? "",
+              // Seeded off the triggering adjustment (blank from the toolbar).
+              workOrderId: returnModal.workOrderId,
             },
             productLabel: record.productName,
             warehouseLabel: record.warehouseName,
             unitLabel: record.unitName,
             coverageUnitLabel: record.coverageUnitName ?? null,
             conversionFormulaLabel: record.conversionFormulaName ?? null,
+            workOrderLabel: returnModal.workOrderLabel,
           }}
-          onClose={() => setReturnModalOpen(false)}
+          onClose={() => setReturnModal(null)}
           onCreated={() => {
-            setReturnModalOpen(false)
+            setReturnModal(null)
             handleAdjustmentMutated()
           }}
         />

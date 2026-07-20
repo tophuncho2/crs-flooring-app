@@ -88,8 +88,8 @@ export type WorkOrderAdjustmentsGridProps = {
   onOpenEdit: (adjustment: EnrichedInventoryAdjustmentRow) => void
   /** Open the create modal pre-filtered to this product (still changeable). */
   onCreateWithProduct: (product: { id: string; name: string }) => void
-  /** Open the Create Return modal seeded with this row's product. */
-  onCreateReturn: (product: { id: string; name: string }) => void
+  /** Open the Create Return modal seeded from this row (product + unit + coverage/conversion + WO link). */
+  onCreateReturn: (row: EnrichedInventoryAdjustmentRow) => void
   /** Open the create modal pre-seeded with this row's inventory item. */
   onDuplicate: (adjustment: EnrichedInventoryAdjustmentRow) => void
   /** Navigate to the split-off create form seeded from this row's inventory. */

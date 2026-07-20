@@ -75,10 +75,11 @@ export function WorkOrderMaterialItemsSection({
   const reconcileAdjustments = useAdjustmentReconcile()
 
   const [modalRequest, setModalRequest] = useState<AdjustmentModalRequest | null>(null)
-  // "+ Create Return" / row ⋮ "Create return" — opens the Create Return modal
-  // seeded with this WO's warehouse + link, optionally pre-filling the product.
+  // "+ Create Return" / row ⋮ "Create return" — opens the Create Return modal.
+  // `row` = the triggering adjustment (seeds product/unit/coverage/conversion/WO);
+  // `null` row = the toolbar entry (seeds this WO's warehouse + link, product blank).
   const [returnRequest, setReturnRequest] = useState<{
-    product: { id: string; name: string } | null
+    row: EnrichedInventoryAdjustmentRow | null
   } | null>(null)
   const [pendingDelete, setPendingDelete] = useState<EnrichedInventoryAdjustmentRow | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -213,7 +214,7 @@ export function WorkOrderMaterialItemsSection({
               key: "create-return",
               label: "+ Create Return",
               kind: "add-row" as const,
-              onClick: () => setReturnRequest({ product: null }),
+              onClick: () => setReturnRequest({ row: null }),
               disabled: section.isSaving,
             },
           ],
@@ -234,7 +235,7 @@ export function WorkOrderMaterialItemsSection({
             requestedItems={materialItems}
             onOpenEdit={handleOpenEdit}
             onCreateWithProduct={(product) => setModalRequest({ product, source: null })}
-            onCreateReturn={(product) => setReturnRequest({ product })}
+            onCreateReturn={(row) => setReturnRequest({ row })}
             onDuplicate={(adjustment) => setModalRequest({ product: null, source: adjustment })}
             onSplitOff={handleSplitOff}
             onDelete={(adjustment) => {
@@ -300,16 +301,40 @@ export function WorkOrderMaterialItemsSection({
       {returnRequest ? (
         <CreateReturnModal
           open
-          seed={{
-            form: {
-              warehouseId: workOrder.warehouseId ?? "",
-              workOrderId: workOrder.id,
-              ...(returnRequest.product ? { productId: returnRequest.product.id } : {}),
-            },
-            productLabel: returnRequest.product?.name ?? null,
-            warehouseLabel: workOrder.warehouseName,
-            unitLabel: null,
-          }}
+          seed={
+            returnRequest.row
+              ? {
+                  // Row ⋮ — seed the full context off the triggering adjustment:
+                  // product + unit + coverage/conversion + its own WO link.
+                  form: {
+                    warehouseId: workOrder.warehouseId ?? "",
+                    productId: returnRequest.row.productId,
+                    unitId: returnRequest.row.unitId ?? "",
+                    coverageUnitId: returnRequest.row.coverageUnitId ?? "",
+                    coveragePerUnit: returnRequest.row.coveragePerUnit ?? "",
+                    conversionFormulaId: returnRequest.row.conversionFormulaId ?? "",
+                    workOrderId: returnRequest.row.workOrderId,
+                  },
+                  productLabel: returnRequest.row.productName,
+                  warehouseLabel: workOrder.warehouseName,
+                  unitLabel: returnRequest.row.unitName,
+                  coverageUnitLabel: returnRequest.row.coverageUnitName ?? null,
+                  conversionFormulaLabel: returnRequest.row.conversionFormulaName ?? null,
+                  workOrderLabel: returnRequest.row.workOrderNumber,
+                }
+              : {
+                  // Toolbar — seed this WO's warehouse + link; product blank
+                  // (picking one auto-seeds unit + coverage/conversion).
+                  form: {
+                    warehouseId: workOrder.warehouseId ?? "",
+                    workOrderId: workOrder.id,
+                  },
+                  productLabel: null,
+                  warehouseLabel: workOrder.warehouseName,
+                  unitLabel: null,
+                  workOrderLabel: workOrder.workOrderNumber,
+                }
+          }
           onClose={() => setReturnRequest(null)}
           onCreated={() => {
             // Mirror the adjustment-modal reconcile: discard any Requested draft,

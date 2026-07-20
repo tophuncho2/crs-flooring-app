@@ -50,8 +50,8 @@ export function InventoryAdjustmentsList({
   onSplitOff: (row: EnrichedInventoryAdjustmentRow) => void
   /** Row ⋮ → "Duplicate adjustment": open the create modal seeded from the row. */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
-  /** Row ⋮ → "Create return": open the Create Return modal seeded with the row's product. */
-  onCreateReturn?: (product: { id: string; name: string }) => void
+  /** Row ⋮ → "Create return": open the Create Return modal seeded from this row (adds the WO link). */
+  onCreateReturn?: (row: EnrichedInventoryAdjustmentRow) => void
   /** Strong-reconcile callback fired after a row delete commits (balances + caches). */
   onDeleted?: () => void
 }) {

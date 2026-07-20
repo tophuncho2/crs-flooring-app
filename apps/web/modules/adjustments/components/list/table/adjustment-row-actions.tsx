@@ -16,8 +16,12 @@ export type AdjustmentRowActionHandlers = {
   onSplitOff?: (row: EnrichedInventoryAdjustmentRow) => void
   /** "Create with matching product" — open create pre-filtered to the row's product. */
   onCreateWithProduct?: (product: { id: string; name: string }) => void
-  /** "Create return" — open the Create Return modal seeded with the row's product. */
-  onCreateReturn?: (product: { id: string; name: string }) => void
+  /**
+   * "Create return" — open the Create Return modal seeded from this row. Carries
+   * the WHOLE row (not just the product) so the seam can seed the unit, coverage/
+   * conversion trio, and the work-order link the row already holds.
+   */
+  onCreateReturn?: (row: EnrichedInventoryAdjustmentRow) => void
   /** "Duplicate adjustment" — pre-seed create with the row's inventory. */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
   /**
@@ -67,7 +71,7 @@ export function renderAdjustmentRowActions(
       key: "create-return",
       label: "Create return",
       icon: <Undo2 size={14} aria-hidden="true" />,
-      onClick: () => handlers.onCreateReturn?.({ id: row.productId, name: row.productName }),
+      onClick: () => handlers.onCreateReturn?.(row),
       disabled: isBusy,
     })
   }

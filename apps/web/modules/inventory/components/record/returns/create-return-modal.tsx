@@ -1,7 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import type { ProductOption, UnitOfMeasureOption, WarehouseOption } from "@builders/domain"
+import type {
+  ProductOption,
+  UnitOfMeasureOption,
+  WarehouseOption,
+  WorkOrderOption,
+} from "@builders/domain"
 import { QuickCreateModal } from "@/engines/record-view"
 import { getClientErrorMessage } from "@/transport"
 import {
@@ -23,6 +28,8 @@ export type ReturnCreateModalSeed = {
   unitLabel: string | null
   coverageUnitLabel?: string | null
   conversionFormulaLabel?: string | null
+  /** Work-order link label (the `#`-prefix is added by the picker) — seeded from the triggering adjustment / current WO. */
+  workOrderLabel?: string | null
 }
 
 /**
@@ -59,6 +66,7 @@ export function CreateReturnModal({
   const [conversionFormulaLabel, setConversionFormulaLabel] = useState<string | null>(
     seed?.conversionFormulaLabel ?? null,
   )
+  const [workOrderLabel, setWorkOrderLabel] = useState<string | null>(seed?.workOrderLabel ?? null)
 
   const handleProductSelected = (option: ProductOption | null) => {
     setProductLabel(option?.name ?? null)
@@ -91,6 +99,12 @@ export function CreateReturnModal({
     setWarehouseLabel(option?.name ?? null)
   }
 
+  // The picker's `onChange` owns `workOrderId` (id on pick, null on clear); this
+  // only syncs the trigger label so it reflects the new selection.
+  const handleWorkOrderSelected = (option: WorkOrderOption | null) => {
+    setWorkOrderLabel(option?.workOrderNumber ?? null)
+  }
+
   const handleCreate = () => {
     commitCreate({
       onSuccess: (result) => onCreated(result),
@@ -118,11 +132,13 @@ export function CreateReturnModal({
         unitLabel={unitLabel}
         coverageUnitLabel={coverageUnitLabel}
         conversionFormulaLabel={conversionFormulaLabel}
+        workOrderLabel={workOrderLabel}
         onProductSelected={handleProductSelected}
         onUnitSelected={handleUnitSelected}
         onWarehouseSelected={handleWarehouseSelected}
         onCoverageUnitSelected={handleCoverageUnitSelected}
         onFormulaSelected={handleFormulaSelected}
+        onWorkOrderSelected={handleWorkOrderSelected}
       />
     </QuickCreateModal>
   )

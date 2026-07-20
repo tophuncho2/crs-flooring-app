@@ -5,6 +5,7 @@ import type {
   ProductOption,
   UnitOfMeasureOption,
   WarehouseOption,
+  WorkOrderOption,
 } from "@builders/domain"
 import { INVENTORY_ADJUSTMENT_AREA_MAX } from "@builders/domain"
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/engines/record-view"
 import { SegmentedDropdown } from "@/engines/picker"
 import { PaletteColorDropdown } from "@/engines/common"
+import { WorkOrderPicker } from "@/modules/work-orders/components/picker/work-order-picker"
 import type { ReturnCreateForm } from "@/modules/inventory/controllers/record/returns/use-return-create-form"
 import {
   ConversionFormulaPickerField,
@@ -62,11 +64,13 @@ export function ReturnCreateFields({
   unitLabel,
   coverageUnitLabel,
   conversionFormulaLabel,
+  workOrderLabel,
   onProductSelected,
   onUnitSelected,
   onWarehouseSelected,
   onCoverageUnitSelected,
   onFormulaSelected,
+  onWorkOrderSelected,
 }: {
   form: ReturnCreateForm
   setField: <K extends keyof ReturnCreateForm>(field: K, value: ReturnCreateForm[K]) => void
@@ -76,11 +80,13 @@ export function ReturnCreateFields({
   unitLabel: string | null
   coverageUnitLabel: string | null
   conversionFormulaLabel: string | null
+  workOrderLabel: string | null
   onProductSelected: (option: ProductOption | null) => void
   onUnitSelected: (option: UnitOfMeasureOption | null) => void
   onWarehouseSelected: (option: WarehouseOption | null) => void
   onCoverageUnitSelected: (option: UnitOfMeasureOption | null) => void
   onFormulaSelected: (option: ConversionFormulaOption | null) => void
+  onWorkOrderSelected: (option: WorkOrderOption | null) => void
 }) {
   return (
     <InventoryFieldGrid>
@@ -161,8 +167,23 @@ export function ReturnCreateFields({
         </FormField>
       </CellAt>
 
-      {/* Inventory identity — product / warehouse select the new row's relations. */}
+      {/* Work Order — the adjustment's link (any product, any warehouse), seeded
+          from the triggering adjustment or the current WO. Editable + clearable. */}
       <CellAt col={1} row={4} colSpan={4}>
+        <FormField label="Work Order">
+          <WorkOrderPicker
+            value={form.workOrderId}
+            selectedLabel={workOrderLabel}
+            onChange={(id) => setField("workOrderId", id)}
+            onOptionSelected={onWorkOrderSelected}
+            disabled={!editable}
+            ariaLabel="Select a work order"
+          />
+        </FormField>
+      </CellAt>
+
+      {/* Inventory identity — product / warehouse select the new row's relations. */}
+      <CellAt col={1} row={5} colSpan={4}>
         <ProductPickerField
           required
           value={form.productId || null}
@@ -173,7 +194,7 @@ export function ReturnCreateFields({
           ariaLabel="Select a product"
         />
       </CellAt>
-      <CellAt col={1} row={5} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={4}>
         <WarehousePickerField
           required
           value={form.warehouseId || null}
@@ -187,7 +208,7 @@ export function ReturnCreateFields({
       </CellAt>
 
       {/* One Location field → stamped onto BOTH the new row and the adjustment. */}
-      <CellAt col={1} row={6} colSpan={4}>
+      <CellAt col={1} row={7} colSpan={4}>
         <LocationField
           editable={editable}
           value={form.location}
@@ -195,26 +216,26 @@ export function ReturnCreateFields({
         />
       </CellAt>
 
-      <CellAt col={1} row={7} colSpan={4}>
+      <CellAt col={1} row={8} colSpan={4}>
         <RollNumberField
           editable={editable}
           value={form.rollNumber}
           onChange={(value) => setField("rollNumber", value)}
         />
       </CellAt>
-      <CellAt col={1} row={8} colSpan={4}>
+      <CellAt col={1} row={9} colSpan={4}>
         <DyeLotField
           editable={editable}
           value={form.dyeLot}
           onChange={(value) => setField("dyeLot", value)}
         />
       </CellAt>
-      <CellAt col={1} row={9} colSpan={4}>
+      <CellAt col={1} row={10} colSpan={4}>
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
       </CellAt>
 
       {/* Conversion feature — formula picker leads the Coverage / Unit pair. */}
-      <CellAt col={1} row={10} colSpan={4}>
+      <CellAt col={1} row={11} colSpan={4}>
         <ConversionFormulaPickerField
           value={form.conversionFormulaId || null}
           selectedLabel={conversionFormulaLabel}
@@ -224,14 +245,14 @@ export function ReturnCreateFields({
           ariaLabel="Select a conversion formula"
         />
       </CellAt>
-      <CellAt col={1} row={11} colSpan={2}>
+      <CellAt col={1} row={12} colSpan={2}>
         <CoveragePerUnitField
           editable={editable}
           value={form.coveragePerUnit}
           onChange={(value) => setField("coveragePerUnit", value)}
         />
       </CellAt>
-      <CellAt col={3} row={11} colSpan={2}>
+      <CellAt col={3} row={12} colSpan={2}>
         <CoverageUnitPickerField
           value={form.coverageUnitId || null}
           selectedLabel={coverageUnitLabel}
