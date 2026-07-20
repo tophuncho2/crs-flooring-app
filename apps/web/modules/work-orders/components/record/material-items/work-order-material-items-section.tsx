@@ -19,6 +19,7 @@ import {
 import { getClientErrorMessage } from "@/transport"
 import {
   buildCurrentRecordEntryPath,
+  buildInventoryAdjustmentHref,
   buildInventoryRecordHref,
   buildInventorySplitOffHref,
 } from "@/hooks/navigation"
@@ -80,6 +81,13 @@ export function WorkOrderMaterialItemsSection({
   // `null` row = the toolbar entry (seeds this WO's warehouse + link, product blank).
   const [returnRequest, setReturnRequest] = useState<{
     row: EnrichedInventoryAdjustmentRow | null
+  } | null>(null)
+  // After a return commits, offer "Stay here" or "View return" — the return's new
+  // inventory row lives outside this WO, so we surface a jump to it (with its
+  // Increase adjustment opened) rather than leave it out of sight.
+  const [returnCreated, setReturnCreated] = useState<{
+    inventoryId: string
+    adjustmentId: string
   } | null>(null)
   const [pendingDelete, setPendingDelete] = useState<EnrichedInventoryAdjustmentRow | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -336,7 +344,7 @@ export function WorkOrderMaterialItemsSection({
                 }
           }
           onClose={() => setReturnRequest(null)}
-          onCreated={() => {
+          onCreated={(result) => {
             // Mirror the adjustment-modal reconcile: discard any Requested draft,
             // flip to the Adjustments view so the new INCREASE is visible, and
             // strong-reconcile the balances + ledger the new row touched.
@@ -344,9 +352,31 @@ export function WorkOrderMaterialItemsSection({
             section.discard()
             setMode("adjustments")
             reconcileAdjustments()
+            setReturnCreated({
+              inventoryId: result.inventory.id,
+              adjustmentId: result.adjustment.id,
+            })
           }}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={returnCreated !== null}
+        title="Return created"
+        message="Added a new inventory row and one Increase adjustment. Open the new row to review the adjustment, or stay here."
+        confirmLabel="View return"
+        cancelLabel="Stay here"
+        onConfirm={() => {
+          const target = returnCreated
+          setReturnCreated(null)
+          if (target) {
+            router.push(
+              buildInventoryAdjustmentHref(target.inventoryId, target.adjustmentId, returnTo),
+            )
+          }
+        }}
+        onCancel={() => setReturnCreated(null)}
+      />
     </>
   )
 }

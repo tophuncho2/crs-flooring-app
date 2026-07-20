@@ -27,6 +27,7 @@ import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/
 import { useAdjustmentReconcile } from "@/modules/adjustments"
 import { NEW_ADJUSTMENT_ID } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import {
+  buildInventoryAdjustmentHref,
   buildInventoryRecordHref,
   buildInventorySplitOffHref,
   buildRecordCreateHref,
@@ -91,6 +92,14 @@ export function InventoryRecordView({
   const [returnModal, setReturnModal] = useState<{
     workOrderId: string | null
     workOrderLabel: string | null
+  } | null>(null)
+
+  // After a return commits, offer "Stay here" or "View return" — the new row is a
+  // separate inventory record, invisible on this one, so we surface the choice to
+  // jump to it (with its Increase adjustment opened) rather than leave it hidden.
+  const [returnCreated, setReturnCreated] = useState<{
+    inventoryId: string
+    adjustmentId: string
   } | null>(null)
 
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
@@ -418,12 +427,37 @@ export function InventoryRecordView({
             workOrderLabel: returnModal.workOrderLabel,
           }}
           onClose={() => setReturnModal(null)}
-          onCreated={() => {
+          onCreated={(result) => {
             setReturnModal(null)
             handleAdjustmentMutated()
+            setReturnCreated({
+              inventoryId: result.inventory.id,
+              adjustmentId: result.adjustment.id,
+            })
           }}
         />
       ) : null}
+      <ConfirmDialog
+        open={returnCreated !== null}
+        title="Return created"
+        message="Added a new inventory row and one Increase adjustment. Open the new row to review the adjustment, or stay here."
+        confirmLabel="View return"
+        cancelLabel="Stay here"
+        onConfirm={() => {
+          const target = returnCreated
+          setReturnCreated(null)
+          if (target) {
+            router.push(
+              buildInventoryAdjustmentHref(
+                target.inventoryId,
+                target.adjustmentId,
+                buildInventoryRecordHref({ inventoryId: entry.id }),
+              ),
+            )
+          }
+        }}
+        onCancel={() => setReturnCreated(null)}
+      />
       <ConfirmDialog {...stepDialogProps} />
     </>
   )
