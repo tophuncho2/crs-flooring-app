@@ -23,6 +23,7 @@ import {
   buildInventorySplitOffHref,
 } from "@/hooks/navigation"
 import { WorkOrderAdjustmentCreateModal } from "@/modules/inventory/components/record/adjustments/work-order-adjustment-create-modal"
+import { CreateReturnModal } from "@/modules/inventory/components/record/returns/create-return-modal"
 import { useDeleteAdjustmentMutation } from "@/modules/inventory/controllers/record/adjustments/mutations"
 import { useAdjustmentReconcile } from "@/modules/adjustments"
 import type { WorkOrderMaterialItemsSectionController } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
@@ -74,6 +75,11 @@ export function WorkOrderMaterialItemsSection({
   const reconcileAdjustments = useAdjustmentReconcile()
 
   const [modalRequest, setModalRequest] = useState<AdjustmentModalRequest | null>(null)
+  // "+ Create Return" / row ⋮ "Create return" — opens the Create Return modal
+  // seeded with this WO's warehouse + link, optionally pre-filling the product.
+  const [returnRequest, setReturnRequest] = useState<{
+    product: { id: string; name: string } | null
+  } | null>(null)
   const [pendingDelete, setPendingDelete] = useState<EnrichedInventoryAdjustmentRow | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -203,6 +209,13 @@ export function WorkOrderMaterialItemsSection({
               onClick: () => setModalRequest({ product: null, source: null }),
               disabled: section.isSaving,
             },
+            {
+              key: "create-return",
+              label: "+ Create Return",
+              kind: "add-row" as const,
+              onClick: () => setReturnRequest({ product: null }),
+              disabled: section.isSaving,
+            },
           ],
         }
 
@@ -221,6 +234,7 @@ export function WorkOrderMaterialItemsSection({
             requestedItems={materialItems}
             onOpenEdit={handleOpenEdit}
             onCreateWithProduct={(product) => setModalRequest({ product, source: null })}
+            onCreateReturn={(product) => setReturnRequest({ product })}
             onDuplicate={(adjustment) => setModalRequest({ product: null, source: adjustment })}
             onSplitOff={handleSplitOff}
             onDelete={(adjustment) => {
@@ -276,6 +290,32 @@ export function WorkOrderMaterialItemsSection({
             // otherwise leave the user looking at the Requested grid). Discard any
             // Requested draft first so no unsaved edit rides this programmatic hop
             // onto the hidden side (the section-toggle discard-on-swap contract).
+            section.discard()
+            setMode("adjustments")
+            reconcileAdjustments()
+          }}
+        />
+      ) : null}
+
+      {returnRequest ? (
+        <CreateReturnModal
+          open
+          seed={{
+            form: {
+              warehouseId: workOrder.warehouseId ?? "",
+              workOrderId: workOrder.id,
+              ...(returnRequest.product ? { productId: returnRequest.product.id } : {}),
+            },
+            productLabel: returnRequest.product?.name ?? null,
+            warehouseLabel: workOrder.warehouseName,
+            unitLabel: null,
+          }}
+          onClose={() => setReturnRequest(null)}
+          onCreated={() => {
+            // Mirror the adjustment-modal reconcile: discard any Requested draft,
+            // flip to the Adjustments view so the new INCREASE is visible, and
+            // strong-reconcile the balances + ledger the new row touched.
+            setReturnRequest(null)
             section.discard()
             setMode("adjustments")
             reconcileAdjustments()

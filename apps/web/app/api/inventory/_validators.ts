@@ -2,6 +2,7 @@ import { z } from "zod"
 import { InventoryExecutionError } from "@builders/application"
 import type {
   CreateInventoryInput,
+  CreateReturnInput,
   InventoryExportInput,
   InventoryListFilters,
   UpdateInventoryInput,
@@ -401,5 +402,39 @@ export function validateCreateInventoryInput(
     coveragePerUnit: optionalString(body.coveragePerUnit, "coveragePerUnit"),
     conversionFormulaId: optionalString(body.conversionFormulaId, "conversionFormulaId"),
   }
+}
+
+/**
+ * Shape validator for the "Create Return" action. Mirrors the create-inventory
+ * mapper: required id/field strings coerced (missing → ""), plus the adjustment-
+ * side `returnedQuantity` + `area` and the optional `workOrderId` / `isWaste` /
+ * `color`. There is no startingStock / cost / freight / internalNotes field on
+ * this form — a return hardcodes those server-side. Business rules (required
+ * product/unit/warehouse, positive returned quantity, length caps) run in the
+ * domain via the use case and surface as a 422.
+ */
+export function validateCreateReturnInput(
+  body: Record<string, unknown>,
+): CreateReturnInput {
+  const input: CreateReturnInput = {
+    productId: optionalString(body.productId, "productId"),
+    unitId: optionalString(body.unitId, "unitId"),
+    warehouseId: optionalString(body.warehouseId, "warehouseId"),
+    rollNumber: optionalString(body.rollNumber, "rollNumber"),
+    dyeLot: optionalString(body.dyeLot, "dyeLot"),
+    note: optionalString(body.note, "note"),
+    location: optionalString(body.location, "location"),
+    coverageUnitId: optionalString(body.coverageUnitId, "coverageUnitId"),
+    coveragePerUnit: optionalString(body.coveragePerUnit, "coveragePerUnit"),
+    conversionFormulaId: optionalString(body.conversionFormulaId, "conversionFormulaId"),
+    returnedQuantity: optionalString(body.returnedQuantity, "returnedQuantity"),
+    area: optionalString(body.area, "area"),
+  }
+  // Optional adjustment-side extras — only forwarded when actually present.
+  const workOrderId = optionalString(body.workOrderId, "workOrderId")
+  if (workOrderId !== "") input.workOrderId = workOrderId
+  if (body.isWaste !== undefined) input.isWaste = requireBoolean(body.isWaste, "isWaste")
+  if (body.color !== undefined) input.color = requireColor(body.color, "color", failInventory)
+  return input
 }
 

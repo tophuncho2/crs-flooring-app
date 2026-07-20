@@ -34,6 +34,7 @@ import {
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
 import { InventoryAdjustmentCreateModal } from "./adjustments/inventory-adjustment-create-modal"
+import { CreateReturnModal } from "./returns/create-return-modal"
 
 /**
  * The inventory record view. ① editable inventory cells (primary — only Location
@@ -82,6 +83,10 @@ export function InventoryRecordView({
   const [createModal, setCreateModal] = useState<{
     source: EnrichedInventoryAdjustmentRow | null
   } | null>(null)
+
+  // "+ Return" / row ⋮ "Create return" open the Create Return modal seeded from
+  // THIS inventory row (same product/warehouse/unit/identity as a duplicate).
+  const [returnModalOpen, setReturnModalOpen] = useState(false)
 
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
   // so backing out of a (clean or discarded) adjustment doesn't leave the
@@ -312,6 +317,11 @@ export function InventoryRecordView({
                       label: "+ Adjustment",
                       onClick: () => setCreateModal({ source: null }),
                     },
+                    {
+                      key: "create-return",
+                      label: "+ Return",
+                      onClick: () => setReturnModalOpen(true),
+                    },
                   ],
                 }
               : undefined
@@ -335,6 +345,7 @@ export function InventoryRecordView({
                   confirmSplitOff({ inventoryId: row.inventoryId, quantity: row.quantity })
                 }
                 onDuplicate={(row) => setCreateModal({ source: row })}
+                onCreateReturn={() => setReturnModalOpen(true)}
                 onDeleted={handleAdjustmentMutated}
               />
             )}
@@ -370,6 +381,35 @@ export function InventoryRecordView({
           onClose={() => setCreateModal(null)}
           onCreated={() => {
             setCreateModal(null)
+            handleAdjustmentMutated()
+          }}
+        />
+      ) : null}
+      {returnModalOpen ? (
+        <CreateReturnModal
+          open
+          seed={{
+            form: {
+              productId: record.productId,
+              unitId: record.unitId ?? "",
+              warehouseId: record.warehouseId,
+              rollNumber: record.rollNumber,
+              dyeLot: record.dyeLot,
+              note: record.note,
+              location: record.location,
+              coverageUnitId: record.coverageUnitId ?? "",
+              coveragePerUnit: record.coveragePerUnit ?? "",
+              conversionFormulaId: record.conversionFormulaId ?? "",
+            },
+            productLabel: record.productName,
+            warehouseLabel: record.warehouseName,
+            unitLabel: record.unitName,
+            coverageUnitLabel: record.coverageUnitName ?? null,
+            conversionFormulaLabel: record.conversionFormulaName ?? null,
+          }}
+          onClose={() => setReturnModalOpen(false)}
+          onCreated={() => {
+            setReturnModalOpen(false)
             handleAdjustmentMutated()
           }}
         />

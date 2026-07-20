@@ -1,4 +1,4 @@
-import type { InventoryRecord } from "@builders/db"
+import type { InventoryAdjustmentRecord, InventoryRecord } from "@builders/db"
 import type { PaletteColor } from "@builders/domain"
 
 export type UpdateInventoryInput = {
@@ -33,3 +33,35 @@ export type CreateInventoryInput = {
 }
 
 export type InventoryResult = InventoryRecord
+
+/**
+ * A "return": one new inventory row (startingStock "0", cost/freight null) plus
+ * one INCREASE adjustment (quantity = `returnedQuantity`) on it, in one tx. The
+ * validated string fields mirror `CreateReturnEdits`; the trailing optionals are
+ * adjustment-side extras. `location` feeds BOTH the new row and the adjustment.
+ * There is no internalNotes / cost / freight / startingStock field on this form.
+ */
+export type CreateReturnInput = {
+  productId: string
+  unitId: string
+  warehouseId: string
+  rollNumber: string
+  dyeLot: string
+  note: string
+  location: string
+  coverageUnitId: string
+  coveragePerUnit: string
+  conversionFormulaId: string
+  returnedQuantity: string
+  area: string
+  // Optional adjustment-side extras.
+  workOrderId?: string | null
+  /** Non-semantic palette tag; omitted → DB default SLATE. */
+  color?: PaletteColor
+  isWaste?: boolean
+}
+
+export type CreateReturnResult = {
+  inventory: InventoryResult
+  adjustment: InventoryAdjustmentRecord
+}

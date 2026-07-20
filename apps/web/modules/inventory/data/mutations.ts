@@ -2,9 +2,14 @@
 
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
-import type { InventoryDetailRecord, InventoryRecord } from "@builders/db"
+import type {
+  InventoryAdjustmentRecord,
+  InventoryDetailRecord,
+  InventoryRecord,
+} from "@builders/db"
 import type {
   CreateInventoryInput,
+  CreateReturnInput,
   UpdateInventoryInput,
 } from "@builders/application"
 
@@ -26,6 +31,22 @@ export async function createInventoryRequest(input: CreateInventoryInput) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input)),
   })
+}
+
+/**
+ * Create a "return": one new inventory row + one INCREASE adjustment on it, in
+ * one transaction. Returns the full detail (row + its lone adjustment) so the
+ * launching surface can reconcile in place. No revision key — a fresh insert.
+ */
+export async function createReturnRequest(input: CreateReturnInput) {
+  return requestJson<{ inventory: InventoryDetailRecord; adjustment: InventoryAdjustmentRecord }>(
+    `/api/inventory/returns`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta(input)),
+    },
+  )
 }
 
 export async function deleteInventoryRequest(id: string, updatedAt: string) {

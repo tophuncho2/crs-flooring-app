@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Copy, Plus, Split, Trash2 } from "lucide-react"
+import { Copy, Plus, Split, Trash2, Undo2 } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { RecordOptionsMenu, type RecordOptionsMenuItem } from "@/engines/common"
 
@@ -16,6 +16,8 @@ export type AdjustmentRowActionHandlers = {
   onSplitOff?: (row: EnrichedInventoryAdjustmentRow) => void
   /** "Create with matching product" — open create pre-filtered to the row's product. */
   onCreateWithProduct?: (product: { id: string; name: string }) => void
+  /** "Create return" — open the Create Return modal seeded with the row's product. */
+  onCreateReturn?: (product: { id: string; name: string }) => void
   /** "Duplicate adjustment" — pre-seed create with the row's inventory. */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
   /**
@@ -29,7 +31,7 @@ export type AdjustmentRowActionHandlers = {
 
 /**
  * Build the shared adjustment row ⋮ options menu, in canonical order
- * (split-off → create-matching → duplicate → delete). Each item is included only
+ * (split-off → create-matching → create-return → duplicate → delete). Each item is included only
  * when its handler is supplied; `isBusy` disables every item while a mutation is
  * in flight. Returns `null` when no
  * handler applies (no menu rendered). Designed to slot straight into `DataTable`'s
@@ -57,6 +59,15 @@ export function renderAdjustmentRowActions(
       label: "Create with matching product",
       icon: <Plus size={14} aria-hidden="true" />,
       onClick: () => handlers.onCreateWithProduct?.({ id: row.productId, name: row.productName }),
+      disabled: isBusy,
+    })
+  }
+  if (handlers.onCreateReturn) {
+    items.push({
+      key: "create-return",
+      label: "Create return",
+      icon: <Undo2 size={14} aria-hidden="true" />,
+      onClick: () => handlers.onCreateReturn?.({ id: row.productId, name: row.productName }),
       disabled: isBusy,
     })
   }
