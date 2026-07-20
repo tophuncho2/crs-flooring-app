@@ -69,28 +69,6 @@ export function formatEasternDateTime(value: string | Date | null | undefined): 
   return easternDateTimeFormatter.format(date)
 }
 
-// Eastern wall-clock DATE-ONLY (no time). Same America/New_York pinning as
-// `formatEasternDateTime` so a late-evening Eastern timestamp never drifts a day,
-// but formatted `MM/DD/YYYY` for compact surfaces (e.g. the roll-tag print).
-const easternDateFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  month: "2-digit",
-  day: "2-digit",
-  year: "numeric",
-})
-
-/**
- * Formats an operational timestamp as an Eastern wall-clock date, e.g.
- * `04/22/2026`. Mirrors {@link formatEasternDateTime}'s guards — returns "" for
- * null / undefined / empty / unparseable input.
- */
-export function formatEasternDate(value: string | Date | null | undefined): string {
-  if (value === null || value === undefined || value === "") return ""
-  const date = toStableDate(value)
-  if (Number.isNaN(date.getTime())) return ""
-  return easternDateFormatter.format(date)
-}
-
 /**
  * Projects an ISO timestamp / Date / null into the `YYYY-MM-DD` shape an
  * `<input type="date">` element accepts. Returns `""` for null, undefined,

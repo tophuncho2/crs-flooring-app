@@ -28,7 +28,7 @@ export const INV_PRINT_STYLE_BLOCK = `
   .inv-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0 0.25in 0.25in 0.25in; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .inv-print-root h2 { font-size: 14px; margin: 18px 0 6px 0; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
   .inv-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
-  .inv-print-root .inv-roll-number { text-align: center; font-size: 48px; font-weight: 700; letter-spacing: 1px; margin: 4px 0 14px 0; line-height: 1.1; }
+  .inv-print-root .inv-roll-number { text-align: center; font-size: 64px; font-weight: 700; letter-spacing: 1px; margin: 4px 0 14px 0; line-height: 1.1; }
   .inv-print-root .inv-roll-number .empty-cell { color: #999; }
   .inv-print-root .inv-cell-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; row-gap: 6px; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid #ddd; }
   .inv-print-root .inv-cell { display: flex; gap: 10px; align-items: baseline; overflow-wrap: break-word; }

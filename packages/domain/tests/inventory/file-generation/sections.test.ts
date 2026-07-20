@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { formatEasternDateTime } from "../../../src/shared/date-format.js"
 import {
   renderInventoryDocumentHeader,
   renderInventoryPrimaryBlock,
@@ -39,9 +40,11 @@ describe("renderInventoryPrimaryBlock — roll-tag heading + cell gating", () =>
     expect(html).toContain(
       '<span class="inv-cell-label">Starting Stock</span><span class="inv-cell-value">500</span>',
     )
-    // Created Date is Eastern date-only (2026-06-30 12:00Z => 8 AM EDT, same day).
+    // Created Date shows the full Eastern timestamp, like every other date surface.
     expect(html).toContain(
-      '<span class="inv-cell-label">Created Date</span><span class="inv-cell-value">06/30/2026</span>',
+      `<span class="inv-cell-label">Created Date</span><span class="inv-cell-value">${formatEasternDateTime(
+        inventory.createdAt,
+      )}</span>`,
     )
   })
 

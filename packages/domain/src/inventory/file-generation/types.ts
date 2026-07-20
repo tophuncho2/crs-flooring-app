@@ -1,5 +1,5 @@
 import type { ExportColumn } from "../../shared/csv.js"
-import { formatEasternDate } from "../../shared/date-format.js"
+import { formatEasternDateTime } from "../../shared/date-format.js"
 import { INVENTORY_EXPORT_COLUMNS } from "../export-columns.js"
 import { ADJUSTMENTS_EXPORT_COLUMNS } from "../adjustments/export-columns.js"
 import type { InventoryRow } from "../types.js"
@@ -58,7 +58,7 @@ export const INVENTORY_PRINT_CELL_FIELDS: ReadonlyArray<ExportColumn<InventoryRo
   { key: "productStyle", label: "Style", value: (row) => row.productStyle ?? "" },
   { key: "productColor", label: "Color", value: (row) => row.productColor ?? "" },
   { key: "startingStock", label: "Starting Stock", value: (row) => row.startingStock },
-  { key: "createdAt", label: "Created Date", value: (row) => formatEasternDate(row.createdAt) },
+  { key: "createdAt", label: "Created Date", value: (row) => formatEasternDateTime(row.createdAt) },
 ]
 
 /**
@@ -66,7 +66,7 @@ export const INVENTORY_PRINT_CELL_FIELDS: ReadonlyArray<ExportColumn<InventoryRo
  * carries. The grid prints EMPTY — the operator hand-writes cut entries onto the
  * physical tag — so this is purely a layout constant sized to one letter page.
  */
-export const INVENTORY_PRINT_LEDGER_ROW_COUNT = 15
+export const INVENTORY_PRINT_LEDGER_ROW_COUNT = 20
 
 /**
  * Adjustment columns offered on the print adjustments table — the full ledger CSV
