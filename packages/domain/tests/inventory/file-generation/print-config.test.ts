@@ -25,21 +25,24 @@ describe("buildInventoryPrintConfig", () => {
   })
 })
 
-describe("buildInventoryPrintHtml — record only, never adjustments", () => {
+describe("buildInventoryPrintHtml — roll tag, never adjustment data", () => {
   const inventory = makeInventoryDetail({
     inventoryAdjustments: [makeAdjustment(), makeAdjustment({ id: "adj-2" })],
   })
 
-  it("renders the record block", () => {
+  it("renders the roll-tag block: Roll# heading, cells, and the blank write-in grid", () => {
     const html = buildInventoryPrintHtml(inventory, buildInventoryPrintConfig())
     expect(html).toContain("Inventory Item")
-    expect(html).toContain('<table class="inv-primary-table">')
+    expect(html).toContain('<div class="inv-roll-number">ROLL#88</div>')
+    expect(html).toContain('class="inv-cell-grid"')
+    expect(html).toContain('<table class="inv-writein">')
+    expect(html).toContain('<span class="rot">Adjustment</span>')
   })
 
-  it("never renders an adjustments table, even when adjustments exist", () => {
+  it("never renders adjustment DATA, even when adjustments exist (the grid prints blank)", () => {
     const html = buildInventoryPrintHtml(inventory, buildInventoryPrintConfig())
-    // No ledger table on the printed sheet — adjustments are CSV-only.
-    expect(html).not.toContain('<table class="flat-rows">')
+    // The write-in grid is a blank handwriting form — no ledger rows, no adj numbers.
     expect(html).not.toContain("ADJ-1")
+    expect(html).not.toContain("ADJ-2")
   })
 })

@@ -98,6 +98,10 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
       style: payload.product.style,
       color: payload.product.color,
     }),
+    // Standalone style/color (already in the select, previously discarded into
+    // the composed name) so the roll-tag print can render them as their own cells.
+    productStyle: payload.product.style ?? "",
+    productColor: payload.product.color ?? "",
     categoryId: payload.product.category.id,
     unitId: payload.unitId,
     // Unit display derives solely from the FK join (UoM epic 2B) — a UoM rename

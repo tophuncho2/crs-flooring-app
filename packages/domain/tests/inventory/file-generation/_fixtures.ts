@@ -55,6 +55,8 @@ const BASE_INVENTORY: InventoryDetail = {
   purchaseOrderNumber: "PO-55",
   productId: "prod-1",
   productName: "Mohawk Berber - Oatmeal",
+  productStyle: "Berber",
+  productColor: "Oatmeal",
   categoryId: "cat-1",
   unitId: "unit-1",
   unitName: "Square Yard",

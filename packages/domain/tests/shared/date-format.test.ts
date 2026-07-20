@@ -1,5 +1,23 @@
 import { describe, expect, it } from "vitest"
-import { toIsoTimestamp } from "../../src/shared/date-format.js"
+import { formatEasternDate, toIsoTimestamp } from "../../src/shared/date-format.js"
+
+describe("formatEasternDate", () => {
+  it("formats a timestamp as an Eastern MM/DD/YYYY date", () => {
+    expect(formatEasternDate("2026-04-22T16:00:00.000Z")).toBe("04/22/2026")
+  })
+
+  it("pins to America/New_York so a late-UTC time never drifts a day forward", () => {
+    // 2026-04-23 02:00Z is still 2026-04-22 (10 PM EDT).
+    expect(formatEasternDate("2026-04-23T02:00:00.000Z")).toBe("04/22/2026")
+  })
+
+  it("returns an empty string for null / undefined / empty / unparseable input", () => {
+    expect(formatEasternDate(null)).toBe("")
+    expect(formatEasternDate(undefined)).toBe("")
+    expect(formatEasternDate("")).toBe("")
+    expect(formatEasternDate("not-a-date")).toBe("")
+  })
+})
 
 describe("toIsoTimestamp", () => {
   it("serializes a Date to an ISO-8601 string", () => {

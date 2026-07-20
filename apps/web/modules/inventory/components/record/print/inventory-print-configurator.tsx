@@ -8,6 +8,7 @@ import {
   buildInventoryPrintHtml,
   INVENTORY_DOCUMENT_LABEL,
   INVENTORY_PRINT_ADJUSTMENT_COLUMNS,
+  INVENTORY_PRINT_CELL_FIELDS,
   INVENTORY_PRINT_FIELD_COLUMNS,
   type InventoryDetail,
   type InventoryPrintConfig,
@@ -21,7 +22,9 @@ import { RecordStepper } from "@/engines/record-view"
  * prints only the preview.
  *
  * Two outputs, shaped to their medium:
- *   - PRINT — the inventory record sheet (inventory-field checkboxes). Always fits a page.
+ *   - PRINT — the roll TAG: a big Roll# heading, the four print-cell checkboxes
+ *     (Style / Color / Starting Stock / Created Date), and a blank hand-write grid.
+ *     Always fits a page.
  *   - CSV — the record AND the adjustments ledger (adjustment column checkboxes + row
  *     picker). Adjustments are CSV-only (they never fit a printed sheet), flagged as such.
  */
@@ -188,16 +191,31 @@ export function InventoryPrintConfigurator({
           </button>
         </div>
 
-        {/* Inventory has a single printed document — the record sheet — so the
+        {/* Inventory has a single printed document — the roll tag — so the
             document type is a static label, not a selector. */}
         <PanelSection title="Document">
           <div className="rounded border border-neutral-200 bg-white px-2 py-1 text-xs font-medium text-neutral-700">
             {INVENTORY_DOCUMENT_LABEL}
           </div>
-          <p className="mt-1 text-xs text-neutral-400">The printed sheet is the inventory record.</p>
+          <p className="mt-1 text-xs text-neutral-400">The printed sheet is the roll tag.</p>
         </PanelSection>
 
-        <PanelSection title="Inventory fields">
+        {/* The four cells shown on the printed roll tag (under the big Roll#). */}
+        <PanelSection title="Print fields">
+          <p className="-mt-1 mb-1 text-xs text-neutral-400">Cells shown on the roll tag.</p>
+          {INVENTORY_PRINT_CELL_FIELDS.map((column) => (
+            <CheckRow
+              key={column.key}
+              checked={config.inventoryColumns[column.key] ?? false}
+              onChange={() => toggleInventoryColumn(column.key)}
+              label={column.label}
+            />
+          ))}
+        </PanelSection>
+
+        {/* Full record field list — drives the CSV export only (the print tag shows
+            just the four Print fields above), flagged by the badge. */}
+        <PanelSection title="Inventory fields" badge={<CsvOnlyBadge />}>
           {INVENTORY_PRINT_FIELD_COLUMNS.map((column) => (
             <CheckRow
               key={column.key}

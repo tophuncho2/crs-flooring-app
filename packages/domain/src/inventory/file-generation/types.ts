@@ -1,4 +1,5 @@
 import type { ExportColumn } from "../../shared/csv.js"
+import { formatEasternDate } from "../../shared/date-format.js"
 import { INVENTORY_EXPORT_COLUMNS } from "../export-columns.js"
 import { ADJUSTMENTS_EXPORT_COLUMNS } from "../adjustments/export-columns.js"
 import type { InventoryRow } from "../types.js"
@@ -42,6 +43,30 @@ const EXCLUDED_INVENTORY_FIELD_KEYS = new Set<string>([
  */
 export const INVENTORY_PRINT_FIELD_COLUMNS: ReadonlyArray<ExportColumn<InventoryRow>> =
   INVENTORY_EXPORT_COLUMNS.filter((column) => !EXCLUDED_INVENTORY_FIELD_KEYS.has(column.key))
+
+/**
+ * The roll-tag print's primary-block cells — the small label/value grid shown
+ * under the big Roll# heading. A FIXED four-field set (Style, Color, Starting
+ * Stock, Created Date), NOT the full CSV manifest: the roll tag is a purpose-built
+ * physical document, not a record dump. Each cell is gated by the SAME
+ * `inventoryColumns` visibility map the CSV field block reads (single-source
+ * contract — the configurator checkbox and the rendered cell share a key), so
+ * `startingStock` / `createdAt` (also CSV manifest keys) reuse their checkbox and
+ * `productStyle` / `productColor` are seeded on in the print config.
+ */
+export const INVENTORY_PRINT_CELL_FIELDS: ReadonlyArray<ExportColumn<InventoryRow>> = [
+  { key: "productStyle", label: "Style", value: (row) => row.productStyle ?? "" },
+  { key: "productColor", label: "Color", value: (row) => row.productColor ?? "" },
+  { key: "startingStock", label: "Starting Stock", value: (row) => row.startingStock },
+  { key: "createdAt", label: "Created Date", value: (row) => formatEasternDate(row.createdAt) },
+]
+
+/**
+ * How many blank rows the printed write-in grid (Date · Adjustment · Balance)
+ * carries. The grid prints EMPTY — the operator hand-writes cut entries onto the
+ * physical tag — so this is purely a layout constant sized to one letter page.
+ */
+export const INVENTORY_PRINT_LEDGER_ROW_COUNT = 15
 
 /**
  * Adjustment columns offered on the print adjustments table — the full ledger CSV

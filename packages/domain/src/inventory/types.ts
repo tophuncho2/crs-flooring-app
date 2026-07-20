@@ -14,6 +14,13 @@ export type InventoryRow = {
   purchaseOrderNumber: string
   productId: string
   productName: string
+  // Raw product style/color, surfaced standalone (not just fused into
+  // productName) so the roll-tag print can show them as their own cells. Optional
+  // so the sacred WO-adjustment create modal's synthesized row literal still
+  // satisfies the type (mirrors unitId / conversion fields); the normalizer always
+  // populates them for real rows.
+  productStyle?: string
+  productColor?: string
   categoryId: string
   // Canonical unit FK (UoM epic 2B). Optional so the sacred WO-adjustment create
   // modal's synthesized row literal (which has no source unit id) still satisfies

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest"
 import {
   renderInventoryDocumentHeader,
   renderInventoryPrimaryBlock,
+  renderInventoryWriteInGrid,
 } from "../../../src/inventory/file-generation/inventory-document-sections.js"
 import { buildInventoryPrintConfig } from "../../../src/inventory/file-generation/print-presets.js"
+import { INVENTORY_PRINT_LEDGER_ROW_COUNT } from "../../../src/inventory/file-generation/types.js"
 import { EMPTY_CELL, makeInventoryDetail } from "./_fixtures.js"
 
 describe("renderInventoryDocumentHeader", () => {
@@ -21,37 +23,57 @@ describe("renderInventoryDocumentHeader", () => {
   })
 })
 
-describe("renderInventoryPrimaryBlock — field gating", () => {
+describe("renderInventoryPrimaryBlock — roll-tag heading + cell gating", () => {
   const inventory = makeInventoryDetail()
   const columns = buildInventoryPrintConfig().inventoryColumns
 
-  it("renders a checked field's label + value", () => {
-    const html = renderInventoryPrimaryBlock(inventory, { ...columns, productName: true })
-    expect(html).toContain("<th>Product</th>")
-    expect(html).toContain("Mohawk Berber - Oatmeal")
+  it("renders the big Roll# heading from prefix + number", () => {
+    const html = renderInventoryPrimaryBlock(inventory, columns)
+    expect(html).toContain('<div class="inv-roll-number">ROLL#88</div>')
   })
 
-  it("drops an unchecked field", () => {
-    const html = renderInventoryPrimaryBlock(inventory, { ...columns, warehouseName: false })
-    expect(html).not.toContain("<th>Warehouse</th>")
+  it("renders the four checked cells with their composed values", () => {
+    const html = renderInventoryPrimaryBlock(inventory, columns)
+    expect(html).toContain('<span class="inv-cell-label">Style</span><span class="inv-cell-value">Berber</span>')
+    expect(html).toContain('<span class="inv-cell-label">Color</span><span class="inv-cell-value">Oatmeal</span>')
+    expect(html).toContain(
+      '<span class="inv-cell-label">Starting Stock</span><span class="inv-cell-value">500</span>',
+    )
+    // Created Date is Eastern date-only (2026-06-30 12:00Z => 8 AM EDT, same day).
+    expect(html).toContain(
+      '<span class="inv-cell-label">Created Date</span><span class="inv-cell-value">06/30/2026</span>',
+    )
   })
 
-  it("never renders Inv # in the block (it's the header id, not a togglable field)", () => {
-    // Even if a stray inventoryNumber key is truthy, the block manifest excludes it.
-    const html = renderInventoryPrimaryBlock(inventory, { ...columns, inventoryNumber: true })
-    expect(html).not.toContain("<th>Inv #</th>")
+  it("drops an unchecked cell", () => {
+    const html = renderInventoryPrimaryBlock(inventory, { ...columns, productColor: false })
+    expect(html).not.toContain('<span class="inv-cell-label">Color</span>')
   })
 
-  it("renders an em-dash for a blank value", () => {
-    const html = renderInventoryPrimaryBlock(makeInventoryDetail({ location: "" }), {
-      ...columns,
-      location: true,
-    })
-    expect(html).toContain(`<th>Location</th><td>${EMPTY_CELL}</td>`)
+  it("renders an em-dash for a blank cell value", () => {
+    const html = renderInventoryPrimaryBlock(makeInventoryDetail({ productStyle: "" }), columns)
+    expect(html).toContain(`<span class="inv-cell-label">Style</span><span class="inv-cell-value">${EMPTY_CELL}</span>`)
   })
 
-  it("renders nothing when no field is checked", () => {
+  it("still renders the Roll# heading when no cell is checked (heading is not a togglable cell)", () => {
     const allOff = Object.fromEntries(Object.keys(columns).map((key) => [key, false]))
-    expect(renderInventoryPrimaryBlock(inventory, allOff)).toBe("")
+    const html = renderInventoryPrimaryBlock(inventory, allOff)
+    expect(html).toContain('<div class="inv-roll-number">ROLL#88</div>')
+    expect(html).not.toContain('class="inv-cell-grid"')
+  })
+})
+
+describe("renderInventoryWriteInGrid — blank hand-write form", () => {
+  const html = renderInventoryWriteInGrid()
+
+  it("renders the three rotated header labels", () => {
+    expect(html).toContain('<span class="rot">Date</span>')
+    expect(html).toContain('<span class="rot">Adjustment</span>')
+    expect(html).toContain('<span class="rot">Balance</span>')
+  })
+
+  it("renders exactly INVENTORY_PRINT_LEDGER_ROW_COUNT empty rows and no data", () => {
+    const emptyRows = html.match(/<tr><td><\/td><td><\/td><td><\/td><\/tr>/g) ?? []
+    expect(emptyRows).toHaveLength(INVENTORY_PRINT_LEDGER_ROW_COUNT)
   })
 })
