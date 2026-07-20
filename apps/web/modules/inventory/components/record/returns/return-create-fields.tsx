@@ -17,7 +17,7 @@ import {
   type SegmentedChoiceOption,
 } from "@/engines/record-view"
 import { SegmentedDropdown } from "@/engines/picker"
-import { PaletteColorDropdown } from "@/engines/common"
+import { InfoNotice, PaletteColorDropdown } from "@/engines/common"
 import { WorkOrderPicker } from "@/modules/work-orders/components/picker/work-order-picker"
 import type { ReturnCreateForm } from "@/modules/inventory/controllers/record/returns/use-return-create-form"
 import {
@@ -90,6 +90,17 @@ export function ReturnCreateFields({
 }) {
   return (
     <InventoryFieldGrid>
+      {/* Right flank (cols 5–8) — an explainer so the form reads clearly. Reuses
+          the shared InfoNotice primitive (the same sky notice the record view
+          shows when an adjustment is open). */}
+      <CellAt col={5} row={1} colSpan={4}>
+        <InfoNotice>
+          Creating a return adds a brand-new inventory row (starting stock 0) plus a single
+          Increase adjustment for the returned quantity — in one step. Enter the returned
+          quantity and adjust the seeded details as needed.
+        </InfoNotice>
+      </CellAt>
+
       {/* Returned Quantity | Unit lead the form (the returned amount + its unit). */}
       <CellAt col={1} row={1} colSpan={2}>
         <FormField label="Returned Quantity" required>
