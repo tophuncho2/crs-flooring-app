@@ -24,6 +24,7 @@ export const SEEDED_CATEGORIES = [
   { name: "Rubber Transition" },
   { name: "Rock/Stone" },
   { name: "Threshold" },
+  { name: "Underlayment" },
 ] as const
 
 export type SeededCategory = (typeof SEEDED_CATEGORIES)[number]

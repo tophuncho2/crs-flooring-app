@@ -31,6 +31,7 @@ const SEEDED_CATEGORIES = [
   { name: "Rubber Transition" },
   { name: "Rock/Stone" },
   { name: "Threshold" },
+  { name: "Underlayment" },
 ]
 
 function verifySyncWithTypeScriptSource() {
