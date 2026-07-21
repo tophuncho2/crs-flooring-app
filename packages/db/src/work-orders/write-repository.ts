@@ -104,6 +104,13 @@ export type CreateWorkOrderFromTemplateRecordInput = {
     entityId: string | null
     paymentPurposeId: string | null
   }>
+  // Entity involvements copied from the template. Each row carries an optional
+  // entity link + free-text involvement type; "" folds to NULL on write. The
+  // entity FK is nullable and its target is known to exist, so the copy is FK-safe.
+  entityInvolvements: Array<{
+    entityId: string | null
+    involvementType: string
+  }>
 }
 
 // Sync carries the template item's quantity through verbatim. Quantity is
@@ -154,6 +161,18 @@ export async function createWorkOrderFromTemplateRecord(
         notes: payment.notes ? payment.notes : null,
         entityId: payment.entityId,
         paymentPurposeId: payment.paymentPurposeId,
+        createdBy: input.actorEmail,
+        updatedBy: input.actorEmail,
+      })),
+    })
+  }
+
+  if (input.entityInvolvements.length > 0) {
+    await client.flooringWorkOrderEntityInvolvement.createMany({
+      data: input.entityInvolvements.map((involvement) => ({
+        workOrderId: created.id,
+        entityId: involvement.entityId,
+        involvementType: involvement.involvementType ? involvement.involvementType : null,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),

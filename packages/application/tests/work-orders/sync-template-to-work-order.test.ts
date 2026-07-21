@@ -7,6 +7,7 @@ const {
   getWorkOrderDetailByIdMock,
   listWorkOrderMaterialItemsMock,
   listWorkOrderPlannedPaymentsMock,
+  listWorkOrderEntityInvolvementsMock,
 } = vi.hoisted(() => {
   return {
     withDatabaseTransactionMock: vi.fn(),
@@ -15,6 +16,7 @@ const {
     getWorkOrderDetailByIdMock: vi.fn(),
     listWorkOrderMaterialItemsMock: vi.fn(),
     listWorkOrderPlannedPaymentsMock: vi.fn(),
+    listWorkOrderEntityInvolvementsMock: vi.fn(),
   }
 })
 
@@ -27,6 +29,7 @@ vi.mock("@builders/db", () => ({
   getWorkOrderDetailById: getWorkOrderDetailByIdMock,
   listWorkOrderMaterialItems: listWorkOrderMaterialItemsMock,
   listWorkOrderPlannedPayments: listWorkOrderPlannedPaymentsMock,
+  listWorkOrderEntityInvolvements: listWorkOrderEntityInvolvementsMock,
 }))
 
 import { syncTemplateToWorkOrderUseCase } from "../../src/work-orders/sync-template-to-work-order.js"
@@ -49,6 +52,7 @@ function template(overrides: Record<string, unknown> = {}) {
     installerInstructions: null,
     plannedProducts: [],
     plannedPayments: [],
+    entityInvolvements: [],
     ...overrides,
   }
 }
@@ -60,6 +64,7 @@ beforeEach(() => {
   getWorkOrderDetailByIdMock.mockReset()
   listWorkOrderMaterialItemsMock.mockReset()
   listWorkOrderPlannedPaymentsMock.mockReset()
+  listWorkOrderEntityInvolvementsMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
   getTemplateByIdMock.mockResolvedValue(template())
@@ -68,6 +73,7 @@ beforeEach(() => {
   getWorkOrderDetailByIdMock.mockResolvedValue({ id: "wo-1" })
   listWorkOrderMaterialItemsMock.mockResolvedValue([])
   listWorkOrderPlannedPaymentsMock.mockResolvedValue([])
+  listWorkOrderEntityInvolvementsMock.mockResolvedValue([])
 })
 
 describe("syncTemplateToWorkOrderUseCase", () => {
@@ -208,6 +214,56 @@ describe("syncTemplateToWorkOrderUseCase", () => {
     expect(record.plannedPayments).toEqual([
       { amount: "10.00", direction: "REVENUE", notes: null, entityId: null },
     ])
+  })
+
+  it("carries the template's entity involvements into the synced work order, stripping hydration", async () => {
+    getTemplateByIdMock.mockResolvedValue(
+      template({
+        entityInvolvements: [
+          {
+            id: "tei-1",
+            entityId: "ent-1",
+            involvementType: "Sales Rep",
+            // Read-only hydration fields must never reach the WO involvement row.
+            entityName: "Acme",
+            entityType: null,
+            createdAt: "2026-07-09T00:00:00.000Z",
+            updatedAt: "2026-07-09T00:00:00.000Z",
+            createdBy: null,
+            updatedBy: null,
+          },
+        ],
+      }),
+    )
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    const [record] = createWorkOrderFromTemplateRecordMock.mock.calls[0]
+    expect(record.entityInvolvements).toEqual([
+      { entityId: "ent-1", involvementType: "Sales Rep" },
+    ])
+    expect(record.entityInvolvements[0]).not.toHaveProperty("entityName")
+  })
+
+  it("passes a blank involvement type through on sync (write repo coalesces to null)", async () => {
+    getTemplateByIdMock.mockResolvedValue(
+      template({
+        entityInvolvements: [
+          {
+            id: "tei-2",
+            entityId: null,
+            involvementType: "",
+            entityName: null,
+            entityType: null,
+            createdAt: "2026-07-09T00:00:00.000Z",
+            updatedAt: "2026-07-09T00:00:00.000Z",
+            createdBy: null,
+            updatedBy: null,
+          },
+        ],
+      }),
+    )
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    const [record] = createWorkOrderFromTemplateRecordMock.mock.calls[0]
+    expect(record.entityInvolvements).toEqual([{ entityId: null, involvementType: "" }])
   })
 
   it("leaves the address columns null when the template has no property address", async () => {

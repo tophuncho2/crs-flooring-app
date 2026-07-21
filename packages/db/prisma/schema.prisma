@@ -177,6 +177,7 @@ model Entity {
   products        FlooringProduct[]
   imports         FlooringImportEntry[]
   templatePlannedPayments TemplatePlannedPayment[]
+  templateEntityInvolvements TemplateEntityInvolvement[]
   workOrderPlannedPayments FlooringWorkOrderPlannedPayment[]
   workOrderEntityInvolvements FlooringWorkOrderEntityInvolvement[]
   certificates    Certificate[]
@@ -799,6 +800,7 @@ model Template {
   updatedBy            String?
   plannedProducts      TemplatePlannedProduct[]
   plannedPayments      TemplatePlannedPayment[]
+  entityInvolvements   TemplateEntityInvolvement[]
   workOrders           FlooringWorkOrder[]
 
   @@index([templateNumberInt])
@@ -871,6 +873,24 @@ model TemplatePlannedPayment {
   @@index([entityId])
   @@index([paymentPurposeId])
   @@map("template_planned_payment")
+}
+
+model TemplateEntityInvolvement {
+  id              String    @id @default(uuid())
+  templateId      String
+  template        Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  entityId        String?
+  entity          Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  involvementType String?   @db.VarChar(40)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  @@index([templateId])
+  @@index([templateId, createdAt])
+  @@index([entityId])
+  @@map("template_entity_involvement")
 }
 
 model FlooringWarehouse {

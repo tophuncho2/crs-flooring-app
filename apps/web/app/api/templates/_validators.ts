@@ -1,5 +1,6 @@
 import { z } from "zod"
 import {
+  TemplateEntityInvolvementExecutionError,
   TemplateExecutionError,
   TemplatePlannedPaymentExecutionError,
   TemplatePlannedProductExecutionError,
@@ -18,12 +19,15 @@ import {
   LIST_TEMPLATES_PAGE_SIZE,
   TEMPLATE_CUSTOMER_NAME_MAX,
   TEMPLATE_DESCRIPTION_MAX,
+  TEMPLATE_ENTITY_INVOLVEMENT_TYPE_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_PLANNED_PAYMENT_NOTES_MAX,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type FlooringPaymentDirection,
+  type TemplateEntityInvolvementForm,
+  type TemplateEntityInvolvementsDiff,
   type TemplatePlannedPaymentForm,
   type TemplatePlannedPaymentsDiff,
   type TemplatePlannedProductForm,
@@ -317,6 +321,71 @@ export function validateTemplatePlannedPaymentsDiffInput(
   const deleted = requirePaymentsArray(body.deleted, "deleted").map((entry, idx) => {
     const obj = requirePaymentsObject(entry, `deleted[${idx}]`)
     return { id: requireString(obj.id, `deleted[${idx}].id`, failPlannedPaymentsDiff) }
+  })
+
+  return { added, modified, deleted }
+}
+
+// --- Entity-involvement section diff validator ---
+// Why an entity is involved in the template. No required fields (the domain rule
+// is a no-op) — a row may carry any combination of an entity link + a free-text
+// involvement type. Fields: entityId (optional link), involvementType (bounded).
+// Reuses the module-local requireArray/requireObject/optionalBoundedText helpers.
+
+function failEntityInvolvement(message: string, field?: string): never {
+  throw new TemplateEntityInvolvementExecutionError({
+    code: "TEMPLATE_ENTITY_INVOLVEMENT_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+// Nullable entity link id: null/undefined/"" = unlinked, a non-empty string =
+// the linked entity. Folds missing → null; the FK (P2003) is the only backstop.
+function optionalEntityInvolvementEntityId(value: unknown, field: string): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") failEntityInvolvement(`${field} must be a string`, field)
+  const trimmed = (value as string).trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function validateEntityInvolvementForm(value: unknown, path: string): TemplateEntityInvolvementForm {
+  const obj = requireObject(value, path)
+  return {
+    entityId: optionalEntityInvolvementEntityId(obj.entityId, `${path}.entityId`),
+    involvementType:
+      optionalBoundedText(
+        obj.involvementType,
+        TEMPLATE_ENTITY_INVOLVEMENT_TYPE_MAX,
+        `${path}.involvementType`,
+        failEntityInvolvement,
+      ) ?? "",
+  }
+}
+
+export function validateTemplateEntityInvolvementsDiffInput(
+  body: Record<string, unknown>,
+): TemplateEntityInvolvementsDiff {
+  const added = requireArray(body.added, "added").map((entry, idx) => {
+    const obj = requireObject(entry, `added[${idx}]`)
+    return {
+      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failEntityInvolvement),
+      form: validateEntityInvolvementForm(obj.form, `added[${idx}].form`),
+    }
+  })
+
+  const modified = requireArray(body.modified, "modified").map((entry, idx) => {
+    const obj = requireObject(entry, `modified[${idx}]`)
+    return {
+      id: requireString(obj.id, `modified[${idx}].id`, failEntityInvolvement),
+      form: validateEntityInvolvementForm(obj.form, `modified[${idx}].form`),
+    }
+  })
+
+  const deleted = requireArray(body.deleted, "deleted").map((entry, idx) => {
+    const obj = requireObject(entry, `deleted[${idx}]`)
+    return { id: requireString(obj.id, `deleted[${idx}].id`, failEntityInvolvement) }
   })
 
   return { added, modified, deleted }

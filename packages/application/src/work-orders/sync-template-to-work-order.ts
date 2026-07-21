@@ -3,12 +3,14 @@ import {
   createWorkOrderFromTemplateRecord,
   getTemplateById,
   getWorkOrderDetailById,
+  listWorkOrderEntityInvolvements,
   listWorkOrderMaterialItems,
   listWorkOrderPlannedPayments,
 } from "@builders/db"
 import {
   TEMPLATE_SYNC_TEMPLATE_NOT_FOUND_MESSAGE,
   type WorkOrderDetail,
+  type WorkOrderEntityInvolvementRow,
   type WorkOrderMaterialItemRow,
   type WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
@@ -25,6 +27,7 @@ export type SyncTemplateToWorkOrderResult = {
   workOrder: WorkOrderDetail
   items: WorkOrderMaterialItemRow[]
   plannedPayments: WorkOrderPlannedPaymentRow[]
+  entityInvolvements: WorkOrderEntityInvolvementRow[]
 }
 
 function notesOrNull(value: string): string | null {
@@ -112,18 +115,26 @@ export async function syncTemplateToWorkOrderUseCase(
             entityId: payment.entityId,
             paymentPurposeId: payment.paymentPurposeId,
           })),
+          // Deliberately enumerated (never spread): carry entityId +
+          // involvementType. The row's involvementType is ""-when-unset; the write
+          // repo coalesces "" → NULL, so it passes through verbatim.
+          entityInvolvements: template.entityInvolvements.map((involvement) => ({
+            entityId: involvement.entityId,
+            involvementType: involvement.involvementType,
+          })),
         },
         c,
       ),
     // Enrich the full result on the POOL after commit. Promise.all is safe here —
     // each read runs on its own pooled connection, not the pinned tx.
     async ({ id }) => {
-      const [workOrder, items, plannedPayments] = await Promise.all([
+      const [workOrder, items, plannedPayments, entityInvolvements] = await Promise.all([
         getWorkOrderDetailById(id, { withNeighbors: false }),
         listWorkOrderMaterialItems(id),
         listWorkOrderPlannedPayments(id),
+        listWorkOrderEntityInvolvements(id),
       ])
-      return { workOrder, items, plannedPayments }
+      return { workOrder, items, plannedPayments, entityInvolvements }
     },
     () => {
       throw new Error("syncTemplateToWorkOrderUseCase: work order not found after sync")

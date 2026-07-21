@@ -8,11 +8,13 @@ import {
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/primary/use-template-primary-section"
 import { useTemplatePlannedProductsSection } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
 import { useTemplatePlannedPaymentsSection } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
+import { useTemplateEntityInvolvementSection } from "@/modules/templates/controllers/record/entity-involvement/use-template-entity-involvement-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
 import { TemplateProductsSection } from "./template-products-section"
 import { TemplatePaymentsSection } from "./template-payments-section"
+import { TemplateEntityInvolvementSection } from "./template-entity-involvement-section"
 import { TemplateRecordFooter } from "./footer"
 
 export function TemplateRecordPanel({
@@ -31,15 +33,21 @@ export function TemplateRecordPanel({
     template: primary.record,
     publishTemplate: primary.publishRecord,
   })
+  const entityInvolvement = useTemplateEntityInvolvementSection({
+    template: primary.record,
+    publishTemplate: primary.publishRecord,
+  })
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
   const isDirty =
     primary.primarySection.isDirty ||
     plannedProducts.isDirty ||
+    entityInvolvement.isDirty ||
     plannedPayments.isDirty
   const canSync =
     !isDirty &&
     !primary.primarySection.isSaving &&
     !plannedProducts.isSaving &&
+    !entityInvolvement.isSaving &&
     !plannedPayments.isSaving
 
   return (
@@ -129,6 +137,18 @@ export function TemplateRecordPanel({
               hasConflict: plannedProducts.hasConflict,
             },
             render: () => <TemplateProductsSection planned={plannedProducts} />,
+          },
+          {
+            key: "entity-involvement",
+            type: "item",
+            order: 15,
+            dirtyLabel: "entity involvement",
+            controller: {
+              isDirty: entityInvolvement.isDirty,
+              isSaving: entityInvolvement.isSaving,
+              hasConflict: entityInvolvement.hasConflict,
+            },
+            render: () => <TemplateEntityInvolvementSection section={entityInvolvement} />,
           },
           {
             key: "payments",

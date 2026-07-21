@@ -4,6 +4,7 @@ import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
 import type {
   TemplateDetail,
+  TemplateEntityInvolvementsDiff,
   TemplateForm,
   TemplatePlannedPaymentsDiff,
   TemplatePlannedProductsDiff,
@@ -76,6 +77,21 @@ export async function saveTemplatePlannedPaymentsSectionRequest(
 ) {
   return requestJson<{ template: TemplateDetail; tempIdMap: Record<string, string> }>(
     `/api/templates/${templateId}/planned-payments/section`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta(diff as unknown as Record<string, unknown>, revisionKey)),
+    },
+  )
+}
+
+export async function saveTemplateEntityInvolvementsSectionRequest(
+  templateId: string,
+  diff: TemplateEntityInvolvementsDiff,
+  revisionKey: string,
+) {
+  return requestJson<{ template: TemplateDetail; tempIdMap: Record<string, string> }>(
+    `/api/templates/${templateId}/entity-involvement/section`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

@@ -1,6 +1,7 @@
 import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
 import type { TemplatePlannedPaymentRow } from "./planned-payments/types.js"
+import type { TemplateEntityInvolvementRow } from "./entity-involvement/types.js"
 
 export type TemplateListRow = {
   id: string
@@ -51,6 +52,9 @@ export type TemplateDetail = TemplateListRow & {
   // Planned payments on the template — the §3 payment plan (own table). Read as an
   // array by the record view; no count surfaced. Entity link arrives in a later pass.
   plannedPayments: TemplatePlannedPaymentRow[]
+  // Entity-involvement rows — optional entity link + free-text involvement type.
+  // Read as an array by the record view; carries forward to a synced work order.
+  entityInvolvements: TemplateEntityInvolvementRow[]
   /**
    * Neighbors by global template-number order (`templateNumberInt`), ignoring
    * property/entity filters — powers the record-view shell stepper (◀ TP-# ▶). Null

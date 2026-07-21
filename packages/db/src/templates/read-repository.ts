@@ -4,6 +4,7 @@ import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
 import { buildTemplatesOrderBy } from "./order-by.js"
 import { entityTypeSelect } from "../entities/read-repository.js"
+import { templateEntityInvolvementSelect } from "./entity-involvement/read-repository.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeTemplate,
@@ -130,6 +131,13 @@ const templateDetailSelect = {
       createdBy: true,
       updatedBy: true,
     },
+    orderBy: { createdAt: "asc" as const },
+  },
+  // Entity involvements — optional entity link + free-text involvement type.
+  // Detail-only; the record view reads the array directly and it carries forward
+  // to a synced work order. Reuses the shared select fragment.
+  entityInvolvements: {
+    select: templateEntityInvolvementSelect,
     orderBy: { createdAt: "asc" as const },
   },
 } as const
