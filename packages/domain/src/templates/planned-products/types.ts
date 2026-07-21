@@ -28,6 +28,12 @@ export type TemplatePlannedProductRow = {
   // computeTemplatePlannedProductLineTotal. Display only — never sent in the diff.
   // "" when all inputs are blank.
   lineTotal: string
+  // Derived job-costing metrics, computed on read (bidCost = productCost). Display
+  // only — never sent in the diff. lineProfit is a signed bare money string
+  // ("-5.00" / "12.00"); lineMargin is a signed one-decimal percent ("28.6" /
+  // "−16.7"). Both "" when blank (margin also "" when the line total is zero).
+  lineProfit: string
+  lineMargin: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,

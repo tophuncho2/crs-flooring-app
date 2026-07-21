@@ -6,8 +6,11 @@ import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import {
+  computeTemplatePlannedProductLineMargin,
+  computeTemplatePlannedProductLineProfit,
   computeTemplatePlannedProductLineTotal,
   formatMoney,
+  formatSignedMoney,
   type ProductOption,
   type UnitOfMeasureOption,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
@@ -26,6 +29,8 @@ const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductL
   { key: "freight", label: "Freight", width: 110, align: "end" },
   { key: "unitPrice", label: "Unit Price", width: 120, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
+  { key: "lineProfit", label: "Line Profit", width: 130, align: "end" },
+  { key: "lineMargin", label: "Line Margin", width: 120, align: "end" },
   { key: "notes", label: "Notes", width: 240 },
 ]
 
@@ -157,6 +162,45 @@ export function TemplatePlannedProductsGrid({
                 align="end"
                 value={lineTotal ? formatMoney(lineTotal) : "—"}
                 ariaLabel="Planned product line total"
+              />
+            )
+          }
+          case "lineProfit": {
+            // Derived: Line Total − Line Cost (bid cost = live product cost).
+            // Read-only, recomputed live. Signed — "−$X.XX" when the bid costs more
+            // than it sells for. "—" when qty/price/cost are all blank.
+            const profit = computeTemplatePlannedProductLineProfit({
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              bidCost: item.productCost,
+              tax: item.tax,
+              freight: item.freight,
+            })
+            return (
+              <NumberCell
+                editable={false}
+                align="end"
+                value={formatSignedMoney(profit) || "—"}
+                ariaLabel="Planned product line profit"
+              />
+            )
+          }
+          case "lineMargin": {
+            // Derived: Line Profit ÷ Line Total × 100, one decimal. Read-only,
+            // recomputed live. "—" when the line total is blank or zero.
+            const margin = computeTemplatePlannedProductLineMargin({
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              bidCost: item.productCost,
+              tax: item.tax,
+              freight: item.freight,
+            })
+            return (
+              <NumberCell
+                editable={false}
+                align="end"
+                value={margin ? `${margin}%` : "—"}
+                ariaLabel="Planned product line margin"
               />
             )
           }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   formatMoney,
+  formatSignedMoney,
   isValidMoneyAmount,
   normalizeMoneyAmount,
 } from "../../src/shared/money.js"
@@ -65,5 +66,23 @@ describe("formatMoney", () => {
 
   it("returns empty for absent values so callers render their own placeholder", () => {
     expect(formatMoney("")).toBe("")
+  })
+})
+
+describe("formatSignedMoney", () => {
+  it("formats a non-negative value like formatMoney", () => {
+    expect(formatSignedMoney("12.00")).toBe("$12.00")
+    expect(formatSignedMoney("0.00")).toBe("$0.00")
+    expect(formatSignedMoney("1250.00", { prefix: "€" })).toBe("€1250.00")
+  })
+
+  it("emits the U+2212 minus glyph for a negative value", () => {
+    expect(formatSignedMoney("-5.00")).toBe("−$5.00")
+    expect(formatSignedMoney("-1250.00", { prefix: "€" })).toBe("−€1250.00")
+  })
+
+  it("returns empty for absent values so callers render their own placeholder", () => {
+    expect(formatSignedMoney("")).toBe("")
+    expect(formatSignedMoney("abc")).toBe("")
   })
 })

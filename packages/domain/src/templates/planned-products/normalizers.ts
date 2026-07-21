@@ -1,6 +1,10 @@
 import { toIsoTimestamp } from "../../shared/date-format.js"
 import { normalizeMoneyAmount } from "../../shared/money.js"
-import { computeTemplatePlannedProductLineTotal } from "./math.js"
+import {
+  computeTemplatePlannedProductLineMargin,
+  computeTemplatePlannedProductLineProfit,
+  computeTemplatePlannedProductLineTotal,
+} from "./math.js"
 import type { TemplatePlannedProductRow } from "./types.js"
 
 type TemplatePlannedProductInput = {
@@ -37,6 +41,8 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
   const unitPrice = normalizeMoneyColumn(item.unitPrice)
   const tax = normalizeMoneyColumn(item.tax)
   const freight = normalizeMoneyColumn(item.freight)
+  // Bid cost = the live product cost (read-join), fed to the derived profit/margin.
+  const profitInputs = { quantity, unitPrice, tax, freight, bidCost: productCost }
   return {
     id: item.id,
     productId: item.productId,
@@ -54,6 +60,8 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     tax,
     freight,
     lineTotal: computeTemplatePlannedProductLineTotal({ quantity, unitPrice, tax, freight }),
+    lineProfit: computeTemplatePlannedProductLineProfit(profitInputs),
+    lineMargin: computeTemplatePlannedProductLineMargin(profitInputs),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

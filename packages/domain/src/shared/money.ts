@@ -77,3 +77,18 @@ export function formatMoney(value: string | number, options?: { prefix?: string 
   if (normalized === "") return ""
   return `${options?.prefix ?? "$"}${normalized}`
 }
+
+/**
+ * Display a possibly-negative money string as `"$X.XX"` / `"−$X.XX"`. Currency-of-
+ * record values are never negative, so this is display-only — it parses a leading
+ * ASCII `-` and re-emits the U+2212 minus glyph (matching the app's other signed-
+ * money formatters). Empty/garbage → `""` so callers can render `"—"`.
+ */
+export function formatSignedMoney(value: string | number, options?: { prefix?: string }): string {
+  const raw = toRawString(value)
+  if (raw === "") return ""
+  const negative = raw.startsWith("-")
+  const formatted = formatMoney(negative ? raw.slice(1) : raw, options)
+  if (formatted === "") return ""
+  return negative ? `−${formatted}` : formatted
+}
