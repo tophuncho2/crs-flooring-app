@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, type ReactNode } from "react"
+import { EllipsisVertical } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
+  RecordFooterNeutralButton,
   RecordSectionSubHeader,
   RecordDeleteDialog,
   buildDeleteConfirmationMessage,
@@ -153,6 +155,14 @@ export function EmbeddedAdjustmentRecordView({
           onDuplicate: (row) => onDuplicate?.(row),
         },
         isSaving,
+        // Sub-header wants a labeled "Options" button (matching Save/Discard),
+        // not the list rows' icon-only ⋮.
+        ({ toggle, disabled }) => (
+          <RecordFooterNeutralButton onClick={toggle} disabled={disabled}>
+            <EllipsisVertical size={16} aria-hidden="true" />
+            Options
+          </RecordFooterNeutralButton>
+        ),
       )
     : null
 

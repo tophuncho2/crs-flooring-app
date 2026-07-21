@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Copy, Plus, Split, Trash2, Undo2 } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
-import { RecordOptionsMenu, type RecordOptionsMenuItem } from "@/engines/common"
+import { RecordOptionsMenu, type RecordOptionsMenuItem, type RecordOptionsMenuTrigger } from "@/engines/common"
 
 /**
  * Handlers for the shared adjustment row ⋮ menu. Every adjustment `DataTable`
@@ -40,11 +40,16 @@ export type AdjustmentRowActionHandlers = {
  * in flight. Returns `null` when no
  * handler applies (no menu rendered). Designed to slot straight into `DataTable`'s
  * `rowActions`.
+ *
+ * The default trigger is the icon-only ⋮ (list rows). Pass `renderTrigger` for a
+ * labeled variant — the adjustments record-view sub-header uses it to show an
+ * "Options" button beside Save/Discard.
  */
 export function renderAdjustmentRowActions(
   row: EnrichedInventoryAdjustmentRow,
   handlers: AdjustmentRowActionHandlers,
   isBusy = false,
+  renderTrigger?: RecordOptionsMenuTrigger,
 ): ReactNode {
   const items: RecordOptionsMenuItem[] = []
 
@@ -100,6 +105,7 @@ export function renderAdjustmentRowActions(
     <RecordOptionsMenu
       ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
       items={items}
+      renderTrigger={renderTrigger}
     />
   )
 }
