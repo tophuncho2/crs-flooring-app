@@ -1,13 +1,16 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { Copy, Download, EllipsisVertical } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow, InventoryDetail, InventoryForm } from "@builders/domain"
+import { RecordOptionsMenu, type RecordOptionsMenuItem } from "@/engines/common"
 import {
   ConfirmDialog,
   RecordDrilldownSection,
   RecordEntityFooter,
+  RecordFooterNeutralButton,
   RecordItemSection,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -275,6 +278,40 @@ export function InventoryRecordView({
     [page, goToSplitOff],
   )
 
+  // Primary-section ⋮ — folds Duplicate + Export into one menu beside Save/Discard,
+  // mirroring the embedded adjustment sub-header's labeled "Options" trigger. Both
+  // items keep their original handlers (guarded duplicate-navigate; open the
+  // print/export viewport in a new tab).
+  const primaryOptionsItems: RecordOptionsMenuItem[] = [
+    {
+      key: "duplicate",
+      label: "Duplicate",
+      icon: <Copy size={14} aria-hidden="true" />,
+      onClick: handleDuplicate,
+      disabled: primary.isSaving,
+    },
+    {
+      key: "export",
+      label: "Export",
+      icon: <Download size={14} aria-hidden="true" />,
+      onClick: () => {
+        window.open(`/print/inventory/${entry.id}`, "_blank", "noopener,noreferrer")
+      },
+    },
+  ]
+  const primaryOptionsMenu = (
+    <RecordOptionsMenu
+      ariaLabel="Inventory options"
+      items={primaryOptionsItems}
+      renderTrigger={({ toggle, disabled }) => (
+        <RecordFooterNeutralButton onClick={toggle} disabled={disabled}>
+          <EllipsisVertical size={16} aria-hidden="true" />
+          Options
+        </RecordFooterNeutralButton>
+      )}
+    />
+  )
+
   const sections: RecordPanelSectionConfig[] = [
     {
       key: "primary",
@@ -303,25 +340,9 @@ export function InventoryRecordView({
           hasConflict={primary.hasConflict}
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
-          actions={[
-            {
-              key: "export",
-              label: "Export",
-              tone: "neutral",
-              // Opens the standalone print/export viewport (CSV + Print) in a new
-              // tab, mirroring the work-order Export entry point.
-              onClick: () => {
-                window.open(`/print/inventory/${entry.id}`, "_blank", "noopener,noreferrer")
-              },
-            },
-            {
-              key: "duplicate",
-              label: "Duplicate",
-              tone: "neutral",
-              onClick: handleDuplicate,
-              disabled: primary.isSaving,
-            },
-          ]}
+          // Duplicate + Export are consolidated into the ⋮ Options menu (beside
+          // the managed Save/Discard), mirroring the embedded adjustment sub-header.
+          actionsTrailing={primaryOptionsMenu}
         >
           <InventoryPrimaryFieldsSection
             draft={primary.localValue}
