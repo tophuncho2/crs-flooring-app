@@ -377,6 +377,7 @@ export function InventoryRecordView({
                 onBack={onBack}
                 onDirtyChange={setEmbeddedAdjustmentDirty}
                 onAddInventoryFromAdjustment={confirmSplitOff}
+                onCreateReturn={(args) => setReturnModal(args)}
                 actionsLeading={adjustmentStepper}
               />
             )}

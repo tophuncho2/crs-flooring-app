@@ -34,6 +34,12 @@ export type EmbeddedAdjustmentRecordViewProps = {
    * the split-off create form seeded from the saved adjustment — no re-save.
    */
   onAddInventoryFromAdjustment?: (args: { inventoryId: string; quantity: string }) => void
+  /**
+   * When provided, a "Create return" action opens the shared return modal seeded
+   * off the saved adjustment's work-order link — the edit-face equivalent of the
+   * list row's ⋮ "Create return". The host owns the modal + inventory-row seed.
+   */
+  onCreateReturn?: (args: { workOrderId: string | null; workOrderLabel: string | null }) => void
 }
 
 /**
@@ -56,6 +62,7 @@ export function EmbeddedAdjustmentRecordView({
   onBack,
   onDirtyChange,
   onAddInventoryFromAdjustment,
+  onCreateReturn,
   actionsLeading,
 }: EmbeddedAdjustmentRecordViewProps) {
   const { open, form, isDirty, canSave, isSaving, error } = controller
@@ -112,6 +119,24 @@ export function EmbeddedAdjustmentRecordView({
               onAddInventoryFromAdjustment({
                 inventoryId: splitSourceInventoryId,
                 quantity: form.quantity,
+              }),
+            disabled: isSaving,
+          },
+        ]
+      : []),
+    // Opens the shared return modal seeded off this saved row's work-order link —
+    // the edit-face twin of the list row's ⋮ "Create return". Create is a modal
+    // owned by the host; this only forwards the work-order seed.
+    ...(adjustment && onCreateReturn
+      ? [
+          {
+            key: "create-return",
+            label: "Create return",
+            tone: "neutral" as const,
+            onClick: () =>
+              onCreateReturn({
+                workOrderId: adjustment.workOrderId,
+                workOrderLabel: adjustment.workOrderNumber ?? null,
               }),
             disabled: isSaving,
           },
