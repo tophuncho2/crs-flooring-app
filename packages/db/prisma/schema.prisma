@@ -171,7 +171,8 @@ model Entity {
   createdBy       String?
   updatedBy       String?
   properties      Property[]
-  entityTypes     EntityEntityType[]
+  entityTypeId    String?               @map("entity_type_id")
+  entityType      FlooringEntityType?   @relation(fields: [entityTypeId], references: [id], onDelete: SetNull)
   payments        FlooringPayment[]
   products        FlooringProduct[]
   imports         FlooringImportEntry[]
@@ -197,6 +198,8 @@ model Entity {
   @@index([createdAt, id])
   @@index([updatedAt, id])
   @@index([state, id])
+  // FK backing the entity's single type assignment (nullable, SetNull on type delete).
+  @@index([entityTypeId])
   @@map("entity")
 }
 
@@ -1069,30 +1072,13 @@ model FlooringEntityType {
   updatedAt           DateTime                @updatedAt
   createdBy           String?
   updatedBy           String?
-  entities            EntityEntityType[]
+  entities            Entity[]
 
   @@index([type])
   @@index([entityTypeNumber])
   @@index([entityTypeNumberInt])
   @@index([type(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_entity_type_type_trgm_idx")
   @@map("flooring_entity_type")
-}
-
-// Join row linking an Entity to a FlooringEntityType (many-to-many). An entity
-// may carry several types; a type may tag many entities. Explicit join (not a
-// Prisma implicit m-n) to match the codebase's explicit-FK house style and leave
-// room for future metadata/order. Both sides cascade-delete the link row.
-model EntityEntityType {
-  id           String             @id @default(uuid())
-  entityId     String
-  entityTypeId String
-  entity       Entity             @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  entityType   FlooringEntityType @relation(fields: [entityTypeId], references: [id], onDelete: Cascade)
-  createdAt    DateTime           @default(now())
-
-  @@unique([entityId, entityTypeId])
-  @@index([entityTypeId])
-  @@map("entity_entity_type")
 }
 
 // Standalone user-managed lookup row. Mirrors FlooringEntityType's canonical

@@ -47,7 +47,12 @@ function entityFieldsHaveAnyValue(form: EntityForm): boolean {
     .filter((key) => key !== "color")
     .some((key) => {
       const value = form[key]
-      return Array.isArray(value) ? value.length > 0 : value.trim().length > 0
+      // `typeId` is a nullable scalar (string | null) — a non-null id counts as
+      // intent; null does not (and must not hit `.trim()`). Strings trim-check.
+      if (value === null || value === undefined) return false
+      if (Array.isArray(value)) return value.length > 0
+      if (typeof value === "string") return value.trim().length > 0
+      return true
     })
 }
 

@@ -17,7 +17,7 @@ import {
 } from "@/engines/record-view"
 import { CellAddButton, CellChip, PaletteColorDropdown } from "@/engines/common"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
-import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
+import { EntityTypeSelect } from "@/modules/entity-types/components/picker/entity-type-select"
 
 /**
  * The Property record view's §1 entity block — always shown. The
@@ -35,7 +35,7 @@ export function EntityPickerSection({
   onOptionSelected,
   selectedLabel,
   display,
-  typeRefs,
+  typeRef,
   entityNumber,
   entityColor,
   editable,
@@ -48,8 +48,8 @@ export function EntityPickerSection({
   onOptionSelected: (option: EntityOption | null) => void
   selectedLabel: string | null
   display: EntityForm | null
-  /** The linked entity's type(s), rendered read-only as palette chips. */
-  typeRefs: EntityTypeRef[]
+  /** The linked entity's type, rendered read-only as a palette chip. */
+  typeRef: EntityTypeRef | null
   /** The linked entity's ENT-# (read-only chip), or null when none / mid-re-pick. */
   entityNumber: string | null
   /** The linked entity's palette color (read-only swatch + tints the ENT-# chip). */
@@ -118,8 +118,8 @@ export function EntityPickerSection({
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={8}>
-        <FormField label="Types">
-          <EntityTypeMultiSelect selectedIds={typeRefs.map((ref) => ref.id)} seedRefs={typeRefs} editable={false} />
+        <FormField label="Type">
+          <EntityTypeSelect value={typeRef?.id ?? null} seedRef={typeRef} editable={false} />
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={8}>

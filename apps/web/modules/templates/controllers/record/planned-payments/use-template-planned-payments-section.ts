@@ -33,10 +33,10 @@ export type TemplatePlannedPaymentLocal = {
   // Optional entity link (null = unlinked) — the only writable/diffed link field.
   entityId: string | null
   // Read-only hydration co-located with entityId so the picker's selectedLabel
-  // and the Type(s) chips can never desync from the id (grid label-contract fix).
+  // and the Type chip can never desync from the id (grid label-contract fix).
   // Never sent on save; seeded from the row on load, snapshotted on pick.
   entityName: string | null
-  entityTypes: EntityTypeRef[]
+  entityType: EntityTypeRef | null
   // Optional payment-purpose link (null = unlinked) — writable/diffed.
   paymentPurposeId: string | null
   // Read-only hydration co-located with paymentPurposeId so the picker chip's
@@ -57,7 +57,7 @@ function toLocalItem(row: TemplatePlannedPaymentRow): TemplatePlannedPaymentLoca
     notes: row.notes,
     entityId: row.entityId,
     entityName: row.entityName,
-    entityTypes: row.entityTypes,
+    entityType: row.entityType,
     paymentPurposeId: row.paymentPurposeId,
     paymentPurposeName: row.paymentPurposeName,
     paymentPurposeColor: row.paymentPurposeColor,
@@ -173,7 +173,7 @@ export function useTemplatePlannedPaymentsSection({
           notes: "",
           entityId: null,
           entityName: null,
-          entityTypes: [],
+          entityType: null,
           paymentPurposeId: null,
           paymentPurposeName: null,
           paymentPurposeColor: null,
@@ -204,7 +204,7 @@ export function useTemplatePlannedPaymentsSection({
   }
 
   // Snapshot the picked entity's id + name + type chips into the row atomically,
-  // so selectedLabel and the read-only Type(s) column populate instantly with no
+  // so selectedLabel and the read-only Type column populate instantly with no
   // server round-trip and never desync from entityId. Null clears the link.
   function selectEntity(itemId: string, option: EntityOption | null) {
     section.setLocalValue((previous) => ({
@@ -214,7 +214,7 @@ export function useTemplatePlannedPaymentsSection({
               ...row,
               entityId: option?.id ?? null,
               entityName: option?.entity ?? null,
-              entityTypes: option?.types ?? [],
+              entityType: option?.type ?? null,
             }
           : row,
       ),

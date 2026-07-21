@@ -18,14 +18,8 @@ export function renderEntityRowCell(
     case "entity":
       return <span className="font-medium">{row.entity}</span>
     case "types":
-      return row.types.length > 0 ? (
-        <span className="flex flex-wrap items-center gap-1">
-          {row.types.map((type) => (
-            <CellChip key={type.id} paletteColor={type.color}>
-              {type.type}
-            </CellChip>
-          ))}
-        </span>
+      return row.type ? (
+        <CellChip paletteColor={row.type.color}>{row.type.type}</CellChip>
       ) : (
         "-"
       )

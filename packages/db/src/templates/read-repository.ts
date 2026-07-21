@@ -3,7 +3,7 @@ import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { sliceHasMore } from "../shared/paginate.js"
 import { combineAnd } from "../shared/where.js"
 import { buildTemplatesOrderBy } from "./order-by.js"
-import { entityTypesSelect } from "../entities/read-repository.js"
+import { entityTypeSelect } from "../entities/read-repository.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeTemplate,
@@ -118,7 +118,7 @@ const templateDetailSelect = {
       direction: true,
       notes: true,
       entityId: true,
-      entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
+      entity: { select: { id: true, entity: true, entityType: entityTypeSelect } },
       paymentPurposeId: true,
       paymentPurpose: { select: { id: true, name: true, color: true } },
       createdAt: true,

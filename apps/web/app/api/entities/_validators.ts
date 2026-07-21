@@ -52,18 +52,14 @@ function pickPostalCode(body: Record<string, unknown>): unknown {
   return undefined
 }
 
-// Linked entity-type ids. Must be an array of non-empty strings; dedup'd to keep
-// set semantics. Referential validity (the ids point at real types) is the
-// data/application layer's job (FK → P2003 → 400).
-function requireTypeIds(value: unknown): string[] {
-  if (!Array.isArray(value)) fail("typeIds must be an array", "typeIds")
-  const ids = value.map((entry) => {
-    if (typeof entry !== "string" || !entry.trim()) {
-      fail("typeIds must be non-empty strings", "typeIds")
-    }
-    return (entry as string).trim()
-  })
-  return Array.from(new Set(ids))
+// The entity's single linked type id. A non-empty string assigns; null/absent
+// leaves it unassigned. Referential validity (the id points at a real type) is
+// the data/application layer's job (FK → P2003 → 400).
+function optionalTypeId(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") fail("typeId must be a string or null", "typeId")
+  const trimmed = (value as string).trim()
+  return trimmed.length > 0 ? trimmed : null
 }
 
 export function validateCreateEntityInput(
@@ -77,7 +73,7 @@ export function validateCreateEntityInput(
     postalCode: optionalString(pickPostalCode(body)),
     phone: optionalPhone(body.phone),
     email: optionalString(body.email),
-    typeIds: "typeIds" in body ? requireTypeIds(body.typeIds) : [],
+    typeId: "typeId" in body ? optionalTypeId(body.typeId) : null,
   }
 }
 
@@ -93,7 +89,7 @@ export function validateUpdateEntityInput(
   if ("zip" in body || "postalCode" in body) input.postalCode = optionalString(pickPostalCode(body))
   if ("phone" in body) input.phone = optionalPhone(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
-  if ("typeIds" in body) input.typeIds = requireTypeIds(body.typeIds)
+  if ("typeId" in body) input.typeId = optionalTypeId(body.typeId)
   if ("color" in body) input.color = requireColor(body.color, "color", fail)
 
   return input

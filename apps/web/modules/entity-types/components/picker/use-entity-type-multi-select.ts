@@ -21,9 +21,10 @@ export function toEntityTypePickerOption(option: EntityTypeOption): PickerListOp
  * The shared multi-select-of-entity-types machinery: an id-driven `string[]`
  * selection with a small id→{type,color} ref-cache for chip labels, plus an
  * options controller whose list hides the already-selected ids (so the add-list
- * only ever offers additions). Composed by both the standalone
- * `EntityTypeMultiSelect` chip control and the combo picker's type side, so the
- * pick/remove/label logic lives in exactly one place.
+ * only ever offers additions). Composed by the entity-type list-filter rail and
+ * the combo picker's type-narrowing side, so the pick/remove/label logic lives
+ * in exactly one place. (Per-entity assignment is single-select — see
+ * `EntityTypeSelect` — and no longer uses this hook.)
  *
  * `enabled` gates the underlying options fetch (pass the panel's open state).
  */

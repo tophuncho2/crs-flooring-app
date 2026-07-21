@@ -166,7 +166,7 @@ describe("syncTemplateToWorkOrderUseCase", () => {
             entityId: "ent-1",
             // Read-only hydration fields must never reach the WO payment row.
             entityName: "Acme",
-            entityTypes: [],
+            entityType: null,
             createdAt: "2026-07-09T00:00:00.000Z",
             updatedAt: "2026-07-09T00:00:00.000Z",
             createdBy: null,
@@ -194,7 +194,7 @@ describe("syncTemplateToWorkOrderUseCase", () => {
             notes: "",
             entityId: null,
             entityName: null,
-            entityTypes: [],
+            entityType: null,
             createdAt: "2026-07-09T00:00:00.000Z",
             updatedAt: "2026-07-09T00:00:00.000Z",
             createdBy: null,

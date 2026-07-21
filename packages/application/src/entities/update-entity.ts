@@ -46,9 +46,9 @@ export async function updateEntityUseCase(
       if (isP2003(error)) {
         throw new EntityExecutionError({
           code: "ENTITY_INVALID_TYPE",
-          message: "One or more entity types could not be found",
+          message: "The selected entity type could not be found",
           status: 400,
-          field: "typeIds",
+          field: "typeId",
         })
       }
       throw error

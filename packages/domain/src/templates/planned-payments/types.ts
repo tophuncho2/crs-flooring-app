@@ -17,9 +17,9 @@ export type TemplatePlannedPaymentRow = {
   // Optional entity link — the writable FK.
   entityId: string | null
   // Read-only hydration off the entity link (never round-trips on save): the
-  // linked entity's name + its type chips. Null/empty when unlinked.
+  // linked entity's name + its type chip. Null when unlinked.
   entityName: string | null
-  entityTypes: EntityTypeRef[]
+  entityType: EntityTypeRef | null
   // Optional payment-purpose link — the writable FK.
   paymentPurposeId: string | null
   // Read-only hydration off the purpose link (never round-trips on save): the
@@ -42,7 +42,7 @@ export type TemplatePlannedPaymentForm = {
   // Short free-text note; "" = unset (persisted as NULL).
   notes: string
   // Optional entity link (null = unlinked). The only writable link field —
-  // entityName/entityTypes are read-only hydration and never enter the form.
+  // entityName/entityType are read-only hydration and never enter the form.
   entityId: string | null
   // Optional payment-purpose link (null = unlinked). Writable FK —
   // paymentPurposeName/Color are read-only hydration and never enter the form.

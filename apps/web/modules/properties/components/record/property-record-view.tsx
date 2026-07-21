@@ -50,9 +50,9 @@ function toDisplayForm(option: EntityOption): EntityForm {
     zip: option.zip,
     phone: option.phone,
     email: option.email,
-    // Contact-only display form: the type chips render from `entityTypeRefs`
-    // (fed the option's `types`), not from this form's `typeIds`.
-    typeIds: [],
+    // Contact-only display form: the type chip renders from `entityTypeRef`
+    // (fed the option's `type`), not from this form's `typeId`.
+    typeId: null,
     // Read-only contact display only — color is never shown/edited here, so the
     // default satisfies the form shape without implying a real value.
     color: DEFAULT_PALETTE_COLOR,
@@ -110,10 +110,10 @@ export function PropertyRecordView({
     entity ? toEntityForm(entity) : null,
   )
   const [entityLabel, setEntityLabel] = useState<string | null>(linkedEntity?.entity ?? null)
-  // The linked entity's type chips (read-only). Seeded from the server-loaded
-  // entity and refreshed from the picked option (which carries its types).
-  const [entityTypeRefs, setEntityTypeRefs] = useState<EntityTypeRef[]>(
-    entity?.types ?? [],
+  // The linked entity's type chip (read-only). Seeded from the server-loaded
+  // entity and refreshed from the picked option (which carries its type).
+  const [entityTypeRef, setEntityTypeRef] = useState<EntityTypeRef | null>(
+    entity?.type ?? null,
   )
   // The linked entity's ENT-# + palette color, mirrored read-only above the
   // Entity cell (parity with the entity record view). Seeded from the
@@ -124,7 +124,7 @@ export function PropertyRecordView({
   const selectEntity = (option: EntityOption | null) => {
     setEntityDisplay(option ? toDisplayForm(option) : null)
     setEntityLabel(option?.entity ?? null)
-    setEntityTypeRefs(option?.types ?? [])
+    setEntityTypeRef(option?.type ?? null)
     setEntityNumber(option?.entityNumber ?? null)
     setEntityColor(option?.color ?? null)
   }
@@ -138,7 +138,7 @@ export function PropertyRecordView({
     setSeenEntryId(entry.id)
     setEntityDisplay(entity ? toEntityForm(entity) : null)
     setEntityLabel(linkedEntity?.entity ?? null)
-    setEntityTypeRefs(entity?.types ?? [])
+    setEntityTypeRef(entity?.type ?? null)
     setEntityNumber(entity?.entityNumber ?? null)
     setEntityColor(entity?.color ?? null)
   }
@@ -191,7 +191,7 @@ export function PropertyRecordView({
                   onOptionSelected={selectEntity}
                   selectedLabel={entityLabel}
                   display={entityDisplay}
-                  typeRefs={entityTypeRefs}
+                  typeRef={entityTypeRef}
                   entityNumber={entityNumber}
                   entityColor={entityColor}
                   editable={!primary.isSaving}

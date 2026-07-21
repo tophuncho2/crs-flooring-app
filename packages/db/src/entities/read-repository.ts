@@ -31,15 +31,12 @@ export type EntitiesListSort = {
   entries: EntitiesListSortEntry[]
 }
 
-// Linked entity-types, slimmed to what the chip/picker render. Ordered by type
-// name so chips render in a stable, alphabetical order. Exported so the write
-// repository reuses the exact same shape (single source of truth).
-export const entityTypesSelect = {
-  select: {
-    entityType: { select: { id: true, type: true, color: true } },
-  },
-  orderBy: { entityType: { type: "asc" } },
-} as const satisfies Prisma.Entity$entityTypesArgs
+// The entity's single linked type, slimmed to what the chip/picker render.
+// Exported so the write repository reuses the exact same shape (single source
+// of truth). Nullable — an entity may carry no type.
+export const entityTypeSelect = {
+  select: { id: true, type: true, color: true },
+} as const satisfies Prisma.Entity$entityTypeArgs
 
 const entityListSelect = {
   id: true,
@@ -59,7 +56,7 @@ const entityListSelect = {
   _count: {
     select: { properties: true },
   },
-  entityTypes: entityTypesSelect,
+  entityType: entityTypeSelect,
 } as const
 
 const entityDetailSelect = {
@@ -83,7 +80,7 @@ const entityDetailSelect = {
   _count: {
     select: { properties: true },
   },
-  entityTypes: entityTypesSelect,
+  entityType: entityTypeSelect,
 } as const
 
 // Picker option select — carries the contact/address columns so a freshly
@@ -100,7 +97,7 @@ const entityOptionSelect = {
   postalCode: true,
   phone: true,
   email: true,
-  entityTypes: entityTypesSelect,
+  entityType: entityTypeSelect,
 } as const
 
 export async function listEntityOptions(
@@ -215,12 +212,12 @@ function buildListViewWhere(
     clauses.push({ state: { in: [...stateCodes] } })
   }
 
-  // Entity-type filter: an entity holds an array of types (m2m), so match is
-  // `some linked type ∈ selection` (contains/OR), never equality. The EXISTS
-  // is served by the join's @@unique([entityId, entityTypeId]) / @@index([entityTypeId]).
+  // Entity-type filter: an entity now carries at most ONE type (direct FK), but
+  // the toolbar facet still filters by ANY of several selected types, so match is
+  // `entityTypeId ∈ selection`. Served by @@index([entityTypeId]).
   const entityTypeIds = options.filters?.entityTypeIds
   if (entityTypeIds && entityTypeIds.length > 0) {
-    clauses.push({ entityTypes: { some: { entityTypeId: { in: [...entityTypeIds] } } } })
+    clauses.push({ entityTypeId: { in: [...entityTypeIds] } })
   }
 
   return combineAnd(clauses)
@@ -275,9 +272,7 @@ export async function searchEntityOptions(
     optionClauses.push({ entity: { contains: args.search, mode: "insensitive" } })
   }
   if (args.typeIds && args.typeIds.length > 0) {
-    optionClauses.push({
-      entityTypes: { some: { entityTypeId: { in: [...args.typeIds] } } },
-    })
+    optionClauses.push({ entityTypeId: { in: [...args.typeIds] } })
   }
   const where = combineAnd(optionClauses)
 

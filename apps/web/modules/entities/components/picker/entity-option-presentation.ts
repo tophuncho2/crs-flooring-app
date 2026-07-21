@@ -19,12 +19,12 @@ export function entityOptionLabel(option: EntityOption): string {
 
 /**
  * Build the picker option: entity name on the title line, then two stacked subtitle
- * lines — the linked type(s), then the address. Empty lines drop out, so a type-less
+ * lines — the linked type, then the address. Empty lines drop out, so a type-less
  * or address-less entity collapses to just the lines it has.
  */
 export function toEntityOption(option: EntityOption): PickerListOption {
-  const typesText = option.types.map((type) => type.type).join(", ")
-  const subtitles = [typesText, option.fullAddress].filter(Boolean)
+  const typeText = option.type?.type ?? ""
+  const subtitles = [typeText, option.fullAddress].filter(Boolean)
   return {
     id: option.id,
     title: entityOptionLabel(option),

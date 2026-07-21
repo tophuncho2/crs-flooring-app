@@ -6,7 +6,7 @@ import {
   type EntityDetail,
   type PaletteColor,
 } from "@builders/domain"
-import { entityTypesSelect } from "./read-repository.js"
+import { entityTypeSelect } from "./read-repository.js"
 
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -27,8 +27,8 @@ export type CreateEntityRecordInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
-  /** Entity-type ids to link. Omit (undefined) to link none on create. */
-  typeIds?: string[]
+  /** The entity's single type. `null` links none; omit (undefined) to link none on create. */
+  typeId?: string | null
   createdBy: string
   updatedBy: string
 }
@@ -58,21 +58,19 @@ const entityDetailSelect = {
   _count: {
     select: { properties: true },
   },
-  entityTypes: entityTypesSelect,
+  entityType: entityTypeSelect,
 } as const satisfies Prisma.EntitySelect
 
 export async function createEntityRecord(
   input: CreateEntityRecordInput,
   client: EntitiesDbClient = db,
 ): Promise<EntityDetail> {
-  const { typeIds, ...fields } = input
+  const { typeId, ...fields } = input
   const entity = await client.entity.create({
     data: {
       ...fields,
       phone: normalizeNullablePhone(fields.phone),
-      ...(typeIds
-        ? { entityTypes: { create: typeIds.map((entityTypeId) => ({ entityTypeId })) } }
-        : {}),
+      entityTypeId: typeId ?? null,
     },
     select: entityDetailSelect,
   })
@@ -85,22 +83,15 @@ export async function updateEntityRecord(
   input: UpdateEntityRecordInput,
   client: EntitiesDbClient = db,
 ): Promise<EntityDetail> {
-  const { typeIds, ...fields } = input
+  const { typeId, ...fields } = input
   const entity = await client.entity.update({
     where: { id },
     data: {
       ...fields,
       phone: normalizeNullablePhone(fields.phone),
-      // Replace the link set wholesale when typeIds is provided (set semantics).
-      // deleteMany + create run inside Prisma's implicit per-call transaction.
-      ...(typeIds
-        ? {
-            entityTypes: {
-              deleteMany: {},
-              create: typeIds.map((entityTypeId) => ({ entityTypeId })),
-            },
-          }
-        : {}),
+      // Set the type only when provided (string assigns, null clears). Omit
+      // (undefined) on a partial update leaves the existing assignment untouched.
+      ...(typeId !== undefined ? { entityTypeId: typeId } : {}),
     },
     select: entityDetailSelect,
   })

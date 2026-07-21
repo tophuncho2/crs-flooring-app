@@ -1,14 +1,14 @@
-import { entityTypesSelect } from "../entities/read-repository.js"
+import { entityTypeSelect } from "../entities/read-repository.js"
 import type { Prisma } from "../generated/prisma/client.js"
 import type { EntityTypeRef, PaletteColor } from "@builders/domain"
 
 // Hydration off a payment's optional links: the linked entity's name + its type
-// chips, and the work order's display label. Reuses the canonical
-// `entityTypesSelect` fragment so the chips match the entities module exactly.
+// chip, and the work order's display label. Reuses the canonical
+// `entityTypeSelect` fragment so the chip matches the entities module exactly.
 // Shared by the detail read AND the create/update writes so every Payment that
 // leaves the data layer carries the same read-only display fields (no refetch).
 export const paymentLinksInclude = {
-  entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
+  entity: { select: { id: true, entity: true, entityType: entityTypeSelect } },
   workOrder: {
     select: {
       id: true,
@@ -27,7 +27,7 @@ export type PaymentLinkRelations = {
   entity:
     | {
         entity: string
-        entityTypes: { entityType: { id: string; type: string; color: EntityTypeRef["color"] } }[]
+        entityType: { id: string; type: string; color: EntityTypeRef["color"] } | null
       }
     | null
   workOrder:
@@ -41,15 +41,11 @@ export function projectPaymentLinks(row: PaymentLinkRelations): {
   entityName: string | null
   workOrderNumber: string | null
   workOrderLabel: string | null
-  entityTypes: EntityTypeRef[]
+  entityType: EntityTypeRef | null
   paymentPurposeName: string | null
   paymentPurposeColor: PaletteColor | null
 } {
-  const entityTypes = (row.entity?.entityTypes ?? []).map((link) => ({
-    id: link.entityType.id,
-    type: link.entityType.type,
-    color: link.entityType.color,
-  }))
+  const entityType = row.entity?.entityType ?? null
   const workOrder = row.workOrder
   const workOrderLabel = workOrder
     ? [`#${workOrder.workOrderNumber}`, workOrder.property?.name, workOrder.unitType]
@@ -60,7 +56,7 @@ export function projectPaymentLinks(row: PaymentLinkRelations): {
     entityName: row.entity?.entity ?? null,
     workOrderNumber: workOrder?.workOrderNumber ?? null,
     workOrderLabel,
-    entityTypes,
+    entityType,
     paymentPurposeName: row.paymentPurpose?.name ?? null,
     paymentPurposeColor: row.paymentPurpose?.color ?? null,
   }

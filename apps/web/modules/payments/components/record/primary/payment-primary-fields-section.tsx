@@ -36,7 +36,7 @@ import {
   formatWorkOrderOptionTitle,
 } from "@/modules/work-orders/components/picker/work-order-picker"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
-import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
+import { EntityTypeSelect } from "@/modules/entity-types/components/picker/entity-type-select"
 import { PaymentPurposePicker } from "@/modules/payment-purposes/components/picker/payment-purpose-picker"
 
 const DIRECTION_OPTIONS = [
@@ -45,7 +45,7 @@ const DIRECTION_OPTIONS = [
 ]
 
 type LinkPick = { id: string | null; label: string | null }
-type EntityPick = LinkPick & { types: EntityTypeRef[] }
+type EntityPick = LinkPick & { type: EntityTypeRef | null }
 type PurposePick = LinkPick & { color: PaletteColor | null }
 
 /**
@@ -56,17 +56,17 @@ type PurposePick = LinkPick & { color: PaletteColor | null }
  *
  * Layout: a centered `RecordColumnBreak` is retained for alignment, but every
  * editable field now stacks in the left flank — Payment # / Amount + Direction /
- * Work Order / Entity / Type(s) / Date — while the right flank stays empty. A
+ * Work Order / Entity / Type / Date — while the right flank stays empty. A
  * `RecordSectionDivider` then terminates the section above a read-only metadata
  * band (Created / Updated over Created by / Updated by). The create flow renders
  * neither the divider nor the band.
  *
  * `entityName` / `workOrderLabel` seed the picker triggers from the record so the
  * current link reads back after reload; a fresh pick overrides them via local
- * state until save. The read-only Type(s) chips render whenever an entity is
- * linked: a just-picked option carries its own types (shown immediately on
- * re-select), and otherwise `entityTypes` + `linkedEntityId` supply the saved
- * entity's hydrated types.
+ * state until save. The read-only Type chip renders whenever an entity is
+ * linked: a just-picked option carries its own type (shown immediately on
+ * re-select), and otherwise `entityType` + `linkedEntityId` supply the saved
+ * entity's hydrated type.
  */
 export function PaymentPrimaryFieldsSection({
   paymentNumber,
@@ -75,7 +75,7 @@ export function PaymentPrimaryFieldsSection({
   onFieldChange,
   entityName,
   workOrderLabel,
-  entityTypes,
+  entityType,
   linkedEntityId,
   paymentPurposeName,
   paymentPurposeColor,
@@ -91,7 +91,7 @@ export function PaymentPrimaryFieldsSection({
   onFieldChange: <K extends keyof PaymentForm>(field: K, value: PaymentForm[K]) => void
   entityName?: string | null
   workOrderLabel?: string | null
-  entityTypes?: EntityTypeRef[]
+  entityType?: EntityTypeRef | null
   linkedEntityId?: string | null
   /**
    * Record-seeded hydration for the linked payment purpose — the name + palette
@@ -118,7 +118,7 @@ export function PaymentPrimaryFieldsSection({
   const [entityPick, setEntityPick] = useState<EntityPick>({
     id: null,
     label: null,
-    types: [],
+    type: null,
   })
   const [workOrderPick, setWorkOrderPick] = useState<LinkPick>({ id: null, label: null })
   const [purposePick, setPurposePick] = useState<PurposePick>({
@@ -139,16 +139,16 @@ export function PaymentPrimaryFieldsSection({
   const purposeSelectedColor =
     purposePick.id === draft.paymentPurposeId ? purposePick.color : paymentPurposeColor ?? null
 
-  // Type chips, paralleling `entitySelectedLabel`: trust the just-picked option's
-  // types while its id still matches the draft (shows on re-select, pre-save);
-  // otherwise fall back to the record-hydrated types when the draft still points
+  // Type chip, paralleling `entitySelectedLabel`: trust the just-picked option's
+  // type while its id still matches the draft (shows on re-select, pre-save);
+  // otherwise fall back to the record-hydrated type when the draft still points
   // at the saved entity. The cell is rendered whenever an entity is linked.
-  const shownEntityTypes =
+  const shownEntityType =
     entityPick.id === draft.entityId
-      ? entityPick.types
+      ? entityPick.type
       : draft.entityId === (linkedEntityId ?? null)
-        ? entityTypes ?? []
-        : []
+        ? entityType ?? null
+        : null
 
   return (
     <div className="flex flex-col gap-4">
@@ -156,8 +156,8 @@ export function PaymentPrimaryFieldsSection({
         left={
           <FieldSection gap="0.75rem">
             {/* Left flank, top down: Payment # (unchanged width) / Amount + Direction
-                paired / Work Order / Entity / Type(s) / Date. The full-width cells
-                auto-flow in source order, so a hidden Type(s) leaves no gap. */}
+                paired / Work Order / Entity / Type / Date. The full-width cells
+                auto-flow in source order, so a hidden Type leaves no gap. */}
             {paymentNumber ? (
               <CellAt col={1} row={1} colSpan={4}>
                 <FormField label="Payment #">
@@ -265,13 +265,13 @@ export function PaymentPrimaryFieldsSection({
                   selectedLabel={entitySelectedLabel}
                   onChange={(id) => {
                     onFieldChange("entityId", id)
-                    if (id === null) setEntityPick({ id: null, label: null, types: [] })
+                    if (id === null) setEntityPick({ id: null, label: null, type: null })
                   }}
                   onOptionSelected={(option: EntityOption | null) =>
                     setEntityPick({
                       id: option?.id ?? null,
                       label: option?.entity ?? null,
-                      types: option?.types ?? [],
+                      type: option?.type ?? null,
                     })
                   }
                   placeholder="Select entity"
@@ -282,10 +282,10 @@ export function PaymentPrimaryFieldsSection({
             </CellAt>
             {draft.entityId ? (
               <CellAt col={1} colSpan={8}>
-                <FormField label="Type(s)">
-                  <EntityTypeMultiSelect
-                    selectedIds={shownEntityTypes.map((ref) => ref.id)}
-                    seedRefs={shownEntityTypes}
+                <FormField label="Type">
+                  <EntityTypeSelect
+                    value={shownEntityType?.id ?? null}
+                    seedRef={shownEntityType}
                     editable={false}
                   />
                 </FormField>

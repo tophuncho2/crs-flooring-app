@@ -10,7 +10,7 @@ export function toEntityForm(entity: EntityDetail): EntityForm {
     zip: entity.zip,
     phone: entity.phone,
     email: entity.email,
-    typeIds: entity.types.map((type) => type.id),
+    typeId: entity.type?.id ?? null,
     color: entity.color,
   }
 }

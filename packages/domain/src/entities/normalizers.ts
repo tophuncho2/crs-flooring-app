@@ -20,19 +20,14 @@ export const NO_ENTITY_NEIGHBORS: EntityNeighbors = {
   nextEntity: null,
 }
 
-/** Shape of the joined entity-type rows as selected by the read repository. */
-type EntityTypeLinkInput = {
-  entityType: { id: string; type: string; color: PaletteColor }
-}
+/** Shape of the linked entity-type as selected by the read repository. */
+type EntityTypeLinkInput = { id: string; type: string; color: PaletteColor }
 
-function normalizeEntityTypeRefs(
-  links: EntityTypeLinkInput[] | undefined,
-): EntityTypeRef[] {
-  return (links ?? []).map((link) => ({
-    id: link.entityType.id,
-    type: link.entityType.type,
-    color: link.entityType.color,
-  }))
+function normalizeEntityTypeRef(
+  link: EntityTypeLinkInput | null | undefined,
+): EntityTypeRef | null {
+  if (!link) return null
+  return { id: link.id, type: link.type, color: link.color }
 }
 
 type EntityDetailInput = {
@@ -51,7 +46,7 @@ type EntityDetailInput = {
   email: string | null
   color: PaletteColor
   _count: { properties: number }
-  entityTypes?: EntityTypeLinkInput[]
+  entityType?: EntityTypeLinkInput | null
 }
 
 type EntityListRowInput = {
@@ -70,7 +65,7 @@ type EntityListRowInput = {
   email: string | null
   color: PaletteColor
   _count: { properties: number }
-  entityTypes?: EntityTypeLinkInput[]
+  entityType?: EntityTypeLinkInput | null
 }
 
 export function normalizeEntity(
@@ -94,7 +89,7 @@ export function normalizeEntity(
     fullAddress: buildAddressLine(entity),
     color: entity.color,
     propertyCount: entity._count.properties,
-    types: normalizeEntityTypeRefs(entity.entityTypes),
+    type: normalizeEntityTypeRef(entity.entityType),
     previousEntity: neighbors.previousEntity,
     nextEntity: neighbors.nextEntity,
   }
@@ -118,7 +113,7 @@ export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRo
     fullAddress: buildAddressLine(entity),
     color: entity.color,
     propertyCount: entity._count.properties,
-    types: normalizeEntityTypeRefs(entity.entityTypes),
+    type: normalizeEntityTypeRef(entity.entityType),
   }
 }
 
@@ -133,7 +128,7 @@ type EntityOptionInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
-  entityTypes?: EntityTypeLinkInput[]
+  entityType?: EntityTypeLinkInput | null
 }
 
 export function normalizeEntityOption(entity: EntityOptionInput): EntityOption {
@@ -149,6 +144,6 @@ export function normalizeEntityOption(entity: EntityOptionInput): EntityOption {
     phone: normalizePhoneNumber(entity.phone ?? ""),
     email: entity.email ?? "",
     fullAddress: buildAddressLine(entity),
-    types: normalizeEntityTypeRefs(entity.entityTypes),
+    type: normalizeEntityTypeRef(entity.entityType),
   }
 }

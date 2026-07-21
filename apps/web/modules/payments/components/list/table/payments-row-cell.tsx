@@ -37,15 +37,9 @@ export function renderPaymentRowCell(
     case "entity":
       return <span>{row.entityName ?? "—"}</span>
     case "types":
-      // Same palette chips the entities list + payment record view render.
-      return row.entityTypes.length > 0 ? (
-        <span className="flex flex-wrap items-center gap-1">
-          {row.entityTypes.map((type) => (
-            <CellChip key={type.id} paletteColor={type.color}>
-              {type.type}
-            </CellChip>
-          ))}
-        </span>
+      // Same palette chip the entities list + payment record view render.
+      return row.entityType ? (
+        <CellChip paletteColor={row.entityType.color}>{row.entityType.type}</CellChip>
       ) : (
         "—"
       )

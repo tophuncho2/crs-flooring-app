@@ -33,7 +33,7 @@ export type EntityDetail = {
   fullAddress: string
   color: PaletteColor
   propertyCount: number
-  types: EntityTypeRef[]
+  type: EntityTypeRef | null
   /**
    * Neighbors by global entity-number order (`entityNumberInt`), ignoring
    * state/type filters — powers the record-view shell stepper (◀ ENT-# ▶). Null
@@ -60,7 +60,7 @@ export type EntityListRow = {
   fullAddress: string
   color: PaletteColor
   propertyCount: number
-  types: EntityTypeRef[]
+  type: EntityTypeRef | null
 }
 
 export type EntityOption = {
@@ -77,8 +77,8 @@ export type EntityOption = {
   phone: string
   email: string
   fullAddress: string
-  /** Linked entity-types, for the picker option's subtitle line. */
-  types: EntityTypeRef[]
+  /** Linked entity-type, for the picker option's subtitle line. */
+  type: EntityTypeRef | null
 }
 
 export type EntityForm = {
@@ -89,8 +89,8 @@ export type EntityForm = {
   zip: string
   phone: string
   email: string
-  /** Ids of the entity-types linked to this entity (set semantics). */
-  typeIds: string[]
+  /** Id of the entity-type linked to this entity, or null when unassigned. */
+  typeId: string | null
   /** Edit-only palette tag — wraps the ENT-# chip. New entities default SLATE. */
   color: PaletteColor
 }
@@ -103,6 +103,6 @@ export const EMPTY_ENTITY_FORM: EntityForm = {
   zip: "",
   phone: "",
   email: "",
-  typeIds: [],
+  typeId: null,
   color: DEFAULT_PALETTE_COLOR,
 }

@@ -26,7 +26,7 @@ type PaymentInput = {
   entityName?: string | null
   workOrderNumber?: string | null
   workOrderLabel?: string | null
-  entityTypes?: EntityTypeRef[]
+  entityType?: EntityTypeRef | null
   paymentPurposeName?: string | null
   paymentPurposeColor?: PaletteColor | null
   createdAt: Date | string
@@ -56,7 +56,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     entityName: payment.entityName ?? null,
     workOrderNumber: payment.workOrderNumber ?? null,
     workOrderLabel: payment.workOrderLabel ?? null,
-    entityTypes: payment.entityTypes ?? [],
+    entityType: payment.entityType ?? null,
     paymentPurposeName: payment.paymentPurposeName ?? null,
     paymentPurposeColor: payment.paymentPurposeColor ?? null,
     createdAt: toIsoTimestamp(payment.createdAt),

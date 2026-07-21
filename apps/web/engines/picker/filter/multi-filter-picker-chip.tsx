@@ -78,7 +78,7 @@ export function MultiFilterPickerChip<TOption extends { id: string }>({
 }: MultiFilterPickerChipProps<TOption>) {
   const [open, setOpen] = useState(false)
   // The picker's search input portals into this header slot so it stays pinned
-  // above the scrolling option list (mirrors EntityTypeMultiSelect).
+  // above the scrolling option list (mirrors the entity-type rail picker).
   const [searchSlot, setSearchSlot] = useState<HTMLDivElement | null>(null)
 
   const controller = useAsyncRichDropdownController<TOption>({

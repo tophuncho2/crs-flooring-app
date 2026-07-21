@@ -100,7 +100,7 @@ describe("createEntityUseCase", () => {
     await expect(createEntityUseCase(input() as never, ACTOR)).rejects.toMatchObject({
       code: "ENTITY_INVALID_TYPE",
       status: 400,
-      field: "typeIds",
+      field: "typeId",
     })
   })
 })

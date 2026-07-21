@@ -96,7 +96,23 @@ describe("normalizeEntityOption", () => {
       phone: "",
       email: "",
       fullAddress: "1 Main St, Austin, TX, 78701",
-      types: [],
+      type: null,
     })
+  })
+
+  it("flattens the linked entityType to a single ref (null when absent)", () => {
+    expect(
+      normalizeEntityOption({
+        id: "entity-1",
+        entity: "Acme",
+        streetAddress: "1 Main St",
+        city: "Austin",
+        state: "TX",
+        postalCode: "78701",
+        phone: null,
+        email: null,
+        entityType: { id: "type-1", type: "Vendor", color: "SLATE" },
+      }).type,
+    ).toEqual({ id: "type-1", type: "Vendor", color: "SLATE" })
   })
 })

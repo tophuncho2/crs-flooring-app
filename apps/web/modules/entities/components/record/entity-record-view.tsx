@@ -112,9 +112,9 @@ export function EntityRecordView({
                   }
                   showTypes
                   typesPosition="below"
-                  seedTypeRefs={entry.types}
-                  onTypeIdsChange={(typeIds) =>
-                    primary.setLocalValue((previous) => ({ ...previous, typeIds }))
+                  seedTypeRef={entry.type}
+                  onTypeIdChange={(typeId) =>
+                    primary.setLocalValue((previous) => ({ ...previous, typeId }))
                   }
                   cellSpan={8}
                   nameRowLeading={

@@ -10,11 +10,11 @@ type TemplatePlannedPaymentInput = {
   direction: FlooringPaymentDirection
   notes: string | null
   entityId: string | null
-  // Nested entity relation (from `entityTypesSelect` in the data layer); flattened
-  // here to entityName + entityTypes. Absent/null on unlinked rows.
+  // Nested entity relation (from `entityTypeSelect` in the data layer); flattened
+  // here to entityName + entityType. Absent/null on unlinked rows.
   entity?: {
     entity: string
-    entityTypes: { entityType: { id: string; type: string; color: PaletteColor } }[]
+    entityType: { id: string; type: string; color: PaletteColor } | null
   } | null
   paymentPurposeId: string | null
   // Nested payment-purpose relation; flattened here to name + color. Absent/null
@@ -42,7 +42,7 @@ export function normalizeTemplatePlannedPayment(
     // Flatten the nested entity join into the flat read-only display fields
     // (mirrors the planned-product product/unit flatten).
     entityName: item.entity?.entity ?? null,
-    entityTypes: (item.entity?.entityTypes ?? []).map((link) => link.entityType),
+    entityType: item.entity?.entityType ?? null,
     paymentPurposeId: item.paymentPurposeId ?? null,
     paymentPurposeName: item.paymentPurpose?.name ?? null,
     paymentPurposeColor: item.paymentPurpose?.color ?? null,

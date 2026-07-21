@@ -51,7 +51,7 @@ export function PaymentRecordPanel({
             }
             entityName={record.entityName}
             workOrderLabel={record.workOrderLabel}
-            entityTypes={record.entityTypes}
+            entityType={record.entityType}
             linkedEntityId={record.entityId}
             paymentPurposeName={record.paymentPurposeName}
             paymentPurposeColor={record.paymentPurposeColor}

@@ -77,7 +77,7 @@ export function EntitySelectSection({
           onFieldChange={onEntityFieldChange}
           showContactAndAddress={!compact}
           showTypes
-          onTypeIdsChange={(typeIds) => onEntityFieldChange("typeIds", typeIds)}
+          onTypeIdChange={(typeId) => onEntityFieldChange("typeId", typeId)}
         />
       </div>
     </>

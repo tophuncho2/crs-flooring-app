@@ -21,9 +21,9 @@ const DIRECTION_OPTIONS: ChoiceChipOption[] = [
 ]
 
 const TEMPLATE_PLANNED_PAYMENTS_COLUMNS: DataTableColumn<TemplatePlannedPaymentLocal>[] = [
-  // Entity link leads; Type(s) is a read-only lookup off the picked entity.
+  // Entity link leads; Type is a read-only lookup off the picked entity.
   { key: "entity", label: "Entity", width: 220 },
-  { key: "types", label: "Type(s)", width: 200 },
+  { key: "types", label: "Type", width: 200 },
   { key: "purpose", label: "Purpose", width: 200 },
   { key: "amount", label: "Amount", width: 160, align: "end" },
   // Direction sits to the RIGHT of amount and carries the tone chip/badge.
@@ -84,14 +84,10 @@ export function TemplatePlannedPaymentsGrid({
               />
             )
           case "types":
-            return item.entityTypes.length > 0 ? (
-              <span className="flex flex-wrap items-center gap-1">
-                {item.entityTypes.map((type) => (
-                  <CellChip key={type.id} paletteColor={type.color}>
-                    {type.type}
-                  </CellChip>
-                ))}
-              </span>
+            return item.entityType ? (
+              <CellChip paletteColor={item.entityType.color}>
+                {item.entityType.type}
+              </CellChip>
             ) : (
               "—"
             )

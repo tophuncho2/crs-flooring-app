@@ -113,20 +113,16 @@ export function EntityTypePicker({
     onOptionSelected?.(null)
   }, [onChange, onOptionSelected])
 
-  // Entity row = name on top, the linked type(s) as their palette chips (same
-  // chips the type rail shows), then the address. Chips match the type rail so
-  // an entity's identity reads identically on both sides of the combo.
+  // Entity row = name on top, the linked type as its palette chip (same chip the
+  // type rail shows), then the address. The chip matches the type rail so an
+  // entity's identity reads identically on both sides of the combo.
   const renderEntityOption = useCallback(
     (_option: PickerListOption, raw: EntityOption) => (
       <div>
         <div className="truncate text-sm font-medium text-[var(--foreground)]">{raw.entity}</div>
-        {raw.types.length > 0 ? (
+        {raw.type ? (
           <div className="mt-1 flex flex-wrap gap-1">
-            {raw.types.map((type) => (
-              <CellChip key={type.id} paletteColor={type.color ?? undefined}>
-                {type.type}
-              </CellChip>
-            ))}
+            <CellChip paletteColor={raw.type.color ?? undefined}>{raw.type.type}</CellChip>
           </div>
         ) : null}
         {raw.fullAddress ? (

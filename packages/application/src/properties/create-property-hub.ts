@@ -61,7 +61,7 @@ function toDomainForm(input: CreatePropertyHubUseCaseInput): CreatePropertyHubFo
             zip: input.entity.fields.postalCode ?? "",
             phone: input.entity.fields.phone ?? "",
             email: input.entity.fields.email ?? "",
-            typeIds: input.entity.fields.typeIds ?? [],
+            typeId: input.entity.fields.typeId ?? null,
             // Edit-only tag — the hub create form never sets it; new rows default
             // SLATE in the DB. Present only to satisfy the EntityForm shape.
             color: DEFAULT_PALETTE_COLOR,

@@ -1,7 +1,7 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import { normalizeWorkOrderPlannedPayment, type WorkOrderPlannedPaymentRow } from "@builders/domain"
-import { entityTypesSelect } from "../../entities/read-repository.js"
+import { entityTypeSelect } from "../../entities/read-repository.js"
 
 type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -12,8 +12,8 @@ const workOrderPlannedPaymentSelect = {
   notes: true,
   entityId: true,
   // Linked entity name + type chips — read-only hydration flattened by the
-  // domain normalizer (reuses the canonical entityTypesSelect fragment).
-  entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
+  // domain normalizer (reuses the canonical entityTypeSelect fragment).
+  entity: { select: { id: true, entity: true, entityType: entityTypeSelect } },
   paymentPurposeId: true,
   // Linked purpose name + palette color — read-only hydration flattened by the
   // domain normalizer for the colored chip.

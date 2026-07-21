@@ -10,9 +10,9 @@ export type FlooringPaymentDirection = "REVENUE" | "EXPENSE"
  *
  * `entityId` / `workOrderId` are the optional, single links to an entity and a
  * work order (both `null` when unlinked). The `entityName` / `workOrderLabel` /
- * `entityTypes` fields are READ-ONLY hydration off those links — projected by the
+ * `entityType` fields are READ-ONLY hydration off those links — projected by the
  * detail read so the record-view pickers can show the current trigger label and
- * the linked entity's type chips. They never round-trip on save.
+ * the linked entity's type chip. They never round-trip on save.
  */
 export type Payment = {
   id: string
@@ -50,7 +50,7 @@ export type Payment = {
   // richer "#WO-N · property · unitType" string the record-view picker trigger reads.
   workOrderNumber: string | null
   workOrderLabel: string | null
-  entityTypes: EntityTypeRef[]
+  entityType: EntityTypeRef | null
   // Read-only hydration off the purpose link (never round-trips on save): the
   // linked purpose's name + palette color for the colored-chip trigger. Null
   // when unlinked.

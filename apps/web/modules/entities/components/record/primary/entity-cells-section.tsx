@@ -11,7 +11,7 @@ import {
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
-import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
+import { EntityTypeSelect } from "@/modules/entity-types/components/picker/entity-type-select"
 
 /**
  * A single labeled text field in the entity cells grid. Editable renders the live
@@ -70,8 +70,8 @@ export function EntityCellsSection({
   showContactAndAddress = true,
   showTypes = false,
   typesPosition = "above",
-  seedTypeRefs = [],
-  onTypeIdsChange,
+  seedTypeRef = null,
+  onTypeIdChange,
   cellSpan = 5,
   nameRowLeading,
   nameRowTrailing,
@@ -89,7 +89,7 @@ export function EntityCellsSection({
    */
   showContactAndAddress?: boolean
   /**
-   * Render the entity-type array picker as a cell stacked next to Entity Name
+   * Render the entity-type single-select as a cell stacked next to Entity Name
    * (placement set by `typesPosition`). Default `false`. The create surfaces (the
    * standalone create form, both quick-create modals, and the property-hub-create
    * entity sub-form) pass `true` with the default `"above"`; the entity record
@@ -102,10 +102,10 @@ export function EntityCellsSection({
    * `showTypes` is set.
    */
   typesPosition?: "above" | "below"
-  /** The record's current type refs — seeds chip labels for the picker. */
-  seedTypeRefs?: EntityTypeRef[]
-  /** Editable-types handler. When omitted, the picker renders read-only. */
-  onTypeIdsChange?: (nextIds: string[]) => void
+  /** The record's current type ref — seeds the chip label for the picker. */
+  seedTypeRef?: EntityTypeRef | null
+  /** Editable-type handler. When omitted, the picker renders read-only. */
+  onTypeIdChange?: (nextId: string | null) => void
   /**
    * Width (in 8-col grid units) of the stacked left-column cells (including the
    * Types cell when shown). Defaults to `5/8`. The entity record view passes `8`
@@ -131,12 +131,12 @@ export function EntityCellsSection({
 
   const typesCell = showTypes ? (
     <CellAt col={1} colSpan={cellSpan}>
-      <FormField label="Types">
-        <EntityTypeMultiSelect
-          selectedIds={form.typeIds}
-          seedRefs={seedTypeRefs}
-          editable={editable && Boolean(onTypeIdsChange)}
-          onChange={onTypeIdsChange}
+      <FormField label="Type">
+        <EntityTypeSelect
+          value={form.typeId}
+          seedRef={seedTypeRef}
+          editable={editable && Boolean(onTypeIdChange)}
+          onChange={onTypeIdChange}
         />
       </FormField>
     </CellAt>

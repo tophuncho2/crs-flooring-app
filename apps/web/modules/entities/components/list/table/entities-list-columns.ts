@@ -14,7 +14,7 @@ export const ENTITIES_LIST_COLUMNS: ReadonlyArray<
   DataTableColumn<EntityListRow>
 > = [
   { key: "entityNumber", label: "ENT #" },
-  { key: "types", label: "Type(s)" },
+  { key: "types", label: "Type" },
   { key: "entity", label: "Entity" },
   { key: "streetAddress", label: "Street" },
   { key: "city", label: "City" },
@@ -35,8 +35,8 @@ export const ENTITIES_LIST_COLUMNS: ReadonlyArray<
  * control's labels (A→Z / Newest). Single source of truth: the allowlist is
  * derived from these keys, so the menu and the client allowlist can never drift.
  * Row# (ENT #) is intentionally NOT sortable — `createdAt` is the canonical time
- * key. Type(s) is NOT sortable either: it's a to-many relation (an entity holds
- * multiple types), which Prisma can't order by the related name.
+ * key. Type is NOT sortable either: it's a related lookup (the entity's linked
+ * type name), left out of the sort allowlist here.
  */
 export const ENTITIES_SORT_OPTIONS = [
   { key: "entity", label: "Entity", type: "text" },

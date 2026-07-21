@@ -13,7 +13,7 @@ describe("normalizeWorkOrderPlannedPayment", () => {
     entityId: "ent-1",
     entity: {
       entity: "Acme Supply",
-      entityTypes: [{ entityType: { id: "t1", type: "Vendor", color: "SLATE" as const } }],
+      entityType: { id: "t1", type: "Vendor", color: "SLATE" as const },
     },
     paymentPurposeId: "pp-1",
     paymentPurpose: { name: "Deposit", color: "VIOLET" as const },
@@ -34,7 +34,7 @@ describe("normalizeWorkOrderPlannedPayment", () => {
     const row = normalizeWorkOrderPlannedPayment(base)
     expect(row.entityId).toBe("ent-1")
     expect(row.entityName).toBe("Acme Supply")
-    expect(row.entityTypes).toEqual([{ id: "t1", type: "Vendor", color: "SLATE" }])
+    expect(row.entityType).toEqual({ id: "t1", type: "Vendor", color: "SLATE" })
   })
 
   it("flattens the linked payment purpose into name + color", () => {
@@ -48,7 +48,7 @@ describe("normalizeWorkOrderPlannedPayment", () => {
     const row = normalizeWorkOrderPlannedPayment({ ...base, entityId: null, entity: null })
     expect(row.entityId).toBeNull()
     expect(row.entityName).toBeNull()
-    expect(row.entityTypes).toEqual([])
+    expect(row.entityType).toBeNull()
   })
 
   it("coalesces an unlinked payment purpose to null name + color", () => {
