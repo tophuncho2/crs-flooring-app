@@ -8,11 +8,11 @@ import { EntityTypePicker } from "@/modules/entities/components/picker/entity-ty
 import type { WorkOrderEntityInvolvementLocal } from "@/modules/work-orders/controllers/record/entity-involvement/use-work-order-entity-involvement-section"
 
 const WORK_ORDER_ENTITY_INVOLVEMENT_COLUMNS: DataTableColumn<WorkOrderEntityInvolvementLocal>[] = [
-  // Entity link leads; Type is a read-only lookup off the picked entity; the
-  // free-text involvement type says why they're involved.
+  // Free-text involvement type leads (why they're involved); Entity is the link;
+  // Type is a read-only lookup off the picked entity.
+  { key: "involvementType", label: "Involvement Type", width: 320 },
   { key: "entity", label: "Entity", width: 220 },
   { key: "types", label: "Type", width: 200 },
-  { key: "involvementType", label: "Involvement Type", width: 320 },
 ]
 
 // Pure editable-table body for the Entity Involvement section. The
