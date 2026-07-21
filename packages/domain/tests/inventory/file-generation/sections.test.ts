@@ -37,8 +37,9 @@ describe("renderInventoryPrimaryBlock — roll-tag heading + cell gating", () =>
     const html = renderInventoryPrimaryBlock(inventory, columns)
     expect(html).toContain('<span class="inv-cell-label">Style</span><span class="inv-cell-value">Berber</span>')
     expect(html).toContain('<span class="inv-cell-label">Color</span><span class="inv-cell-value">Oatmeal</span>')
+    // Starting Stock prints the stock unit alongside the amount ("500" + "SY").
     expect(html).toContain(
-      '<span class="inv-cell-label">Starting Stock</span><span class="inv-cell-value">500</span>',
+      '<span class="inv-cell-label">Starting Stock</span><span class="inv-cell-value">500 SY</span>',
     )
     // Created Date shows the full Eastern timestamp, like every other date surface.
     expect(html).toContain(

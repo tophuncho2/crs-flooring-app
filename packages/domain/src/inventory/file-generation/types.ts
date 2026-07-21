@@ -54,10 +54,29 @@ export const INVENTORY_PRINT_FIELD_COLUMNS: ReadonlyArray<ExportColumn<Inventory
  * `startingStock` / `createdAt` (also CSV manifest keys) reuse their checkbox and
  * `productStyle` / `productColor` are seeded on in the print config.
  */
+/**
+ * Compose a stock amount with its unit abbreviation for the printed tag
+ * ("500" + "SY" → "500 SY"). A blank amount stays blank (the renderer shows an
+ * em-dash); a blank unit yields the bare amount.
+ */
+function appendUnit(amount: string, unitAbbrev: string): string {
+  const value = amount.trim()
+  if (!value) return ""
+  const unit = unitAbbrev.trim()
+  return unit ? `${value} ${unit}` : value
+}
+
 export const INVENTORY_PRINT_CELL_FIELDS: ReadonlyArray<ExportColumn<InventoryRow>> = [
   { key: "productStyle", label: "Style", value: (row) => row.productStyle ?? "" },
   { key: "productColor", label: "Color", value: (row) => row.productColor ?? "" },
-  { key: "startingStock", label: "Starting Stock", value: (row) => row.startingStock },
+  {
+    key: "startingStock",
+    label: "Starting Stock",
+    // Print the stock unit alongside the amount (e.g. "500 SY") so the physical
+    // tag reads unambiguously. Print-only: the CSV manifest keeps startingStock a
+    // raw decimal with the unit in its own column.
+    value: (row) => appendUnit(row.startingStock, row.unitAbbrev),
+  },
   { key: "createdAt", label: "Created Date", value: (row) => formatEasternDateTime(row.createdAt) },
 ]
 
