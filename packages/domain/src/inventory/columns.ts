@@ -19,7 +19,7 @@ export const INVENTORY_COLUMNS: ReadonlyArray<ColumnCatalogEntry<InventoryRow>> 
   { key: "stockBalance", label: "Stock", value: (row) => row.stockBalance },
   { key: "netDeducted", label: "Deducted", value: (row) => row.netDeducted },
   { key: "productName", label: "Product", value: (row) => row.productName },
-  { key: "inventoryNumber", label: "Inv #", value: (row) => row.inventoryNumber },
+  { key: "location", label: "Location", value: (row) => row.location },
   {
     key: "rollNumber",
     label: "Roll #",
@@ -27,7 +27,7 @@ export const INVENTORY_COLUMNS: ReadonlyArray<ColumnCatalogEntry<InventoryRow>> 
   },
   { key: "dyeLot", label: "Dye Lot", value: (row) => row.dyeLot },
   { key: "note", label: "Note", value: (row) => row.note },
-  { key: "location", label: "Location", value: (row) => row.location },
+  { key: "inventoryNumber", label: "Inv #", value: (row) => row.inventoryNumber },
   { key: "converted", label: "Converted", value: (row) => row.convertedStockBalance ?? "" },
   {
     key: "convertedUnit",
