@@ -78,12 +78,19 @@ export type InventoryOptionsGridController = {
 export function useInventoryOptionsGrid({
   warehouseId,
   productFilterId,
+  isArchived = false,
   enabled,
   requestFn = listInventoryRequest,
   queryKey = INVENTORY_LIST_QUERY_KEY,
 }: {
   warehouseId: string | null
   productFilterId: string | null
+  /**
+   * Archive scope for the grid, mirroring the list's binary control:
+   * `false` (default) = Active only; `true` = Archived only. There is no
+   * "both" state — the shared list read hides archived rows unless `true`.
+   */
+  isArchived?: boolean
   enabled: boolean
   /** Override the fetcher — defaults to the shared list read. */
   requestFn?: InventoryOptionsGridRequest
@@ -101,7 +108,7 @@ export function useInventoryOptionsGrid({
   // render against the previous scope rather than in an effect — React applies
   // it before paint with no extra commit (the recommended "adjust state when a
   // prop changes" pattern).
-  const scopeKey = `${warehouseId ?? ""}|${productFilterId ?? ""}`
+  const scopeKey = `${warehouseId ?? ""}|${productFilterId ?? ""}|${isArchived}`
   const [prevScopeKey, setPrevScopeKey] = useState(scopeKey)
   if (scopeKey !== prevScopeKey) {
     setPrevScopeKey(scopeKey)
@@ -142,9 +149,12 @@ export function useInventoryOptionsGrid({
       ...(rollNumber.trim() ? { rollNumber: rollNumber.trim() } : {}),
       ...(dyeLot.trim() ? { dyeLot: dyeLot.trim() } : {}),
       ...(note.trim() ? { note: note.trim() } : {}),
+      // Omit when active-only (server default hides archived); send `true` for
+      // archived-only. The shared list read has no "both" state.
+      ...(isArchived ? { isArchived: true } : {}),
     }
     return { sorts, filters, page: pager.page, pageSize: pager.pageSize }
-  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, sorts, pager.page, pager.pageSize])
+  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, isArchived, sorts, pager.page, pager.pageSize])
 
   const query = useQuery({
     queryKey: [...queryKey, "picker", input],
