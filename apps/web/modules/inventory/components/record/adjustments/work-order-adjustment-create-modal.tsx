@@ -14,9 +14,6 @@ import { useInventoryModalSelection } from "../../../controllers/record/adjustme
 import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustments/form"
 import type { AdjustmentCreateSeed } from "../../../controllers/record/adjustments/types"
 import { useInventoryOptionsGrid } from "../../../controllers/record/header/use-inventory-options-grid"
-// Interim: reuse the inventory list's archive control in place. The future
-// archiving-consolidation epic relocates it to a shared home.
-import { ArchiveSegmentedControl } from "../../list/toolbar-controls/archive-segmented-control"
 import {
   INVENTORY_DETAIL_QUERY_KEY,
   inventoryDetailRequest,
@@ -143,15 +140,11 @@ export function WorkOrderAdjustmentCreateModal({
   // is chosen. Starts open only when nothing is pre-selected.
   const [isPicking, setIsPicking] = useState(initialInventory === null)
 
-  // Archive scope for the picker grid — `false` (default) lists Active only,
-  // `true` lists Archived only (mirrors the list's binary control). Lets the
-  // operator find an archived inventory row to adjust.
-  const [includeArchived, setIncludeArchived] = useState(false)
-
+  // Archive scope now lives inside the grid controller + its Filter menu (the
+  // operator toggles Active/Archived there to find an archived row to adjust).
   const grid = useInventoryOptionsGrid({
     warehouseId: selection.warehouseId,
     productFilterId: selection.productId,
-    isArchived: includeArchived,
     enabled: isPicking,
   })
 
@@ -223,7 +216,7 @@ export function WorkOrderAdjustmentCreateModal({
     <QuickCreateModal
       open
       title="Add adjustment"
-      widthClassName="max-w-5xl"
+      widthClassName="max-w-6xl"
       onClose={onClose}
       onCreate={() => controller.save()}
       canCreate={!showGrid && canSave}
@@ -235,7 +228,6 @@ export function WorkOrderAdjustmentCreateModal({
           <p className="text-sm text-[var(--foreground)]/70">
             Choose the inventory item to adjust for this work order.
           </p>
-          <ArchiveSegmentedControl value={includeArchived} onChange={setIncludeArchived} />
           <InventoryOptionsGrid
             selection={selection}
             grid={grid}

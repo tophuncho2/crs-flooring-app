@@ -41,6 +41,30 @@ describe("useInventoryOptionsGrid", () => {
     expect(result.current.pagination.page).toBe(1)
   })
 
+  it("flips archive scope via internal state and resets to the first page", async () => {
+    const { result } = renderHook(
+      () =>
+        useInventoryOptionsGrid({
+          warehouseId: null,
+          productFilterId: null,
+          enabled: true,
+          requestFn: stubRequest,
+        }),
+      { wrapper: makeWrapper() },
+    )
+
+    await waitFor(() => expect(result.current.pagination.totalPages).toBe(7))
+    expect(result.current.isArchived).toBe(false)
+
+    act(() => result.current.pagination.onNextPage())
+    act(() => result.current.pagination.onNextPage())
+    expect(result.current.pagination.page).toBe(3)
+
+    act(() => result.current.setIsArchived(true))
+    expect(result.current.isArchived).toBe(true)
+    expect(result.current.pagination.page).toBe(1)
+  })
+
   it("does not advance below page 1", () => {
     const { result } = renderHook(
       () =>

@@ -49,6 +49,14 @@ export type InventoryOptionsGridController = {
   setRollNumber: (value: string) => void
   setDyeLot: (value: string) => void
   setNote: (value: string) => void
+  /**
+   * Archive scope, mirroring the list's binary control: `false` = Active only,
+   * `true` = Archived only (no "both" — the shared list read hides archived rows
+   * unless `true`). Drives the Filter menu's Archive segmented control.
+   */
+  isArchived: boolean
+  /** Flip the archive scope; resets to page 1. */
+  setIsArchived: (value: boolean) => void
   /** Active ordered multi-column sort (drives the Sort menu state). */
   sorts: ListSort[]
   /** Gutter Sort menu → set the full ordered chain (deduped + capped). */
@@ -78,19 +86,12 @@ export type InventoryOptionsGridController = {
 export function useInventoryOptionsGrid({
   warehouseId,
   productFilterId,
-  isArchived = false,
   enabled,
   requestFn = listInventoryRequest,
   queryKey = INVENTORY_LIST_QUERY_KEY,
 }: {
   warehouseId: string | null
   productFilterId: string | null
-  /**
-   * Archive scope for the grid, mirroring the list's binary control:
-   * `false` (default) = Active only; `true` = Archived only. There is no
-   * "both" state — the shared list read hides archived rows unless `true`.
-   */
-  isArchived?: boolean
   enabled: boolean
   /** Override the fetcher — defaults to the shared list read. */
   requestFn?: InventoryOptionsGridRequest
@@ -101,6 +102,9 @@ export function useInventoryOptionsGrid({
   const [rollNumber, setRollNumberState] = useState("")
   const [dyeLot, setDyeLotState] = useState("")
   const [note, setNoteState] = useState("")
+  // Archive scope lives here (not a hook input) so the Filter menu binds it like
+  // the search bars. `false` = Active only, `true` = Archived only.
+  const [isArchived, setIsArchivedState] = useState(false)
   const [sorts, setSorts] = useState<ListSort[]>(DEFAULT_SORTS)
   const pager = useRecordSectionPagination()
 
@@ -131,6 +135,10 @@ export function useInventoryOptionsGrid({
   }, [pager])
   const setNote = useCallback((value: string) => {
     setNoteState(value)
+    pager.reset()
+  }, [pager])
+  const setIsArchived = useCallback((value: boolean) => {
+    setIsArchivedState(value)
     pager.reset()
   }, [pager])
 
@@ -190,6 +198,8 @@ export function useInventoryOptionsGrid({
     setRollNumber,
     setDyeLot,
     setNote,
+    isArchived,
+    setIsArchived,
     sorts,
     onSortsChange,
     hasSearch,

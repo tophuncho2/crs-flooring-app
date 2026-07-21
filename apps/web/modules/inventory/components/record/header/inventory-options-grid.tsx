@@ -1,15 +1,20 @@
 "use client"
 
-import { ArrowUpDown } from "lucide-react"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DataTable,
   DebouncedSearchControl,
+  FilterGroupLabel,
   SortMenuBody,
   ToolbarMenuButton,
 } from "@/engines/list-view"
-import type { InventoryRow } from "@builders/domain"
+import { FilterPickerChip } from "@/engines/picker"
+import type { InventoryRow, ProductOption, WarehouseOption } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
+// Interim: reuse the inventory list's archive control in place. The future
+// archiving-consolidation epic relocates it to a shared home.
+import { ArchiveSegmentedControl } from "../../list/toolbar-controls/archive-segmented-control"
 import { type InventoryOptionsGridController } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
 import { type InventoryRecordSelectionController } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import {
@@ -26,9 +31,10 @@ type InventoryOptionsGridSelection = Pick<
 >
 
 /**
- * The inventory reference-header picker grid: a warehouse picker + the four
- * identity search bars (Inv # / Roll # / Dye lot / Note) inline, over a 15-row
- * paginated results table. Clicking a row selects that inventory record. The grid
+ * The inventory reference-header picker grid: a Filter · Search · Sort toolbar
+ * (warehouse + product + archive scope; the four identity search bars Inv # /
+ * Roll # / Dye lot / Note; multi-column sort) over a 15-row paginated results
+ * table. Clicking a row selects that inventory record. The grid
  * controller is owned by the record surface (so the reference header's Clear can
  * read/reset its search bars) and passed in. Renders rows through the shared
  * `INVENTORY_LIST_COLUMNS` + `renderInventoryRowCell` (same as the list table and
@@ -62,68 +68,96 @@ export function InventoryOptionsGrid({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Scope pickers: warehouse (optional — inventory cross-sources across
-          warehouses) + product (the master filter). Both just narrow the list. */}
-      <div className="grid gap-2 sm:grid-cols-2">
-        <WarehousePicker
-          value={warehouseId}
-          selectedLabel={warehouseLabel}
-          onChange={() => {}}
-          onOptionSelected={onSelectWarehouse}
-          placeholder="Select warehouse"
-          ariaLabel="Select warehouse"
-        />
-        {productEditable ? (
-          <ProductPicker
-            value={productId}
-            selectedLabel={productLabel}
-            onChange={() => {}}
-            onOptionSelected={onSelectProduct}
-            placeholder="All products"
-            ariaLabel="Filter inventory by product"
-          />
-        ) : (
-          <div
-            className="flex items-center truncate rounded-md border border-[var(--panel-border)] bg-[var(--subpanel-background)] px-3 py-2 text-sm text-[var(--foreground)]/70"
-            aria-label="Product (locked)"
-            aria-readonly="true"
+      {/* One toolbar row mirroring the inventory list: Filter (scope pickers +
+          archive) · Search (the four identity bars) · Sort. Same engine
+          primitives, composed module-locally (the grid's filter set differs from
+          the list's, so no shared menu-body). */}
+      <div className="flex items-center justify-end gap-2">
+        {/* Filter — Warehouse + Product scope + Archive. Both pickers just narrow
+            the list; warehouse is optional (inventory cross-sources across
+            warehouses), product is the master filter (locked when not editable). */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={Boolean(warehouseId || productId || grid.isArchived)}
+        >
+          <FilterPickerChip<WarehouseOption>
+            value={warehouseId}
+            selectedLabel={warehouseLabel}
+            onOptionSelected={onSelectWarehouse}
+            onChange={(id) => {
+              if (id === null) onSelectWarehouse(null)
+            }}
+            nounSingular="Warehouse"
+            nounPlural="warehouses"
+            subject="inventory"
           >
-            {productLabel ?? "Product"}
-          </div>
-        )}
-      </div>
-      {/* Identity search bars. */}
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <DebouncedSearchControl
-          value={grid.invNumber}
-          onCommit={grid.setInvNumber}
-          placeholder="Inv #"
-          ariaLabel="Search inventory by inventory number"
-        />
-        <DebouncedSearchControl
-          value={grid.rollNumber}
-          onCommit={grid.setRollNumber}
-          placeholder="Roll #"
-          ariaLabel="Search inventory by roll number"
-        />
-        <DebouncedSearchControl
-          value={grid.dyeLot}
-          onCommit={grid.setDyeLot}
-          placeholder="Dye lot"
-          ariaLabel="Search inventory by dye lot"
-        />
-        <DebouncedSearchControl
-          value={grid.note}
-          onCommit={grid.setNote}
-          placeholder="Note"
-          ariaLabel="Search inventory by note"
-        />
-      </div>
+            {(chrome) => <WarehousePicker {...chrome} />}
+          </FilterPickerChip>
+          {productEditable ? (
+            <FilterPickerChip<ProductOption>
+              value={productId}
+              selectedLabel={productLabel}
+              onOptionSelected={onSelectProduct}
+              onChange={(id) => {
+                if (id === null) onSelectProduct(null)
+              }}
+              nounSingular="Product"
+              nounPlural="products"
+              subject="inventory"
+            >
+              {(chrome) => <ProductPicker {...chrome} />}
+            </FilterPickerChip>
+          ) : (
+            <div
+              className="flex items-center truncate rounded-md border border-[var(--panel-border)] bg-[var(--subpanel-background)] px-3 py-2 text-sm text-[var(--foreground)]/70"
+              aria-label="Product (locked)"
+              aria-readonly="true"
+            >
+              {productLabel ?? "Product"}
+            </div>
+          )}
+          <ArchiveSegmentedControl value={grid.isArchived} onChange={grid.setIsArchived} />
+        </ToolbarMenuButton>
 
-      {/* Multi-column sort — the same builder the inventory list uses, hosted in
-          a header tool rather than the table gutter. Header clicks still do a
-          single-sort replace via `grid.setSort`. */}
-      <div className="flex justify-end">
+        {/* Search — the four identity bars (Inv # / Roll # / Dye lot / Note). The
+            grid has no Product-search column (that's list-only). */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={grid.hasSearch}
+          bodyClassName="w-[28rem]"
+        >
+          <div className="flex flex-col gap-2">
+            <FilterGroupLabel>Identity</FilterGroupLabel>
+            <DebouncedSearchControl
+              value={grid.invNumber}
+              onCommit={grid.setInvNumber}
+              placeholder="Inv #"
+              ariaLabel="Search inventory by inventory number"
+            />
+            <DebouncedSearchControl
+              value={grid.rollNumber}
+              onCommit={grid.setRollNumber}
+              placeholder="Roll #"
+              ariaLabel="Search inventory by roll number"
+            />
+            <DebouncedSearchControl
+              value={grid.dyeLot}
+              onCommit={grid.setDyeLot}
+              placeholder="Dye lot"
+              ariaLabel="Search inventory by dye lot"
+            />
+            <DebouncedSearchControl
+              value={grid.note}
+              onCommit={grid.setNote}
+              placeholder="Note"
+              ariaLabel="Search inventory by note"
+            />
+          </div>
+        </ToolbarMenuButton>
+
+        {/* Multi-column sort — the same builder the inventory list uses. */}
         <ToolbarMenuButton
           label="Sort"
           title="Sort by"
