@@ -377,6 +377,18 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
+      {/* Sell price — bare money (no unit picker). The customer-facing price per
+          unit; seeds a template's planned product on select. */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Unit Price">
+          <MoneyCell
+            editable={editable}
+            value={draft.unitPrice}
+            onChange={(next) => onFieldChange("unitPrice", next)}
+            ariaLabel="Unit price"
+          />
+        </FormField>
+      </CellAt>
     </>
   )
 

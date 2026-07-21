@@ -43,6 +43,8 @@ const EMPTY_PRODUCT: ProductRecord = {
   cost: "",
   costUnitId: "",
   costUnit: null,
+  // No sell price until the user sets it.
+  unitPrice: "",
   // No conversion formula until the user picks one.
   conversionFormulaId: "",
   conversionFormulaName: "",
@@ -76,6 +78,7 @@ function ProductCreatePanel({
         categoryId: localValue.categoryId,
         unitId: localValue.unitId,
         cost: localValue.cost,
+        unitPrice: localValue.unitPrice,
       })
       if (validationError) {
         throw createRecordSectionError({

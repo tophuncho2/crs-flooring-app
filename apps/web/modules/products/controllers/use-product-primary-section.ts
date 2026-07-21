@@ -43,6 +43,7 @@ export function useProductPrimarySection({
         categoryId: localValue.categoryId,
         unitId: localValue.unitId,
         cost: localValue.cost,
+        unitPrice: localValue.unitPrice,
       })
       if (validationError) {
         throw createRecordSectionError({

@@ -33,6 +33,9 @@ export type CreateProductInput = {
   // The unit it's priced per (independent FK; DB FK RESTRICT is the backstop).
   cost: string | null
   costUnitId: string | null
+  // Money-standard sell price — normalized to fixed scale-2 before write; null
+  // clears. Bare money (no unit FK).
+  unitPrice: string | null
   // Conversion formula FK (UoM conversion feature). Optional — null clears it.
   // DB FK RESTRICT is the existence backstop.
   conversionFormulaId: string | null
@@ -75,6 +78,7 @@ export async function createProduct(
       coverageUnitId: input.coverageUnitId,
       cost: input.cost ? normalizeMoneyAmount(input.cost) : null,
       costUnitId: input.costUnitId || null,
+      unitPrice: input.unitPrice ? normalizeMoneyAmount(input.unitPrice) : null,
       conversionFormulaId: input.conversionFormulaId || null,
       productNamingAddon: input.productNamingAddon,
       createdBy: input.createdBy,
@@ -101,6 +105,9 @@ export async function updateProduct(
   if (input.coverageUnitId !== undefined) data.coverageUnitId = input.coverageUnitId
   if (input.cost !== undefined) data.cost = input.cost ? normalizeMoneyAmount(input.cost) : null
   if (input.costUnitId !== undefined) data.costUnitId = input.costUnitId || null
+  if (input.unitPrice !== undefined) {
+    data.unitPrice = input.unitPrice ? normalizeMoneyAmount(input.unitPrice) : null
+  }
   if (input.conversionFormulaId !== undefined) {
     data.conversionFormulaId = input.conversionFormulaId || null
   }

@@ -15,8 +15,19 @@ export type TemplatePlannedProductRow = {
   notes: string
   // LIVE cost read-joined off the linked product (`product.cost`), NOT stored on
   // this row. Canonical money string ("10.00"); "" when the product has no cost.
-  // Display only — never sent in the diff (like productName).
+  // Display only — never sent in the diff (like productName). This is the "bid
+  // cost".
   productCost: string
+  // Job-costing money columns (persisted). Canonical money strings ("" when
+  // unset). `unitPrice` seeds from the product on select, then editable; tax +
+  // freight are manual entry. All three are sent in the diff.
+  unitPrice: string
+  tax: string
+  freight: string
+  // Derived line total (qty × unitPrice + tax + freight), computed on read via
+  // computeTemplatePlannedProductLineTotal. Display only — never sent in the diff.
+  // "" when all inputs are blank.
+  lineTotal: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -31,5 +42,10 @@ export type TemplatePlannedProductForm = {
   // Editable unit FK (UoM epic 2C). "" disconnects the unit.
   unitId: string
   quantity: string
+  // Job-costing money columns (persisted). "" = unset (stored NULL). `unitPrice`
+  // is seeded from the product but stays editable; tax + freight are manual.
+  unitPrice: string
+  tax: string
+  freight: string
   notes: string
 }

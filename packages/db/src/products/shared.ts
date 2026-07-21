@@ -51,6 +51,9 @@ export const productRowSelect = {
       abbreviation: true,
     },
   },
+  // Money-standard sell price (record view). Nullable — null until set. Bare
+  // money, no unit FK (unlike cost).
+  unitPrice: true,
   // Conversion feature: the picked formula (record-view picker label).
   conversionFormulaId: true,
   conversionFormula: { select: { id: true, name: true } },
@@ -101,6 +104,8 @@ export const productOptionSelect = {
   category: { select: { name: true } },
   // Live cost — seeds a row picker's pricing math for freshly-added rows.
   cost: true,
+  // Sell price — seeds a planned-product row's editable unit price on select.
+  unitPrice: true,
   style: true,
   color: true,
   // Conversion seed source — copied onto inventory/adjustment/staged rows.

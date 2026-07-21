@@ -1,11 +1,12 @@
 "use client"
 
-import { NumberCell, TextCell } from "@/engines/record-view"
+import { MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import {
+  computeTemplatePlannedProductLineTotal,
   formatMoney,
   type ProductOption,
   type UnitOfMeasureOption,
@@ -14,14 +15,18 @@ import {
 import type { TemplatePlannedProductLocal } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
 
 const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductLocal>[] = [
-  // Product carries the wide 360 floor + sole grow; Quantity, Unit, Cost sit
-  // right of it, Notes is the pinned tail. Cost is a read-only live join off the
-  // product.
+  // Product carries the wide 360 floor + sole grow. Bid Cost is a read-only live
+  // join off the product; Unit Price/Tax/Freight are editable money; Line Total is
+  // the derived total. Notes is the pinned tail.
   { key: "product", label: "Product", minWidth: 360, grow: 1 },
-  { key: "quantity", label: "Quantity", width: 130, align: "end" },
-  { key: "unit", label: "Unit", width: 140 },
-  { key: "cost", label: "Cost", width: 120, align: "end" },
-  { key: "notes", label: "Notes", width: 280 },
+  { key: "quantity", label: "Quantity", width: 120, align: "end" },
+  { key: "unit", label: "Unit", width: 130 },
+  { key: "bidCost", label: "Bid Cost", width: 110, align: "end" },
+  { key: "tax", label: "Tax", width: 110, align: "end" },
+  { key: "freight", label: "Freight", width: 110, align: "end" },
+  { key: "unitPrice", label: "Unit Price", width: 120, align: "end" },
+  { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
+  { key: "notes", label: "Notes", width: 240 },
 ]
 
 // Pure editable-table body for the Planned Products side. The RecordItemSection
@@ -99,17 +104,62 @@ export function TemplatePlannedProductsGrid({
                 ariaLabel="Planned product quantity"
               />
             )
-          case "cost":
-            // Live cost read-joined off the product — read-only. "—" when the
-            // product has no cost set.
+          case "bidCost":
+            // Bid cost = live cost read-joined off the product — read-only. "—"
+            // when the product has no cost set.
             return (
               <NumberCell
                 editable={false}
                 align="end"
                 value={item.productCost ? formatMoney(item.productCost) : "—"}
-                ariaLabel="Planned product cost (from product)"
+                ariaLabel="Planned product bid cost (from product)"
               />
             )
+          case "tax":
+            return (
+              <MoneyCell
+                editable={editable}
+                value={item.tax}
+                onChange={(next) => onChangeField(item.id, "tax", next)}
+                ariaLabel="Planned product tax"
+              />
+            )
+          case "freight":
+            return (
+              <MoneyCell
+                editable={editable}
+                value={item.freight}
+                onChange={(next) => onChangeField(item.id, "freight", next)}
+                ariaLabel="Planned product freight"
+              />
+            )
+          case "unitPrice":
+            return (
+              <MoneyCell
+                editable={editable}
+                value={item.unitPrice}
+                onChange={(next) => onChangeField(item.id, "unitPrice", next)}
+                ariaLabel="Planned product unit price"
+              />
+            )
+          case "lineTotal": {
+            // Derived: qty × unitPrice + tax + freight. Read-only, recomputed live
+            // from the local row. "—" when all inputs are blank.
+            const lineTotal = computeTemplatePlannedProductLineTotal({
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              tax: item.tax,
+              freight: item.freight,
+            })
+            return (
+              <NumberCell
+                editable={false}
+                align="end"
+                value={lineTotal ? formatMoney(lineTotal) : "—"}
+                ariaLabel="Planned product line total"
+              />
+            )
+          }
           case "notes":
             return (
               <TextCell

@@ -59,6 +59,8 @@ export type ProductRecord = {
   cost: string
   costUnitId: string
   costUnit: ProductRecordUnit | null
+  // Money-standard sell price (normalized string, "" when unset). Bare money.
+  unitPrice: string
   // Conversion feature: the picked formula FK + its resolved name ("" when unset).
   conversionFormulaId: string
   conversionFormulaName: string
@@ -102,6 +104,9 @@ export type ProductOptionRecord = {
   // Live product cost (canonical money string; "" when unset). Seeds a row
   // picker's pricing math for freshly-added rows.
   cost: string
+  // Product sell price (canonical money string; "" when unset). Seeds a
+  // planned-product row's editable unit price on select.
+  unitPrice: string
   // Conversion seed source — copied onto inventory/adjustment/staged rows.
   coverageUnitId: string
   coverageUnitName: string
@@ -170,6 +175,7 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
           abbreviation: product.costUnit.abbreviation,
         }
       : null,
+    unitPrice: product.unitPrice ? normalizeMoneyAmount(product.unitPrice.toString()) : "",
     conversionFormulaId: product.conversionFormulaId ?? "",
     conversionFormulaName: product.conversionFormula?.name ?? "",
     productNamingAddon: product.productNamingAddon ?? "",
@@ -233,6 +239,7 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     unitName: product.unit?.name ?? "",
     unitAbbrev: product.unit?.abbreviation ?? "",
     cost: product.cost ? normalizeMoneyAmount(product.cost.toString()) : "",
+    unitPrice: product.unitPrice ? normalizeMoneyAmount(product.unitPrice.toString()) : "",
     // Raw-trimmed decimal (not money-normalized) — matches normalizeProductRow so
     // the seeded row's coveragePerUnit doesn't falsely diverge.
     coverageUnitId: product.coverageUnitId ?? "",

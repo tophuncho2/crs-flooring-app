@@ -378,6 +378,10 @@ model FlooringProduct {
   // The unit `cost` is priced per (e.g. $/sq ft). Independent of `unitId`; editable.
   costUnitId                       String?
   costUnit                         FlooringUnitOfMeasure?             @relation("FlooringProductCostUnit", fields: [costUnitId], references: [id], onDelete: Restrict)
+  // Money standard: Decimal(12,2). The customer-facing sell price per unit. Seeded
+  // onto a template's planned product when this product is picked; editable there.
+  // Bare money — no unit FK (priced per the row's own unit). NULL = unset.
+  unitPrice                        Decimal?                           @db.Decimal(12, 2)
   productNamingAddon               String?                            @db.VarChar(80)
   // Archive flag (mirrors FlooringInventory.isArchived). Default-hidden from the
   // products list unless the Archived filter is chosen, and excluded from every
@@ -820,6 +824,13 @@ model TemplatePlannedProduct {
   quantity       Decimal?         @db.Decimal(10, 2)
   unitId         String?
   unit           FlooringUnitOfMeasure? @relation("TemplatePlannedProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
+  // Job-costing money columns (money standard: Decimal(12,2)). Manual entry;
+  // `unitPrice` seeds from the picked product but stays editable. Bid cost is NOT
+  // stored here — it's a live read-join off `product.cost`. Line total (qty ×
+  // unitPrice + tax + freight) is computed on read, never stored. NULL = unset.
+  unitPrice      Decimal?         @db.Decimal(12, 2)
+  tax            Decimal?         @db.Decimal(12, 2)
+  freight        Decimal?         @db.Decimal(12, 2)
   notes          String?          @db.VarChar(30)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt

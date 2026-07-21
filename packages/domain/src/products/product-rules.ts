@@ -51,6 +51,7 @@ export function validateProductPrimaryForm(input: {
   categoryId: string
   unitId: string
   cost?: string
+  unitPrice?: string
 }): string {
   if (!input.categoryId.trim()) {
     return "Category is required"
@@ -62,6 +63,10 @@ export function validateProductPrimaryForm(input: {
   // money amount. No cross-field rule: a cost does not require a cost-unit.
   if (input.cost && input.cost.trim() && !isValidMoneyAmount(input.cost)) {
     return "Cost is not a valid amount"
+  }
+  // Unit price is optional (empty = unset); when present it must be valid money.
+  if (input.unitPrice && input.unitPrice.trim() && !isValidMoneyAmount(input.unitPrice)) {
+    return "Unit price is not a valid amount"
   }
   return ""
 }

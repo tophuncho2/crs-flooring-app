@@ -68,7 +68,7 @@ describe("saveTemplatePlannedProductsSectionUseCase", () => {
         diff: {
           added: [],
           modified: [
-            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } },
+            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", unitPrice: "", tax: "", freight: "", notes: "" } },
           ],
           deleted: [],
         },
@@ -86,7 +86,7 @@ describe("saveTemplatePlannedProductsSectionUseCase", () => {
       {
         templateId: "tpl-1",
         diff: {
-          added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } }],
+          added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", unitPrice: "", tax: "", freight: "", notes: "" } }],
           modified: [],
           deleted: [],
         },

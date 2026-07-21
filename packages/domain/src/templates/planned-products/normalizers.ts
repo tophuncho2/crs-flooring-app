@@ -1,5 +1,6 @@
 import { toIsoTimestamp } from "../../shared/date-format.js"
 import { normalizeMoneyAmount } from "../../shared/money.js"
+import { computeTemplatePlannedProductLineTotal } from "./math.js"
 import type { TemplatePlannedProductRow } from "./types.js"
 
 type TemplatePlannedProductInput = {
@@ -11,6 +12,10 @@ type TemplatePlannedProductInput = {
   quantity: { toString(): string } | null
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
+  // Persisted job-costing money columns.
+  unitPrice: { toString(): string } | null
+  tax: { toString(): string } | null
+  freight: { toString(): string } | null
   notes: string | null
   createdAt: Date | string
   updatedAt: Date | string
@@ -18,11 +23,20 @@ type TemplatePlannedProductInput = {
   updatedBy: string | null
 }
 
+// Normalize a persisted money column on read to a canonical "X.XX" ("" when
+// NULL) so dirty-checks compare stable strings (no trailing-zero false-dirty).
+function normalizeMoneyColumn(value: { toString(): string } | null): string {
+  return value == null ? "" : normalizeMoneyAmount(value.toString())
+}
+
 export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInput): TemplatePlannedProductRow {
   const quantity = item.quantity == null ? "" : item.quantity.toString()
   // Live product cost (read-join). Normalize on read to a canonical "X.XX" so the
   // subtotal and any dirty-check compare against a stable string. "" = no cost.
   const productCost = item.product.cost == null ? "" : normalizeMoneyAmount(item.product.cost.toString())
+  const unitPrice = normalizeMoneyColumn(item.unitPrice)
+  const tax = normalizeMoneyColumn(item.tax)
+  const freight = normalizeMoneyColumn(item.freight)
   return {
     id: item.id,
     productId: item.productId,
@@ -36,6 +50,10 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     unitAbbrev: item.unit?.abbreviation ?? "",
     notes: item.notes ?? "",
     productCost,
+    unitPrice,
+    tax,
+    freight,
+    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, unitPrice, tax, freight }),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

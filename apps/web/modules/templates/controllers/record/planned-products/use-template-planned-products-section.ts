@@ -37,8 +37,14 @@ export type TemplatePlannedProductLocal = {
   notes: string
   // LIVE cost read-joined off the product (seeded from the picked ProductOption
   // for unsaved rows; re-resolved server-side on save). Display only — NEVER sent
-  // in the diff (like productName).
+  // in the diff (like productName). This is the "bid cost".
   productCost: string
+  // Persisted job-costing money columns. `unitPrice` seeds from the picked product
+  // on select but stays editable; tax + freight are manual. All three ARE sent in
+  // the diff. Line total is derived (not stored here) — computed in the grid cell.
+  unitPrice: string
+  tax: string
+  freight: string
   // Client-only ergonomic for narrowing the row's product picker. NOT
   // persisted to the server — excluded from the diff sent on save.
   categoryFilterId: string | null
@@ -62,6 +68,9 @@ function toLocalItem(row: TemplatePlannedProductRow): TemplatePlannedProductLoca
     quantity: row.quantity,
     notes: row.notes,
     productCost: row.productCost,
+    unitPrice: row.unitPrice,
+    tax: row.tax,
+    freight: row.freight,
     categoryFilterId: null,
     categoryFilterName: row.categoryName || null,
   }
@@ -77,7 +86,7 @@ function createItemsRevisionKey(record: TemplateDetail) {
     // re-seeds the local cost display.
     record.plannedProducts.map(
       (row) =>
-        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.productCost}`,
+        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.productCost}:${row.unitPrice}:${row.tax}:${row.freight}`,
     ),
   )
 }
@@ -87,6 +96,9 @@ function itemsDiffer(local: TemplatePlannedProductLocal, server: TemplatePlanned
     local.productId !== server.productId ||
     local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
+    local.unitPrice !== server.unitPrice ||
+    local.tax !== server.tax ||
+    local.freight !== server.freight ||
     local.notes !== server.notes
   )
 }
@@ -96,6 +108,9 @@ function toDiffForm(local: TemplatePlannedProductLocal): TemplatePlannedProductF
     productId: local.productId,
     unitId: local.unitId,
     quantity: local.quantity,
+    unitPrice: local.unitPrice,
+    tax: local.tax,
+    freight: local.freight,
     notes: local.notes,
   }
 }
@@ -177,6 +192,9 @@ export function useTemplatePlannedProductsSection({
           quantity: "",
           notes: "",
           productCost: "",
+          unitPrice: "",
+          tax: "",
+          freight: "",
           categoryFilterId: null,
           categoryFilterName: null,
         },
@@ -242,11 +260,14 @@ export function useTemplatePlannedProductsSection({
           { nameKey: "unitName", abbrevKey: "unitAbbrev" },
         )
         // Seed the live cost from the picked product (for unsaved rows the server
-        // hasn't joined yet) for the read-only cost display.
+        // hasn't joined yet) for the read-only bid-cost display, and seed the
+        // editable unit price from the product's sell price. Tax/freight are
+        // manual — never seeded.
         return {
           ...seeded,
           productName: option?.name ?? "",
           productCost: option?.cost ?? "",
+          unitPrice: option?.unitPrice ?? "",
         }
       }),
     }))

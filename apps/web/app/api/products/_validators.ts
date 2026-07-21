@@ -62,6 +62,18 @@ function parseCost(value: unknown): string | null {
   return trimmed
 }
 
+// Sell price — same money-standard contract as `cost`. Blank or a lone "."
+// clears it (unset).
+function parseUnitPrice(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  const trimmed = String(value).trim()
+  if (trimmed === "" || trimmed === ".") return null
+  if (!isValidMoneyAmount(trimmed)) {
+    fail("unitPrice must be a valid money amount", "unitPrice")
+  }
+  return trimmed
+}
+
 // Required FK id — trimmed non-empty. Structural guard only; existence is
 // checked in the use case (and the DB FK's RESTRICT is the backstop).
 function requireId(value: unknown, field: string): string {
@@ -90,6 +102,8 @@ function parseSharedFields(body: Record<string, unknown>) {
     // the existence backstop for costUnitId.
     cost: parseCost(body.cost),
     costUnitId: parseOptionalString(body.costUnitId),
+    // Money sell price — bare (no unit FK). Optional; blank clears.
+    unitPrice: parseUnitPrice(body.unitPrice),
     // Conversion formula FK (UoM conversion feature). Optional — blank clears it.
     // Structural parse only; the DB FK's RESTRICT is the existence backstop.
     conversionFormulaId: parseOptionalString(body.conversionFormulaId),

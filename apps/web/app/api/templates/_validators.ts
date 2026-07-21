@@ -190,6 +190,11 @@ function validatePlannedProductForm(value: unknown, path: string): TemplatePlann
     // Editable unit FK (UoM epic 2C); "" = no unit.
     unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
+    // Job-costing money columns (money standard) — blank clears, else validated +
+    // canonicalized to scale-2. Bid cost is NOT here (live product join).
+    unitPrice: optionalMoney(obj.unitPrice, `${path}.unitPrice`, failDiff),
+    tax: optionalMoney(obj.tax, `${path}.tax`, failDiff),
+    freight: optionalMoney(obj.freight, `${path}.freight`, failDiff),
     notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
   }
 }
