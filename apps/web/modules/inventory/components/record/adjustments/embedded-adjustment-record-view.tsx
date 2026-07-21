@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, type ReactNode } from "react"
-import { EllipsisVertical } from "lucide-react"
+import { EllipsisVertical, List } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
@@ -100,13 +100,6 @@ export function EmbeddedAdjustmentRecordView({
 
   const actions: RecordSectionSubHeaderAction[] = [
     {
-      key: "back",
-      label: "Show list",
-      tone: "neutral",
-      onClick: handleBack,
-      disabled: isSaving,
-    },
-    {
       key: "save",
       label: isSaving ? "Saving…" : "Save",
       tone: "primary",
@@ -174,7 +167,22 @@ export function EmbeddedAdjustmentRecordView({
         isSaving={isSaving}
         hasConflict={false}
         error={error}
-        actionsLeading={actionsLeading}
+        actionsLeading={
+          <>
+            {/* Back to the list face — icon-only, leftmost (left of the adj#
+                stepper). Same dirty-guarded handler + disable-while-saving as the
+                old "Show list" text button. */}
+            <RecordFooterNeutralButton
+              onClick={handleBack}
+              disabled={isSaving}
+              aria-label="Show list"
+              title="Show list"
+            >
+              <List size={16} aria-hidden="true" />
+            </RecordFooterNeutralButton>
+            {actionsLeading}
+          </>
+        }
         actions={actions}
         actionsTrailing={optionsMenu}
       />
