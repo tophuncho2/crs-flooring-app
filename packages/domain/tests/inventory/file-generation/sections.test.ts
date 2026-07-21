@@ -30,7 +30,7 @@ describe("renderInventoryPrimaryBlock — roll-tag heading + cell gating", () =>
 
   it("renders the big Roll# heading from prefix + number", () => {
     const html = renderInventoryPrimaryBlock(inventory, columns)
-    expect(html).toContain('<div class="inv-roll-number">ROLL#88</div>')
+    expect(html).toContain('<div class="inv-roll-number">88</div>')
   })
 
   it("renders the four checked cells with their composed values", () => {
@@ -61,7 +61,7 @@ describe("renderInventoryPrimaryBlock — roll-tag heading + cell gating", () =>
   it("still renders the Roll# heading when no cell is checked (heading is not a togglable cell)", () => {
     const allOff = Object.fromEntries(Object.keys(columns).map((key) => [key, false]))
     const html = renderInventoryPrimaryBlock(inventory, allOff)
-    expect(html).toContain('<div class="inv-roll-number">ROLL#88</div>')
+    expect(html).toContain('<div class="inv-roll-number">88</div>')
     expect(html).not.toContain('class="inv-cell-grid"')
   })
 })

@@ -33,7 +33,7 @@ describe("buildInventoryPrintHtml — roll tag, never adjustment data", () => {
   it("renders the roll-tag block: Roll# heading, cells, and the blank write-in grid", () => {
     const html = buildInventoryPrintHtml(inventory, buildInventoryPrintConfig())
     expect(html).toContain("Inventory Item")
-    expect(html).toContain('<div class="inv-roll-number">ROLL#88</div>')
+    expect(html).toContain('<div class="inv-roll-number">88</div>')
     expect(html).toContain('class="inv-cell-grid"')
     expect(html).toContain('<table class="inv-writein">')
     expect(html).toContain("<th>Adjustment</th>")

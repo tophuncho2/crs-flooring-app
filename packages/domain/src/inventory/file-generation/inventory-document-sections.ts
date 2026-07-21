@@ -1,4 +1,3 @@
-import { composeRollNumberDisplay } from "../formatters.js"
 import type { InventoryRow } from "../types.js"
 import {
   INVENTORY_PRINT_CELL_FIELDS,
@@ -105,8 +104,7 @@ export function renderInventoryPrimaryBlock(
   inventory: InventoryRow,
   columns: InventoryColumnVisibility,
 ): string {
-  const rollNumber = composeRollNumberDisplay(inventory.rollPrefix, inventory.rollNumber)
-  const heading = `<div class="inv-roll-number">${escapeOrEmpty(rollNumber)}</div>`
+  const heading = `<div class="inv-roll-number">${escapeOrEmpty(inventory.rollNumber.trim())}</div>`
 
   const cells = INVENTORY_PRINT_CELL_FIELDS.filter((column) => columns[column.key]).map(
     (column) =>
