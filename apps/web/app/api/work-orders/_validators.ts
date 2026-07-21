@@ -1,5 +1,6 @@
 import { z } from "zod"
 import {
+  WorkOrderEntityInvolvementExecutionError,
   WorkOrderExecutionError,
   WorkOrderMaterialItemExecutionError,
   WorkOrderPlannedPaymentExecutionError,
@@ -25,12 +26,15 @@ import {
   WO_RETURN_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
+  WORK_ORDER_ENTITY_INVOLVEMENT_TYPE_MAX,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
   WORK_ORDER_PLANNED_PAYMENT_NOTES_MAX,
   isValidMoneyAmount,
   normalizeMoneyAmount,
   type FlooringPaymentDirection,
   type PaletteColor,
+  type WorkOrderEntityInvolvementForm,
+  type WorkOrderEntityInvolvementsDiff,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemUpdateForm,
   type WorkOrderMaterialItemsDiff,
@@ -393,6 +397,73 @@ export function validateWorkOrderPlannedPaymentsDiffInput(
   const deleted = requireArray(body.deleted, "deleted", failPlannedPayment).map((entry, idx) => {
     const obj = requireObject(entry, `deleted[${idx}]`, failPlannedPayment)
     return { id: requireString(obj.id, `deleted[${idx}].id`, failPlannedPayment) }
+  })
+
+  return { added, modified, deleted }
+}
+
+// ---------------------------------------------------------------------------
+// Entity involvement diff
+// ---------------------------------------------------------------------------
+// Why an entity is involved in a work order. No required fields (the domain rule
+// is a no-op) — a row may carry any combination of an entity link + a free-text
+// involvement type. Fields: entityId (optional link), involvementType (bounded).
+
+function failEntityInvolvement(message: string, field?: string): never {
+  throw new WorkOrderEntityInvolvementExecutionError({
+    code: "WORK_ORDER_ENTITY_INVOLVEMENT_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+// Nullable entity link id: null/undefined/"" = unlinked, a non-empty string =
+// the linked entity. Folds missing → null (the grid always sends the field, but
+// stays defensive). Referential validity is enforced by the FK (P2003), not here.
+function optionalEntityInvolvementEntityId(value: unknown, field: string): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") failEntityInvolvement(`${field} must be a string`, field)
+  const trimmed = (value as string).trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function validateEntityInvolvementForm(value: unknown, path: string): WorkOrderEntityInvolvementForm {
+  const obj = requireObject(value, path, failEntityInvolvement)
+  return {
+    entityId: optionalEntityInvolvementEntityId(obj.entityId, `${path}.entityId`),
+    involvementType:
+      optionalBoundedText(
+        obj.involvementType,
+        WORK_ORDER_ENTITY_INVOLVEMENT_TYPE_MAX,
+        `${path}.involvementType`,
+        failEntityInvolvement,
+      ) ?? "",
+  }
+}
+
+export function validateWorkOrderEntityInvolvementsDiffInput(
+  body: Record<string, unknown>,
+): WorkOrderEntityInvolvementsDiff {
+  const added = requireArray(body.added, "added", failEntityInvolvement).map((entry, idx) => {
+    const obj = requireObject(entry, `added[${idx}]`, failEntityInvolvement)
+    return {
+      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failEntityInvolvement),
+      form: validateEntityInvolvementForm(obj.form, `added[${idx}].form`),
+    }
+  })
+
+  const modified = requireArray(body.modified, "modified", failEntityInvolvement).map((entry, idx) => {
+    const obj = requireObject(entry, `modified[${idx}]`, failEntityInvolvement)
+    return {
+      id: requireString(obj.id, `modified[${idx}].id`, failEntityInvolvement),
+      form: validateEntityInvolvementForm(obj.form, `modified[${idx}].form`),
+    }
+  })
+
+  const deleted = requireArray(body.deleted, "deleted", failEntityInvolvement).map((entry, idx) => {
+    const obj = requireObject(entry, `deleted[${idx}]`, failEntityInvolvement)
+    return { id: requireString(obj.id, `deleted[${idx}].id`, failEntityInvolvement) }
   })
 
   return { added, modified, deleted }

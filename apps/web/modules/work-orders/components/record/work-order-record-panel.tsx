@@ -11,16 +11,19 @@ import type {
   EnrichedInventoryAdjustmentRow,
   Payment,
   WorkOrderDetail,
+  WorkOrderEntityInvolvementRow,
   WorkOrderMaterialItemRow,
   WorkOrderPlannedPaymentRow,
 } from "@builders/domain"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
 import { useWorkOrderMaterialItemsSection } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { useWorkOrderPlannedPaymentsSection } from "@/modules/work-orders/controllers/record/planned-payments/use-work-order-planned-payments-section"
+import { useWorkOrderEntityInvolvementSection } from "@/modules/work-orders/controllers/record/entity-involvement/use-work-order-entity-involvement-section"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
 import { WorkOrderPlannedPaymentsSection } from "./planned-payments/work-order-planned-payments-section"
+import { WorkOrderEntityInvolvementSection } from "./entity-involvement/work-order-entity-involvement-section"
 import { WorkOrderPaymentsSection } from "./payments/work-order-payments-section"
 import { WorkOrderRecordFooter } from "./footer"
 
@@ -30,6 +33,7 @@ export function WorkOrderRecordPanel({
   initialMaterialItems,
   initialAdjustmentsForWorkOrder,
   initialPlannedPayments,
+  initialEntityInvolvements,
   initialPayments,
   printCounts,
 }: {
@@ -38,6 +42,7 @@ export function WorkOrderRecordPanel({
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
   initialPlannedPayments: WorkOrderPlannedPaymentRow[]
+  initialEntityInvolvements: WorkOrderEntityInvolvementRow[]
   initialPayments: Payment[]
   /** Per-doc-type print counts for this WO (read-only, shown in the primary section). */
   printCounts: ReadonlyArray<{ documentTypeName: string; count: number }>
@@ -45,6 +50,7 @@ export function WorkOrderRecordPanel({
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
   const [plannedPayments, setPlannedPayments] = useState(initialPlannedPayments)
+  const [entityInvolvements, setEntityInvolvements] = useState(initialEntityInvolvements)
   // Read-only adjustments display snapshot, read straight from server props (NOT
   // frozen in state). Adjustments are created in-place via the modal, then
   // `router.refresh()` re-runs the loader — so the fresh enriched set flows back
@@ -72,6 +78,15 @@ export function WorkOrderRecordPanel({
     workOrder: controller.record,
     plannedPayments,
     publishPlannedPayments: setPlannedPayments,
+    publishWorkOrder: controller.publishRecord,
+  })
+
+  // Lifted to the panel (like plannedPaymentsSection) so its dirty state registers
+  // with the multi-section close-guard. Standalone section — no toggle.
+  const entityInvolvementSection = useWorkOrderEntityInvolvementSection({
+    workOrder: controller.record,
+    entityInvolvements,
+    publishEntityInvolvements: setEntityInvolvements,
     publishWorkOrder: controller.publishRecord,
   })
 
@@ -208,6 +223,21 @@ export function WorkOrderRecordPanel({
                 key={controller.record.id}
                 workOrder={controller.record}
                 payments={payments}
+              />
+            ),
+          },
+          {
+            key: "entity-involvement",
+            type: "item",
+            order: 40,
+            dirtyLabel: "entity involvement",
+            controller: entityInvolvementSection,
+            render: () => (
+              // key on the WO id so stepping ◀/▶ to a neighbor remounts + resets
+              // the section, matching the sibling editable slots above.
+              <WorkOrderEntityInvolvementSection
+                key={controller.record.id}
+                section={entityInvolvementSection}
               />
             ),
           },

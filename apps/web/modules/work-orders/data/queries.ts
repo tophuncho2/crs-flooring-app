@@ -8,6 +8,7 @@ import {
   listAdjustmentsForWorkOrder,
   listPaymentsByWorkOrder,
   listWorkOrderDocumentTypeOptions,
+  listWorkOrderEntityInvolvements,
   listWorkOrderMaterialItems,
   listWorkOrderPlannedPayments,
   type PrismaDetailPageResult,
@@ -19,6 +20,7 @@ import type {
   Payment,
   WorkOrderDetail,
   WorkOrderDocumentTypeOption,
+  WorkOrderEntityInvolvementRow,
   WorkOrderFileGenerationInput,
   WorkOrderMaterialItemRow,
   WorkOrderPlannedPaymentRow,
@@ -47,6 +49,12 @@ export type WorkOrderDetailPageData = {
    */
   plannedPayments: WorkOrderPlannedPaymentRow[]
   /**
+   * The work order's entity involvements (why an entity is involved), ordered
+   * createdAt asc. Loaded separately (sibling-prop pattern) and threaded into the
+   * record panel's own state — NOT nested into WorkOrderDetail.
+   */
+  entityInvolvements: WorkOrderEntityInvolvementRow[]
+  /**
    * The real payments (`FlooringPayment`) linked to this work order, newest-first
    * (createdAt desc). Loaded separately (sibling-prop pattern) and read straight
    * from the server prop by the read-only Payments section — NOT frozen in state
@@ -64,15 +72,23 @@ export async function getWorkOrderDetailPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderDetailPageData>> {
   try {
-    const [workOrder, materialItems, adjustmentsForWorkOrder, plannedPayments, payments, printCounts] =
-      await Promise.all([
-        getWorkOrderDetailById(id),
-        listWorkOrderMaterialItems(id),
-        listAdjustmentsForWorkOrder(id),
-        listWorkOrderPlannedPayments(id),
-        listPaymentsByWorkOrder(id),
-        getWorkOrderPrintCountsByDocumentType(id),
-      ])
+    const [
+      workOrder,
+      materialItems,
+      adjustmentsForWorkOrder,
+      plannedPayments,
+      entityInvolvements,
+      payments,
+      printCounts,
+    ] = await Promise.all([
+      getWorkOrderDetailById(id),
+      listWorkOrderMaterialItems(id),
+      listAdjustmentsForWorkOrder(id),
+      listWorkOrderPlannedPayments(id),
+      listWorkOrderEntityInvolvements(id),
+      listPaymentsByWorkOrder(id),
+      getWorkOrderPrintCountsByDocumentType(id),
+    ])
 
     if (!workOrder) {
       return { ok: false, notFound: true }
@@ -85,6 +101,7 @@ export async function getWorkOrderDetailPageData(
         materialItems,
         adjustmentsForWorkOrder,
         plannedPayments,
+        entityInvolvements,
         payments,
         printCounts,
       },

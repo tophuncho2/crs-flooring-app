@@ -178,6 +178,7 @@ model Entity {
   imports         FlooringImportEntry[]
   templatePlannedPayments TemplatePlannedPayment[]
   workOrderPlannedPayments FlooringWorkOrderPlannedPayment[]
+  workOrderEntityInvolvements FlooringWorkOrderEntityInvolvement[]
   certificates    Certificate[]
 
   // Sort-column btree backing the work-orders list sort by entity name (2-hop
@@ -943,6 +944,7 @@ model FlooringWorkOrder {
   inventoryAdjustments FlooringInventoryAdjustment[]
   payments             FlooringPayment[]
   plannedPayments      FlooringWorkOrderPlannedPayment[]
+  entityInvolvements   FlooringWorkOrderEntityInvolvement[]
   printEvents          FlooringWorkOrderPrintEvent[]
 
   @@index([workOrderNumber])
@@ -1023,6 +1025,33 @@ model FlooringWorkOrderPlannedPayment {
   @@index([entityId])
   @@index([paymentPurposeId])
   @@map("flooring_work_order_planned_payment")
+}
+
+// Why an entity is involved in a work order — the reason is separate from the
+// entity's own type. Links an Entity (SetNull, like the planned payment) plus a
+// free-text `involvementType`. Structure mirrors the work-order child tables
+// (Cascade off the work order, actor + timestamp pair). No money/direction — this
+// is a plain link+label row; a future second surface to create payments.
+model FlooringWorkOrderEntityInvolvement {
+  id              String            @id @default(uuid())
+  workOrderId     String
+  workOrder       FlooringWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  entityId        String?
+  entity          Entity?           @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  involvementType String?           @db.VarChar(40)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  // Explicit short index names (map:) — the default Prisma names (long table +
+  // column) would exceed Postgres' 63-byte identifier limit (the
+  // workOrderId+createdAt composite hits 64) and truncate. `fwoei_` =
+  // flooring_work_order_entity_involvement. FK constraint names fit as defaults.
+  @@index([workOrderId], map: "fwoei_work_order_idx")
+  @@index([workOrderId, createdAt], map: "fwoei_work_order_created_at_idx")
+  @@index([entityId], map: "fwoei_entity_idx")
+  @@map("flooring_work_order_entity_involvement")
 }
 
 model QueueOutboxEvent {

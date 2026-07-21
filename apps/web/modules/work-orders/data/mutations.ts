@@ -8,6 +8,8 @@ import type {
 } from "@builders/application"
 import type {
   WorkOrderDetail,
+  WorkOrderEntityInvolvementRow,
+  WorkOrderEntityInvolvementsDiff,
   WorkOrderMaterialItemRow,
   WorkOrderMaterialItemsDiff,
   WorkOrderPlannedPaymentRow,
@@ -75,6 +77,25 @@ export async function saveWorkOrderPlannedPaymentsSectionRequest(
     tempIdMap: Record<string, string>
   }>(
     `/api/work-orders/${workOrderId}/planned-payments/section`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta(diff as unknown as Record<string, unknown>, revisionKey)),
+    },
+  )
+}
+
+export async function saveWorkOrderEntityInvolvementsSectionRequest(
+  workOrderId: string,
+  diff: WorkOrderEntityInvolvementsDiff,
+  revisionKey: string,
+) {
+  return requestJson<{
+    workOrder: WorkOrderDetail
+    entityInvolvements: WorkOrderEntityInvolvementRow[]
+    tempIdMap: Record<string, string>
+  }>(
+    `/api/work-orders/${workOrderId}/entity-involvement/section`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

@@ -11,6 +11,7 @@ import type {
   EnrichedInventoryAdjustmentRow,
   Payment,
   WorkOrderDetail,
+  WorkOrderEntityInvolvementRow,
   WorkOrderNeighbor,
   WorkOrderMaterialItemRow,
   WorkOrderPlannedPaymentRow,
@@ -22,6 +23,7 @@ export function WorkOrderDetailClient({
   initialMaterialItems,
   initialAdjustmentsForWorkOrder,
   initialPlannedPayments,
+  initialEntityInvolvements,
   initialPayments,
   printCounts,
   backHref,
@@ -30,6 +32,7 @@ export function WorkOrderDetailClient({
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
   initialPlannedPayments: WorkOrderPlannedPaymentRow[]
+  initialEntityInvolvements: WorkOrderEntityInvolvementRow[]
   initialPayments: Payment[]
   printCounts: ReadonlyArray<{ documentTypeName: string; count: number }>
   backHref: string
@@ -79,6 +82,7 @@ export function WorkOrderDetailClient({
             initialMaterialItems={initialMaterialItems}
             initialAdjustmentsForWorkOrder={initialAdjustmentsForWorkOrder}
             initialPlannedPayments={initialPlannedPayments}
+            initialEntityInvolvements={initialEntityInvolvements}
             initialPayments={initialPayments}
             printCounts={printCounts}
           />
