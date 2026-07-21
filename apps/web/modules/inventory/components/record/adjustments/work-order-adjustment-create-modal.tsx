@@ -216,7 +216,7 @@ export function WorkOrderAdjustmentCreateModal({
     <QuickCreateModal
       open
       title="Add adjustment"
-      widthClassName="max-w-6xl"
+      widthClassName="max-w-7xl"
       onClose={onClose}
       onCreate={() => controller.save()}
       canCreate={!showGrid && canSave}
