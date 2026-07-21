@@ -44,6 +44,21 @@ describe("renderAdjustmentRowActions — delete item visibility", () => {
     expect(screen.queryByText("Delete adjustment")).toBeNull()
   })
 
+  it("ledger host (split-off + return + duplicate): shows all three, still NO delete", async () => {
+    await openMenu(
+      renderAdjustmentRowActions(row(), {
+        onSplitOff: vi.fn(),
+        onCreateReturn: vi.fn(),
+        onDuplicate: vi.fn(),
+      }),
+    )
+
+    expect(screen.getByText("Add inventory from adjustment")).toBeTruthy()
+    expect(screen.getByText("Create return")).toBeTruthy()
+    expect(screen.getByText("Duplicate adjustment")).toBeTruthy()
+    expect(screen.queryByText("Delete adjustment")).toBeNull()
+  })
+
   it("record-view host (onDelete wired): shows an enabled delete that fires with the row", async () => {
     const onDelete = vi.fn()
     const target = row()

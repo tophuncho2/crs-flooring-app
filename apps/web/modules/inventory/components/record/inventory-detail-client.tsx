@@ -89,6 +89,8 @@ function InventoryRecordSurface({
           entry={inventory}
           selectedAdjustmentId={selection.adjustment}
           onSelectAdjustment={(id) => selection.setAdjustment(id)}
+          action={selection.action}
+          onClearAction={selection.clearAction}
         />
       ) : null}
     </div>

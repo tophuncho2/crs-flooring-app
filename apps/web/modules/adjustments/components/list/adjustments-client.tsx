@@ -499,6 +499,16 @@ export default function AdjustmentsClient({
             }),
           )
         }
+        // Duplicate / Create return navigate into the row's inventory record view
+        // with a one-shot `action` intent; the record view resolves the row by id
+        // and opens the seeded modal (reusing its existing mounts). `returnTo`
+        // brings the operator back to this ledger.
+        onDuplicate={(row) =>
+          router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo, "duplicate"))
+        }
+        onCreateReturn={(row) =>
+          router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo, "return"))
+        }
         pagination={{
           page,
           pageSize,

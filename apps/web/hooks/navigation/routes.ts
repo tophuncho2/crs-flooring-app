@@ -176,6 +176,12 @@ export function buildInventoryRecordHref(options?: {
   productId?: string | null
   productLabel?: string | null
   adjustment?: string | null
+  /**
+   * One-shot intent applied to the drilled-in `adjustment` row once the record
+   * view resolves it: open the Duplicate create modal or the Create Return modal
+   * seeded from that row. Cleared by the record view after it fires.
+   */
+  action?: "duplicate" | "return" | null
   returnTo?: string | null
 }): string {
   const searchParams = new URLSearchParams()
@@ -189,6 +195,7 @@ export function buildInventoryRecordHref(options?: {
   set("productId", options?.productId)
   set("productLabel", options?.productLabel)
   set("adjustment", options?.adjustment)
+  set("action", options?.action)
   set("returnTo", options?.returnTo)
 
   const query = searchParams.toString()
@@ -200,13 +207,17 @@ export function buildInventoryRecordHref(options?: {
  * adjustments section at that row (`?adjustment=<id>`). The single entry point
  * for "open an adjustment" — used by the adjustments ledger row click. The
  * record view resolves the row by id when it isn't on the first loaded page.
+ *
+ * Pass `action` to also fire a one-shot intent on that row once resolved — the
+ * ledger's ⋮ "Duplicate"/"Create return" use it to open the seeded modal.
  */
 export function buildInventoryAdjustmentHref(
   inventoryId: string,
   adjustmentId: string,
   returnTo?: string | null,
+  action?: "duplicate" | "return" | null,
 ) {
-  return buildInventoryRecordHref({ inventoryId, adjustment: adjustmentId, returnTo })
+  return buildInventoryRecordHref({ inventoryId, adjustment: adjustmentId, returnTo, action })
 }
 
 /**

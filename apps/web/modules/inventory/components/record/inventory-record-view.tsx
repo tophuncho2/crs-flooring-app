@@ -50,11 +50,20 @@ export function InventoryRecordView({
   entry,
   selectedAdjustmentId,
   onSelectAdjustment,
+  action = null,
+  onClearAction,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: InventoryDetail
   selectedAdjustmentId: string | null
   onSelectAdjustment: (adjustmentId: string | null) => void
+  /**
+   * One-shot `?action` intent cold-linked from the adjustments ledger's ⋮
+   * ("duplicate"/"return"). Applied to the resolved `?adjustment` row once, then
+   * cleared via `onClearAction`.
+   */
+  action?: "duplicate" | "return" | null
+  onClearAction?: () => void
 }) {
   const router = useRouter()
   const controller = useInventoryPrimarySection({ page, entry })
@@ -150,6 +159,26 @@ export function InventoryRecordView({
       : byIdQuery.data && byIdQuery.data.id === selectedAdjustmentId
         ? byIdQuery.data
         : null
+
+  // Cold-link intent from the adjustments ledger's ⋮: `?adjustment=<id>&action=
+  // duplicate|return`. Once the row resolves (via `byIdQuery` above), open the
+  // matching modal seeded from it — the same paths the row/toolbar triggers use —
+  // then clear the action and the drilldown so the modal sits over the record's
+  // adjustments list (not the embedded edit face), mirroring the `?adjustment=new`
+  // translation. Guarded on the resolved row so the seed is never empty.
+  useEffect(() => {
+    if (!action || !editRow || editRow.id !== selectedAdjustmentId) return
+    if (action === "duplicate") {
+      setCreateModal({ source: editRow })
+    } else {
+      setReturnModal({
+        workOrderId: editRow.workOrderId,
+        workOrderLabel: editRow.workOrderNumber,
+      })
+    }
+    onClearAction?.()
+    handleSelectAdjustment(null)
+  }, [action, editRow, selectedAdjustmentId, onClearAction, handleSelectAdjustment])
 
   // Per-parent stepper: walk prev/next adjustments of THIS inventory in ledger
   // order (createdAt desc, id desc), crossing page boundaries. Neighbors are

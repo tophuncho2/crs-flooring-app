@@ -15,6 +15,8 @@ export function AdjustmentsTable({
   rows,
   onOpenAdjustment,
   onSplitOff,
+  onDuplicate,
+  onCreateReturn,
   selection,
   pagination,
   columnWidths,
@@ -25,6 +27,10 @@ export function AdjustmentsTable({
   onOpenAdjustment: (row: EnrichedInventoryAdjustmentRow) => void
   /** Row ⋮ → "Add inventory from adjustment": open the split-off create form. */
   onSplitOff: (row: EnrichedInventoryAdjustmentRow) => void
+  /** Row ⋮ → "Duplicate adjustment": open the duplicate create modal seeded from the row. */
+  onDuplicate: (row: EnrichedInventoryAdjustmentRow) => void
+  /** Row ⋮ → "Create return": open the Create Return modal seeded from the row. */
+  onCreateReturn: (row: EnrichedInventoryAdjustmentRow) => void
   /** Row-selection state — drives the checkbox column + Select-All (CSV export scope). */
   selection?: ListSelection
   pagination?: PaginateContract
@@ -53,7 +59,9 @@ export function AdjustmentsTable({
           : undefined
       }
       onOpenRow={(row) => onOpenAdjustment(row)}
-      rowActions={(row) => renderAdjustmentRowActions(row, { onSplitOff })}
+      rowActions={(row) =>
+        renderAdjustmentRowActions(row, { onSplitOff, onCreateReturn, onDuplicate })
+      }
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
       renderCell={renderAdjustmentsRowCell}
       pagination={pagination}

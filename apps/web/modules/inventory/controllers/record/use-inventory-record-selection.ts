@@ -113,6 +113,21 @@ export type InventoryRecordSelectionController = {
    */
   adjustment: string | null
   setAdjustment: (adjustmentId: string | null) => void
+  /**
+   * One-shot intent (`?action=duplicate|return`) applied to the drilled-in
+   * `?adjustment` row once the record view resolves it — the adjustments ledger's
+   * ⋮ "Duplicate"/"Create return" cold-link here. Cleared by `clearAction` after
+   * the record view opens the seeded modal, and dropped alongside the concrete
+   * drilldown on any record swap so it never rides onto a different record.
+   */
+  action: InventoryRecordAction | null
+  clearAction: () => void
+}
+
+type InventoryRecordAction = "duplicate" | "return"
+
+function parseRecordAction(value: string | null): InventoryRecordAction | null {
+  return value === "duplicate" || value === "return" ? value : null
 }
 
 const SELECTION_PARSERS = {
@@ -123,6 +138,7 @@ const SELECTION_PARSERS = {
   inventoryId: parseAsString,
   inventoryLabel: parseAsString,
   adjustment: parseAsString,
+  action: parseAsString,
 }
 
 /**
@@ -149,6 +165,7 @@ export function useInventoryRecordSelection({
     inventoryId,
     inventoryLabel,
     adjustment,
+    action,
   } = selection
 
   const selectWarehouse = useCallback(
@@ -162,6 +179,7 @@ export function useInventoryRecordSelection({
         inventoryId: null,
         inventoryLabel: null,
         adjustment: preserveCreateIntent(adjustment),
+        action: null,
       })
     },
     [setSelection, adjustment],
@@ -178,6 +196,7 @@ export function useInventoryRecordSelection({
         inventoryId: null,
         inventoryLabel: null,
         adjustment: preserveCreateIntent(adjustment),
+        action: null,
       })
     },
     [setSelection, adjustment],
@@ -193,6 +212,7 @@ export function useInventoryRecordSelection({
         // Swapping the record discards a concrete drilldown but preserves the
         // create intent, so an "+ Adjustment" entry lands straight in the form.
         adjustment: preserveCreateIntent(adjustment),
+        action: null,
       })
     },
     [setSelection, adjustment],
@@ -218,6 +238,7 @@ export function useInventoryRecordSelection({
         inventoryLabel: null,
         // Swapping the record drops a concrete drilldown but keeps create intent.
         adjustment: preserveCreateIntent(adjustment),
+        action: null,
       })
     },
     [setSelection, adjustment],
@@ -233,6 +254,7 @@ export function useInventoryRecordSelection({
       inventoryId: null,
       inventoryLabel: null,
       adjustment: null,
+      action: null,
     })
   }, [setSelection])
 
@@ -249,6 +271,10 @@ export function useInventoryRecordSelection({
     },
     [setSelection],
   )
+
+  const clearAction = useCallback(() => {
+    void setSelection({ action: null })
+  }, [setSelection])
 
   const inventoryQuery = useQuery({
     queryKey: [...INVENTORY_DETAIL_QUERY_KEY, inventoryId],
@@ -292,5 +318,7 @@ export function useInventoryRecordSelection({
     inventoryError,
     adjustment,
     setAdjustment,
+    action: parseRecordAction(action),
+    clearAction,
   }
 }
