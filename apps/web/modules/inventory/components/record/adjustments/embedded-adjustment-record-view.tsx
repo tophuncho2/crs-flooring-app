@@ -98,9 +98,6 @@ export function EmbeddedAdjustmentRecordView({
     }
   })
 
-  // Delete is available on any saved row.
-  const showDelete = adjustment != null
-
   const actions: RecordSectionSubHeaderAction[] = [
     {
       key: "back",
@@ -123,23 +120,14 @@ export function EmbeddedAdjustmentRecordView({
       onClick: () => controller.discard(),
       disabled: !isDirty || isSaving,
     },
-    ...(showDelete
-      ? [
-          {
-            key: "delete",
-            label: "Delete",
-            tone: "destructive" as const,
-            onClick: del.requestDelete,
-            disabled: isSaving,
-          },
-        ]
-      : []),
   ]
 
   // The shared row ⋮ menu, mounted at the right of the sub-header (actionsTrailing).
-  // Split-off / return / duplicate — the same options the list rows carry, wired
-  // to the host callbacks. Coerce the edit row to the Enriched shape the renderer
-  // expects (`workOrderNumber`/`warehouseName` aren't read by these three items).
+  // Split-off / return / duplicate / delete — the same options the list rows carry,
+  // wired to the host callbacks. Delete is the bottom item (canonical order) and is
+  // confirmed through the same dialog below (`del`), so it persists past the menu
+  // closing. Coerce the edit row to the Enriched shape the renderer expects
+  // (`workOrderNumber`/`warehouseName` aren't read by these items).
   const optionsMenu = adjustment
     ? renderAdjustmentRowActions(
         {
@@ -153,6 +141,10 @@ export function EmbeddedAdjustmentRecordView({
           onCreateReturn: (row) =>
             onCreateReturn?.({ workOrderId: row.workOrderId, workOrderLabel: row.workOrderNumber }),
           onDuplicate: (row) => onDuplicate?.(row),
+          // Delete the currently-open edit row via the shared confirm dialog. The
+          // controller deletes the open adjustment (not the row arg), so the arg
+          // is unused here.
+          onDelete: () => del.requestDelete(),
         },
         isSaving,
         // Sub-header wants a labeled "Options" button (matching Save/Discard),
