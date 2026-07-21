@@ -8,8 +8,8 @@ import type {
 export type SaveTemplateProductsSectionUseCaseInput = {
   templateId: string
   // The "products" record section owns TWO editable tables saved in one atomic
-  // diff: planned products + service / misc items. Both ride one transaction so
-  // the parent template's optimistic-concurrency token (updatedAt) stays valid.
+  // diff: planned products + service / misc items. Both ride one transaction so a
+  // single Save is all-or-nothing across both tables.
   plannedProducts: TemplatePlannedProductsDiff
   serviceItems: TemplateServiceItemsDiff
 }

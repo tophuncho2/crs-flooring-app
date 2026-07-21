@@ -59,6 +59,18 @@ describe("validateTemplateServiceItemsDiffInput — service item form", () => {
   it("rejects an itemName over the length cap", () => {
     expect(() => validateTemplateServiceItemsDiffInput(diffWith({ itemName: "x".repeat(81) }))).toThrow()
   })
+
+  it("rejects an itemType over the length cap", () => {
+    expect(() => validateTemplateServiceItemsDiffInput(diffWith({ itemType: "x".repeat(41) }))).toThrow()
+  })
+
+  it("reports the service-item error code on a malformed (non-array) added bucket", () => {
+    expect(() =>
+      validateTemplateServiceItemsDiffInput({ added: "nope", modified: [], deleted: [] } as never),
+    ).toThrowError(
+      expect.objectContaining({ code: "TEMPLATE_SERVICE_ITEM_VALIDATION_FAILED" }),
+    )
+  })
 })
 
 describe("validateTemplateProductsSectionInput — combined envelope", () => {

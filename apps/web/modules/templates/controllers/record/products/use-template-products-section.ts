@@ -256,8 +256,9 @@ export function useTemplateProductsSection({
         }
       }
 
-      // Both tables ride ONE atomic PATCH — the parent template's concurrency
-      // token (updatedAt) is bumped once, so a single save call is required.
+      // Both tables ride ONE atomic PATCH so a single Save is all-or-nothing
+      // across both grids (and one round-trip). (Child writes don't bump the
+      // parent template.updatedAt, so this isn't about token-staleness.)
       const { template: nextTemplate } = await saveTemplateProductsSectionRequest(
         template.id,
         {

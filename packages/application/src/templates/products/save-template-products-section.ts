@@ -31,8 +31,11 @@ import type {
  *     (Service items have no product, so no guard.)
  *  3. Assign UUIDs to drafts on both tables via `assignDraftIds`.
  *  4. Apply both diffs inside ONE transaction (lock-free — just the writes). One
- *     transaction is required: the parent template's `updatedAt` concurrency token
- *     is bumped once, so two sequential saves would send a stale token.
+ *     transaction so a single Save is all-or-nothing across both tables (and one
+ *     round-trip). NOTE: child-row writes never bump the parent `template.updatedAt`,
+ *     so the route's optimistic-concurrency token only catches a concurrent PARENT
+ *     edit, not concurrent child edits — atomicity is the reason to combine, not the
+ *     token.
  *  5. Enrich both updated lists on the pool after commit.
  *
  * The reads (guard + enrich) run on the pool — a relation-rich read on the pinned

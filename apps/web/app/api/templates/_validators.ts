@@ -238,9 +238,10 @@ export function validateTemplatePlannedProductsDiffInput(
 // --- Service / misc items section diff validator ---
 // The second table in the "products" section. No product link + no required
 // fields: itemType/itemName are free-text (bounded), bidCost is a MANUAL money
-// column (unlike planned products' live product-cost join). Throws the service-
-// item error class so the client keys off its distinct code. Reuses the module-
-// local requireArray/requireObject helpers (mirrors the entity-involvement precedent).
+// column (unlike planned products' live product-cost join). Uses its OWN structural
+// require helpers so EVERY error (structural + field-level) throws the service-item
+// error class + code — the client keys off it to route errors to the right table
+// (mirrors the planned-payments precedent).
 
 function failServiceItem(message: string, field?: string): never {
   throw new TemplateServiceItemExecutionError({
@@ -251,8 +252,20 @@ function failServiceItem(message: string, field?: string): never {
   })
 }
 
+function requireServiceItemsArray(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) failServiceItem(`${path} must be an array`, path)
+  return value
+}
+
+function requireServiceItemsObject(value: unknown, path: string): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    failServiceItem(`${path} must be an object`, path)
+  }
+  return value as Record<string, unknown>
+}
+
 function validateServiceItemForm(value: unknown, path: string): TemplateServiceItemForm {
-  const obj = requireObject(value, path)
+  const obj = requireServiceItemsObject(value, path)
   return {
     itemType:
       optionalBoundedText(obj.itemType, TEMPLATE_SERVICE_ITEM_ITEM_TYPE_MAX, `${path}.itemType`, failServiceItem) ?? "",
@@ -273,24 +286,24 @@ function validateServiceItemForm(value: unknown, path: string): TemplateServiceI
 export function validateTemplateServiceItemsDiffInput(
   body: Record<string, unknown>,
 ): TemplateServiceItemsDiff {
-  const added = requireArray(body.added, "added").map((entry, idx) => {
-    const obj = requireObject(entry, `added[${idx}]`)
+  const added = requireServiceItemsArray(body.added, "added").map((entry, idx) => {
+    const obj = requireServiceItemsObject(entry, `added[${idx}]`)
     return {
       tempId: requireString(obj.tempId, `added[${idx}].tempId`, failServiceItem),
       form: validateServiceItemForm(obj.form, `added[${idx}].form`),
     }
   })
 
-  const modified = requireArray(body.modified, "modified").map((entry, idx) => {
-    const obj = requireObject(entry, `modified[${idx}]`)
+  const modified = requireServiceItemsArray(body.modified, "modified").map((entry, idx) => {
+    const obj = requireServiceItemsObject(entry, `modified[${idx}]`)
     return {
       id: requireString(obj.id, `modified[${idx}].id`, failServiceItem),
       form: validateServiceItemForm(obj.form, `modified[${idx}].form`),
     }
   })
 
-  const deleted = requireArray(body.deleted, "deleted").map((entry, idx) => {
-    const obj = requireObject(entry, `deleted[${idx}]`)
+  const deleted = requireServiceItemsArray(body.deleted, "deleted").map((entry, idx) => {
+    const obj = requireServiceItemsObject(entry, `deleted[${idx}]`)
     return { id: requireString(obj.id, `deleted[${idx}].id`, failServiceItem) }
   })
 
@@ -299,8 +312,10 @@ export function validateTemplateServiceItemsDiffInput(
 
 // --- Combined "products" section input ---
 // The section saves BOTH tables in one atomic PATCH: { plannedProducts, serviceItems },
-// each a section diff. One envelope so the parent template's concurrency token
-// (updatedAt) is honored once (a second call would carry a stale token).
+// each a section diff. One transaction so a single Save is all-or-nothing across
+// both grids (and one round-trip). NOTE: child-row writes don't bump the parent
+// `template.updatedAt`, so the section's optimistic-concurrency token only guards
+// against a concurrent PARENT edit, not concurrent child edits.
 export function validateTemplateProductsSectionInput(
   body: Record<string, unknown>,
 ): { plannedProducts: TemplatePlannedProductsDiff; serviceItems: TemplateServiceItemsDiff } {
@@ -309,7 +324,7 @@ export function validateTemplateProductsSectionInput(
       requireObject(body.plannedProducts, "plannedProducts"),
     ),
     serviceItems: validateTemplateServiceItemsDiffInput(
-      requireObject(body.serviceItems, "serviceItems"),
+      requireServiceItemsObject(body.serviceItems, "serviceItems"),
     ),
   }
 }
