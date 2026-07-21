@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, type ReactNode } from "react"
+import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
   RecordSectionSubHeader,
@@ -10,6 +11,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
+import { renderAdjustmentRowActions } from "@/modules/adjustments"
 import { AdjustmentRecordFields } from "./adjustment-record-fields"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 
@@ -40,6 +42,11 @@ export type EmbeddedAdjustmentRecordViewProps = {
    * list row's ⋮ "Create return". The host owns the modal + inventory-row seed.
    */
   onCreateReturn?: (args: { workOrderId: string | null; workOrderLabel: string | null }) => void
+  /**
+   * When provided, a "Duplicate adjustment" action opens the create modal seeded
+   * from this row — the same handler the list row's ⋮ "Duplicate" uses.
+   */
+  onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
 }
 
 /**
@@ -63,6 +70,7 @@ export function EmbeddedAdjustmentRecordView({
   onDirtyChange,
   onAddInventoryFromAdjustment,
   onCreateReturn,
+  onDuplicate,
   actionsLeading,
 }: EmbeddedAdjustmentRecordViewProps) {
   const { open, form, isDirty, canSave, isSaving, error } = controller
@@ -72,7 +80,6 @@ export function EmbeddedAdjustmentRecordView({
   }, [isDirty, onDirtyChange])
 
   const adjustment = open?.mode === "edit" ? open.adjustment : null
-  const splitSourceInventoryId = adjustment?.inventoryId ?? null
 
   const handleBack = () => hostPage.confirmNavigation(onBack)
 
@@ -107,41 +114,6 @@ export function EmbeddedAdjustmentRecordView({
       onClick: () => controller.save(),
       disabled: !canSave || isSaving,
     },
-    // Routes straight to the split-off create form seeded from this saved row —
-    // no re-save. Split-off is also a row ⋮ action on the list face.
-    ...(splitSourceInventoryId && onAddInventoryFromAdjustment
-      ? [
-          {
-            key: "add-inventory",
-            label: "Add inventory from adjustment",
-            tone: "neutral" as const,
-            onClick: () =>
-              onAddInventoryFromAdjustment({
-                inventoryId: splitSourceInventoryId,
-                quantity: form.quantity,
-              }),
-            disabled: isSaving,
-          },
-        ]
-      : []),
-    // Opens the shared return modal seeded off this saved row's work-order link —
-    // the edit-face twin of the list row's ⋮ "Create return". Create is a modal
-    // owned by the host; this only forwards the work-order seed.
-    ...(adjustment && onCreateReturn
-      ? [
-          {
-            key: "create-return",
-            label: "Create return",
-            tone: "neutral" as const,
-            onClick: () =>
-              onCreateReturn({
-                workOrderId: adjustment.workOrderId,
-                workOrderLabel: adjustment.workOrderNumber ?? null,
-              }),
-            disabled: isSaving,
-          },
-        ]
-      : []),
     {
       key: "discard",
       label: "Discard",
@@ -162,6 +134,28 @@ export function EmbeddedAdjustmentRecordView({
       : []),
   ]
 
+  // The shared row ⋮ menu, mounted at the right of the sub-header (actionsTrailing).
+  // Split-off / return / duplicate — the same options the list rows carry, wired
+  // to the host callbacks. Coerce the edit row to the Enriched shape the renderer
+  // expects (`workOrderNumber`/`warehouseName` aren't read by these three items).
+  const optionsMenu = adjustment
+    ? renderAdjustmentRowActions(
+        {
+          ...adjustment,
+          workOrderNumber: adjustment.workOrderNumber ?? null,
+          warehouseName: adjustment.warehouseName ?? "",
+        },
+        {
+          onSplitOff: (row) =>
+            onAddInventoryFromAdjustment?.({ inventoryId: row.inventoryId, quantity: form.quantity }),
+          onCreateReturn: (row) =>
+            onCreateReturn?.({ workOrderId: row.workOrderId, workOrderLabel: row.workOrderNumber }),
+          onDuplicate: (row) => onDuplicate?.(row),
+        },
+        isSaving,
+      )
+    : null
+
   if (!open) {
     return <p className="px-4 py-6 text-sm text-[var(--foreground)]/60">Loading adjustment…</p>
   }
@@ -180,6 +174,7 @@ export function EmbeddedAdjustmentRecordView({
         error={error}
         actionsLeading={actionsLeading}
         actions={actions}
+        actionsTrailing={optionsMenu}
       />
       <div className={`px-5 py-5 ${RECORD_SECTION_BODY_SURFACE_CLASS_NAME}`}>
         <AdjustmentRecordFields controller={controller} mode="edit" adjustment={adjustment} />
