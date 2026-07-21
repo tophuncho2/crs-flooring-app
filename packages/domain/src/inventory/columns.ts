@@ -46,13 +46,13 @@ export const INVENTORY_COLUMNS: ReadonlyArray<ColumnCatalogEntry<InventoryRow>> 
   { key: "unit", label: "Unit", value: (row) => row.unitAbbrev, exportOnly: true },
   { key: "cost", label: "Cost", value: (row) => row.cost, exportOnly: true },
   { key: "freight", label: "Freight", value: (row) => row.freight, exportOnly: true },
-  { key: "createdAt", label: "Created", value: (row) => formatEasternDateTime(row.createdAt) },
-  { key: "updatedAt", label: "Updated", value: (row) => formatEasternDateTime(row.updatedAt) },
   {
     key: "balanceLastChangedAt",
     label: "Balance Changed",
     value: (row) => (row.balanceLastChangedAt ? formatEasternDateTime(row.balanceLastChangedAt) : ""),
   },
+  { key: "createdAt", label: "Created", value: (row) => formatEasternDateTime(row.createdAt) },
+  { key: "updatedAt", label: "Updated", value: (row) => formatEasternDateTime(row.updatedAt) },
   { key: "createdBy", label: "Created by", value: (row) => row.createdBy ?? "" },
   { key: "updatedBy", label: "Updated by", value: (row) => row.updatedBy ?? "" },
 ]
