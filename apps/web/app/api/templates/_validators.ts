@@ -4,6 +4,7 @@ import {
   TemplateExecutionError,
   TemplatePlannedPaymentExecutionError,
   TemplatePlannedProductExecutionError,
+  TemplateServiceItemExecutionError,
 } from "@builders/application"
 import type {
   CreateTemplateUseCaseInput,
@@ -24,6 +25,8 @@ import {
   TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_PLANNED_PAYMENT_NOTES_MAX,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
+  TEMPLATE_SERVICE_ITEM_ITEM_NAME_MAX,
+  TEMPLATE_SERVICE_ITEM_ITEM_TYPE_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type FlooringPaymentDirection,
   type TemplateEntityInvolvementForm,
@@ -32,6 +35,8 @@ import {
   type TemplatePlannedPaymentsDiff,
   type TemplatePlannedProductForm,
   type TemplatePlannedProductsDiff,
+  type TemplateServiceItemForm,
+  type TemplateServiceItemsDiff,
 } from "@builders/domain"
 import {
   optionsQuerySchema,
@@ -228,6 +233,85 @@ export function validateTemplatePlannedProductsDiffInput(
   })
 
   return { added, modified, deleted }
+}
+
+// --- Service / misc items section diff validator ---
+// The second table in the "products" section. No product link + no required
+// fields: itemType/itemName are free-text (bounded), bidCost is a MANUAL money
+// column (unlike planned products' live product-cost join). Throws the service-
+// item error class so the client keys off its distinct code. Reuses the module-
+// local requireArray/requireObject helpers (mirrors the entity-involvement precedent).
+
+function failServiceItem(message: string, field?: string): never {
+  throw new TemplateServiceItemExecutionError({
+    code: "TEMPLATE_SERVICE_ITEM_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+function validateServiceItemForm(value: unknown, path: string): TemplateServiceItemForm {
+  const obj = requireObject(value, path)
+  return {
+    itemType:
+      optionalBoundedText(obj.itemType, TEMPLATE_SERVICE_ITEM_ITEM_TYPE_MAX, `${path}.itemType`, failServiceItem) ?? "",
+    itemName:
+      optionalBoundedText(obj.itemName, TEMPLATE_SERVICE_ITEM_ITEM_NAME_MAX, `${path}.itemName`, failServiceItem) ?? "",
+    quantity: optionalQuantity(obj.quantity),
+    // Editable unit FK (UoM epic 2C); "" = no unit.
+    unitId: optionalString(obj.unitId) ?? "",
+    // Job-costing money columns (money standard) — blank clears, else validated +
+    // canonicalized. bidCost is MANUAL here (a persisted column, not a join).
+    bidCost: optionalMoney(obj.bidCost, `${path}.bidCost`, failServiceItem),
+    unitPrice: optionalMoney(obj.unitPrice, `${path}.unitPrice`, failServiceItem),
+    tax: optionalMoney(obj.tax, `${path}.tax`, failServiceItem),
+    freight: optionalMoney(obj.freight, `${path}.freight`, failServiceItem),
+  }
+}
+
+export function validateTemplateServiceItemsDiffInput(
+  body: Record<string, unknown>,
+): TemplateServiceItemsDiff {
+  const added = requireArray(body.added, "added").map((entry, idx) => {
+    const obj = requireObject(entry, `added[${idx}]`)
+    return {
+      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failServiceItem),
+      form: validateServiceItemForm(obj.form, `added[${idx}].form`),
+    }
+  })
+
+  const modified = requireArray(body.modified, "modified").map((entry, idx) => {
+    const obj = requireObject(entry, `modified[${idx}]`)
+    return {
+      id: requireString(obj.id, `modified[${idx}].id`, failServiceItem),
+      form: validateServiceItemForm(obj.form, `modified[${idx}].form`),
+    }
+  })
+
+  const deleted = requireArray(body.deleted, "deleted").map((entry, idx) => {
+    const obj = requireObject(entry, `deleted[${idx}]`)
+    return { id: requireString(obj.id, `deleted[${idx}].id`, failServiceItem) }
+  })
+
+  return { added, modified, deleted }
+}
+
+// --- Combined "products" section input ---
+// The section saves BOTH tables in one atomic PATCH: { plannedProducts, serviceItems },
+// each a section diff. One envelope so the parent template's concurrency token
+// (updatedAt) is honored once (a second call would carry a stale token).
+export function validateTemplateProductsSectionInput(
+  body: Record<string, unknown>,
+): { plannedProducts: TemplatePlannedProductsDiff; serviceItems: TemplateServiceItemsDiff } {
+  return {
+    plannedProducts: validateTemplatePlannedProductsDiffInput(
+      requireObject(body.plannedProducts, "plannedProducts"),
+    ),
+    serviceItems: validateTemplateServiceItemsDiffInput(
+      requireObject(body.serviceItems, "serviceItems"),
+    ),
+  }
 }
 
 // --- Planned-payments section diff validator ---

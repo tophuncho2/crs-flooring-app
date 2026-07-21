@@ -2,6 +2,7 @@ import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
 import type { TemplatePlannedPaymentRow } from "./planned-payments/types.js"
 import type { TemplateEntityInvolvementRow } from "./entity-involvement/types.js"
+import type { TemplateServiceItemRow } from "./service-items/types.js"
 
 export type TemplateListRow = {
   id: string
@@ -49,6 +50,10 @@ export type TemplateDetail = TemplateListRow & {
   propertyPostalCode: string
   propertyInstructions: string
   plannedProducts: TemplatePlannedProductRow[]
+  // Service / miscellaneous line items — same "products" record section as planned
+  // products (one Save envelope). Read as an array by the record view. bidCost is a
+  // manual persisted column here (not a live product join).
+  serviceItems: TemplateServiceItemRow[]
   // Planned payments on the template — the §3 payment plan (own table). Read as an
   // array by the record view; no count surfaced. Entity link arrives in a later pass.
   plannedPayments: TemplatePlannedPaymentRow[]

@@ -5,6 +5,7 @@ import { combineAnd } from "../shared/where.js"
 import { buildTemplatesOrderBy } from "./order-by.js"
 import { entityTypeSelect } from "../entities/read-repository.js"
 import { templateEntityInvolvementSelect } from "./entity-involvement/read-repository.js"
+import { templateServiceItemSelect } from "./service-items/read-repository.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeTemplate,
@@ -112,6 +113,14 @@ const templateDetailSelect = {
       createdBy: true,
       updatedBy: true,
     },
+    orderBy: { createdAt: "asc" as const },
+  },
+  // Service / miscellaneous line items — same "products" record section as planned
+  // products (one Save envelope). Detail-only; the record view reads the array
+  // directly. No product join (bid cost is a stored column here). Reuses the
+  // shared select fragment.
+  serviceItems: {
+    select: templateServiceItemSelect,
     orderBy: { createdAt: "asc" as const },
   },
   // Planned payments — the §3 payment plan (own table). Detail-only; the record

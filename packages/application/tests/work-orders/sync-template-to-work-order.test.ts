@@ -51,6 +51,7 @@ function template(overrides: Record<string, unknown> = {}) {
     description: null,
     installerInstructions: null,
     plannedProducts: [],
+    serviceItems: [],
     plannedPayments: [],
     entityInvolvements: [],
     ...overrides,

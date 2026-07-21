@@ -15,7 +15,7 @@ import {
   type UnitOfMeasureOption,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
 } from "@builders/domain"
-import type { TemplatePlannedProductLocal } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
+import type { TemplatePlannedProductLocal } from "@/modules/templates/controllers/record/products/use-template-products-section"
 
 const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductLocal>[] = [
   // Product carries the wide 360 floor + sole grow. Bid Cost is a read-only live

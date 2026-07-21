@@ -8,6 +8,7 @@ import type {
   TemplateForm,
   TemplatePlannedPaymentsDiff,
   TemplatePlannedProductsDiff,
+  TemplateServiceItemsDiff,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -55,17 +56,20 @@ export async function syncTemplateToWorkOrderRequest(templateId: string) {
   )
 }
 
-export async function saveTemplatePlannedProductsSectionRequest(
+// The "products" section saves BOTH editable tables (planned products + service /
+// misc items) in one atomic PATCH so the parent template's concurrency token stays
+// valid. The body carries a named diff per table.
+export async function saveTemplateProductsSectionRequest(
   templateId: string,
-  diff: TemplatePlannedProductsDiff,
+  diffs: { plannedProducts: TemplatePlannedProductsDiff; serviceItems: TemplateServiceItemsDiff },
   revisionKey: string,
 ) {
   return requestJson<{ template: TemplateDetail; tempIdMap: Record<string, string> }>(
-    `/api/templates/${templateId}/planned-products/section`,
+    `/api/templates/${templateId}/products/section`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(withMutationMeta(diff as unknown as Record<string, unknown>, revisionKey)),
+      body: JSON.stringify(withMutationMeta(diffs as unknown as Record<string, unknown>, revisionKey)),
     },
   )
 }

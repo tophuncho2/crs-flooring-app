@@ -6,6 +6,8 @@ import { normalizeTemplatePlannedPayment } from "./planned-payments/normalizers.
 import type { TemplatePlannedPaymentRow } from "./planned-payments/types.js"
 import { normalizeTemplateEntityInvolvement } from "./entity-involvement/normalizers.js"
 import type { TemplateEntityInvolvementRow } from "./entity-involvement/types.js"
+import { normalizeTemplateServiceItem } from "./service-items/normalizers.js"
+import type { TemplateServiceItemRow } from "./service-items/types.js"
 import type {
   TemplateDetail,
   TemplateListRow,
@@ -56,6 +58,7 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
     instructions: string | null
   } | null
   plannedProducts: Array<Parameters<typeof normalizeTemplatePlannedProduct>[0]>
+  serviceItems: Array<Parameters<typeof normalizeTemplateServiceItem>[0]>
   plannedPayments: Array<Parameters<typeof normalizeTemplatePlannedPayment>[0]>
   entityInvolvements: Array<Parameters<typeof normalizeTemplateEntityInvolvement>[0]>
 }
@@ -90,6 +93,7 @@ export function normalizeTemplate(
 ): TemplateDetail {
   const base = normalizeTemplateListRow(template)
   const plannedProducts: TemplatePlannedProductRow[] = template.plannedProducts.map(normalizeTemplatePlannedProduct)
+  const serviceItems: TemplateServiceItemRow[] = template.serviceItems.map(normalizeTemplateServiceItem)
   const plannedPayments: TemplatePlannedPaymentRow[] = template.plannedPayments.map(normalizeTemplatePlannedPayment)
   const entityInvolvements: TemplateEntityInvolvementRow[] = template.entityInvolvements.map(
     normalizeTemplateEntityInvolvement,
@@ -104,6 +108,7 @@ export function normalizeTemplate(
     propertyPostalCode: template.property?.postalCode ?? "",
     propertyInstructions: template.property?.instructions ?? "",
     plannedProducts,
+    serviceItems,
     plannedPayments,
     entityInvolvements,
     previousTemplate: neighbors.previousTemplate,

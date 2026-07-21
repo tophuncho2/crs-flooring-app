@@ -1,61 +1,80 @@
 "use client"
 
 import { RecordItemSection } from "@/engines/record-view"
-import type { useTemplatePlannedProductsSection } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
+import type { useTemplateProductsSection } from "@/modules/templates/controllers/record/products/use-template-products-section"
 import { TemplatePlannedProductsGrid } from "./planned-products/template-planned-products-grid"
+import { TemplateServiceItemsGrid } from "./service-items/template-service-items-grid"
 
-type PlannedController = ReturnType<typeof useTemplatePlannedProductsSection>
+type ProductsController = ReturnType<typeof useTemplateProductsSection>
 
 /**
- * The templates record view's §2 section — the editable Planned Products grid.
- * Formerly a Planned⇄Invoice toggle host; the Invoice Products side was retired,
- * so this is now a single grid with no stepper.
+ * The templates record view's "products" section — TWO editable grids under ONE
+ * RecordItemSection (one Save/Discard/dirty envelope, one atomic diff): planned
+ * products + service / misc items. Both are fed by the same controller so the
+ * single Save persists both tables in one transaction.
  */
-export function TemplateProductsSection({ planned }: { planned: PlannedController }) {
-  const editable = !planned.isSaving
-  const count = planned.items.length
+export function TemplateProductsSection({ products }: { products: ProductsController }) {
+  const editable = !products.isSaving
+  const plannedCount = products.plannedItems.length
+  const serviceCount = products.serviceItems.length
 
   return (
     <RecordItemSection
       title="Planned Products"
       capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
-      noticeMessage={planned.noticeMessage}
-      noticeError={planned.noticeError}
+      noticeMessage={products.noticeMessage}
+      noticeError={products.noticeError}
       subHeader={{
         statusLeading: (
           <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
-            {count} planned product{count === 1 ? "" : "s"}
+            {plannedCount} planned product{plannedCount === 1 ? "" : "s"} · {serviceCount} service item
+            {serviceCount === 1 ? "" : "s"}
           </span>
         ),
-        isDirty: planned.isDirty,
-        isSaving: planned.isSaving,
-        hasConflict: planned.hasConflict,
-        onSave: () => void planned.save(),
-        onDiscard: () => planned.discard(),
+        isDirty: products.isDirty,
+        isSaving: products.isSaving,
+        hasConflict: products.hasConflict,
+        onSave: () => void products.save(),
+        onDiscard: () => products.discard(),
         saveLabel: "Save",
         savingLabel: "Saving...",
         discardLabel: "Discard",
-        error: planned.error ? planned.error.message : null,
+        error: products.error ? products.error.message : null,
         actions: [
           {
-            key: "add",
+            key: "add-planned",
             label: "+ Add Planned Product",
             kind: "add-row",
-            onClick: planned.addItem,
-            disabled: planned.isSaving,
+            onClick: products.addPlannedItem,
+            disabled: products.isSaving,
+          },
+          {
+            key: "add-service",
+            label: "+ Add Service Item",
+            kind: "add-row",
+            onClick: products.addServiceItem,
+            disabled: products.isSaving,
           },
         ],
       }}
     >
       <TemplatePlannedProductsGrid
-        items={planned.items}
+        items={products.plannedItems}
         editable={editable}
-        onChangeField={planned.changeField}
-        onChangeQuantity={planned.changeQuantity}
-        onChangeCategoryFilter={planned.changeCategoryFilter}
-        onSetProductSnapshot={planned.setProductSnapshot}
-        onSetUnit={planned.setUnit}
-        onRemoveItem={planned.removeItem}
+        onChangeField={products.changePlannedField}
+        onChangeQuantity={products.changePlannedQuantity}
+        onChangeCategoryFilter={products.changeCategoryFilter}
+        onSetProductSnapshot={products.setProductSnapshot}
+        onSetUnit={products.setPlannedUnit}
+        onRemoveItem={products.removePlannedItem}
+      />
+      <TemplateServiceItemsGrid
+        items={products.serviceItems}
+        editable={editable}
+        onChangeField={products.changeServiceField}
+        onChangeQuantity={products.changeServiceQuantity}
+        onSetUnit={products.setServiceUnit}
+        onRemoveItem={products.removeServiceItem}
       />
     </RecordItemSection>
   )
