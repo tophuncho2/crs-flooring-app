@@ -229,7 +229,7 @@ export function WorkOrderRecordPanel({
           {
             key: "entity-involvement",
             type: "item",
-            order: 40,
+            order: 15,
             dirtyLabel: "entity involvement",
             controller: entityInvolvementSection,
             render: () => (
