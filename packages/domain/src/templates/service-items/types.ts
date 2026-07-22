@@ -12,19 +12,16 @@ export type TemplateServiceItemRow = {
   unitAbbrev: string
   // MANUAL persisted bid cost (money string; "" = unset). Unlike planned products
   // — where bid cost is a live `product.cost` read-join — a service item has no
-  // product and stores its own bid cost. Sent in the diff. Feeds profit/margin.
+  // product and stores its own bid cost. Sent in the diff. It is the per-unit
+  // basis for the line total.
   bidCost: string
-  // Persisted job-costing money columns ("" when unset). `unitPrice` is manual
-  // (no product to seed from); tax + freight are manual. All sent in the diff.
-  unitPrice: string
+  // Persisted job-costing money columns ("" when unset). tax + freight are manual.
+  // Both sent in the diff.
   tax: string
   freight: string
   // Derived on read, display only — never sent in the diff. Line total (qty ×
-  // unitPrice + tax + freight); lineProfit signed bare money ("-5.00"/"12.00");
-  // lineMargin signed one-decimal percent ("28.6"/"−16.7"). "" when blank.
+  // bidCost + tax + freight, where bidCost is the manual column). "" when blank.
   lineTotal: string
-  lineProfit: string
-  lineMargin: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy+updatedBy on add,
@@ -39,10 +36,9 @@ export type TemplateServiceItemForm = {
   quantity: string
   // Editable unit FK (UoM epic 2C). "" disconnects the unit.
   unitId: string
-  // Job-costing money columns (persisted). "" = unset (stored NULL). bidCost,
-  // unitPrice, tax, and freight are all manual entry on a service item.
+  // Job-costing money columns (persisted). "" = unset (stored NULL). bidCost, tax,
+  // and freight are all manual entry on a service item.
   bidCost: string
-  unitPrice: string
   tax: string
   freight: string
 }

@@ -44,11 +44,10 @@ export type TemplatePlannedProductLocal = {
   notes: string
   // LIVE cost read-joined off the product (seeded from the picked ProductOption
   // for unsaved rows; re-resolved server-side on save). Display only — NEVER sent
-  // in the diff. This is the "bid cost".
+  // in the diff. This is the "bid cost" and the per-unit basis for the line total.
   productCost: string
-  // Persisted job-costing money columns (all sent in the diff). `unitPrice` seeds
-  // from the product on select but stays editable; tax + freight are manual.
-  unitPrice: string
+  // Persisted job-costing money columns (all sent in the diff). tax + freight are
+  // manual entry.
   tax: string
   freight: string
   // Client-only ergonomic for narrowing the row's product picker. NOT persisted.
@@ -69,9 +68,9 @@ export type TemplateServiceItemLocal = {
   unitName: string
   unitAbbrev: string
   // MANUAL persisted bid cost (the key divergence from planned products, where bid
-  // cost is a live product join). Editable money, sent in the diff.
+  // cost is a live product join). Editable money, sent in the diff. It is the
+  // per-unit basis for the line total.
   bidCost: string
-  unitPrice: string
   tax: string
   freight: string
 }
@@ -94,7 +93,6 @@ function toPlannedLocal(row: TemplatePlannedProductRow): TemplatePlannedProductL
     quantity: row.quantity,
     notes: row.notes,
     productCost: row.productCost,
-    unitPrice: row.unitPrice,
     tax: row.tax,
     freight: row.freight,
     categoryFilterId: null,
@@ -112,7 +110,6 @@ function toServiceLocal(row: TemplateServiceItemRow): TemplateServiceItemLocal {
     unitName: row.unitName,
     unitAbbrev: row.unitAbbrev,
     bidCost: row.bidCost,
-    unitPrice: row.unitPrice,
     tax: row.tax,
     freight: row.freight,
   }
@@ -131,11 +128,11 @@ function createItemsRevisionKey(record: TemplateDetail) {
     // re-seeds the local cost display.
     plannedProducts: record.plannedProducts.map(
       (row) =>
-        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.productCost}:${row.unitPrice}:${row.tax}:${row.freight}`,
+        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.productCost}:${row.tax}:${row.freight}`,
     ),
     serviceItems: record.serviceItems.map(
       (row) =>
-        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.unitPrice}:${row.tax}:${row.freight}`,
+        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.tax}:${row.freight}`,
     ),
   })
 }
@@ -147,7 +144,6 @@ function plannedDiffers(local: TemplatePlannedProductLocal, server: TemplatePlan
     local.productId !== server.productId ||
     local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
-    local.unitPrice !== server.unitPrice ||
     local.tax !== server.tax ||
     local.freight !== server.freight ||
     local.notes !== server.notes
@@ -159,7 +155,6 @@ function toPlannedForm(local: TemplatePlannedProductLocal): TemplatePlannedProdu
     productId: local.productId,
     unitId: local.unitId,
     quantity: local.quantity,
-    unitPrice: local.unitPrice,
     tax: local.tax,
     freight: local.freight,
     notes: local.notes,
@@ -188,7 +183,6 @@ function serviceDiffers(local: TemplateServiceItemLocal, server: TemplateService
     local.quantity !== server.quantity ||
     local.unitId !== server.unitId ||
     local.bidCost !== server.bidCost ||
-    local.unitPrice !== server.unitPrice ||
     local.tax !== server.tax ||
     local.freight !== server.freight
   )
@@ -201,7 +195,6 @@ function toServiceForm(local: TemplateServiceItemLocal): TemplateServiceItemForm
     quantity: local.quantity,
     unitId: local.unitId,
     bidCost: local.bidCost,
-    unitPrice: local.unitPrice,
     tax: local.tax,
     freight: local.freight,
   }
@@ -295,7 +288,6 @@ export function useTemplateProductsSection({
           quantity: "",
           notes: "",
           productCost: "",
-          unitPrice: "",
           tax: "",
           freight: "",
           categoryFilterId: null,
@@ -359,7 +351,6 @@ export function useTemplateProductsSection({
           ...seeded,
           productName: option?.name ?? "",
           productCost: option?.cost ?? "",
-          unitPrice: option?.unitPrice ?? "",
         }
       }),
     }))
@@ -397,7 +388,6 @@ export function useTemplateProductsSection({
           unitName: "",
           unitAbbrev: "",
           bidCost: "",
-          unitPrice: "",
           tax: "",
           freight: "",
         },

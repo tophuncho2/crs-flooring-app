@@ -1,10 +1,6 @@
 import { toIsoTimestamp } from "../../shared/date-format.js"
 import { normalizeMoneyAmount } from "../../shared/money.js"
-import {
-  computeTemplatePlannedProductLineMargin,
-  computeTemplatePlannedProductLineProfit,
-  computeTemplatePlannedProductLineTotal,
-} from "./math.js"
+import { computeTemplatePlannedProductLineTotal } from "./math.js"
 import type { TemplatePlannedProductRow } from "./types.js"
 
 type TemplatePlannedProductInput = {
@@ -17,7 +13,6 @@ type TemplatePlannedProductInput = {
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
   // Persisted job-costing money columns.
-  unitPrice: { toString(): string } | null
   tax: { toString(): string } | null
   freight: { toString(): string } | null
   notes: string | null
@@ -36,13 +31,11 @@ function normalizeMoneyColumn(value: { toString(): string } | null): string {
 export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInput): TemplatePlannedProductRow {
   const quantity = item.quantity == null ? "" : item.quantity.toString()
   // Live product cost (read-join). Normalize on read to a canonical "X.XX" so the
-  // subtotal and any dirty-check compare against a stable string. "" = no cost.
+  // line total and any dirty-check compare against a stable string. "" = no cost.
+  // This is the "bid cost" — the per-unit basis for the line total.
   const productCost = item.product.cost == null ? "" : normalizeMoneyAmount(item.product.cost.toString())
-  const unitPrice = normalizeMoneyColumn(item.unitPrice)
   const tax = normalizeMoneyColumn(item.tax)
   const freight = normalizeMoneyColumn(item.freight)
-  // Bid cost = the live product cost (read-join), fed to the derived profit/margin.
-  const profitInputs = { quantity, unitPrice, tax, freight, bidCost: productCost }
   return {
     id: item.id,
     productId: item.productId,
@@ -56,12 +49,10 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     unitAbbrev: item.unit?.abbreviation ?? "",
     notes: item.notes ?? "",
     productCost,
-    unitPrice,
     tax,
     freight,
-    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, unitPrice, tax, freight }),
-    lineProfit: computeTemplatePlannedProductLineProfit(profitInputs),
-    lineMargin: computeTemplatePlannedProductLineMargin(profitInputs),
+    // Line total = qty × bidCost + tax + freight, where bidCost is the live product cost.
+    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost: productCost, tax, freight }),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

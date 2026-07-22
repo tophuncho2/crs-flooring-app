@@ -16,24 +16,16 @@ export type TemplatePlannedProductRow = {
   // LIVE cost read-joined off the linked product (`product.cost`), NOT stored on
   // this row. Canonical money string ("10.00"); "" when the product has no cost.
   // Display only — never sent in the diff (like productName). This is the "bid
-  // cost".
+  // cost" and the per-unit basis for the line total.
   productCost: string
   // Job-costing money columns (persisted). Canonical money strings ("" when
-  // unset). `unitPrice` seeds from the product on select, then editable; tax +
-  // freight are manual entry. All three are sent in the diff.
-  unitPrice: string
+  // unset). Both are manual entry; both are sent in the diff.
   tax: string
   freight: string
-  // Derived line total (qty × unitPrice + tax + freight), computed on read via
-  // computeTemplatePlannedProductLineTotal. Display only — never sent in the diff.
-  // "" when all inputs are blank.
+  // Derived line total (qty × bidCost + tax + freight, where bidCost = the live
+  // productCost), computed on read via computeTemplatePlannedProductLineTotal.
+  // Display only — never sent in the diff. "" when all inputs are blank.
   lineTotal: string
-  // Derived job-costing metrics, computed on read (bidCost = productCost). Display
-  // only — never sent in the diff. lineProfit is a signed bare money string
-  // ("-5.00" / "12.00"); lineMargin is a signed one-decimal percent ("28.6" /
-  // "−16.7"). Both "" when blank (margin also "" when the line total is zero).
-  lineProfit: string
-  lineMargin: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -48,9 +40,8 @@ export type TemplatePlannedProductForm = {
   // Editable unit FK (UoM epic 2C). "" disconnects the unit.
   unitId: string
   quantity: string
-  // Job-costing money columns (persisted). "" = unset (stored NULL). `unitPrice`
-  // is seeded from the product but stays editable; tax + freight are manual.
-  unitPrice: string
+  // Job-costing money columns (persisted). "" = unset (stored NULL). tax + freight
+  // are manual entry. (Bid cost is the live product-cost read-join, not stored.)
   tax: string
   freight: string
   notes: string

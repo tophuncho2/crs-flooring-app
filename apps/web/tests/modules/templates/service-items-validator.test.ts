@@ -18,7 +18,6 @@ function diffWith(form: Record<string, unknown>) {
           quantity: "2",
           unitId: "",
           bidCost: "10",
-          unitPrice: "25",
           tax: "",
           freight: "",
           ...form,
@@ -32,20 +31,20 @@ function diffWith(form: Record<string, unknown>) {
 
 describe("validateTemplateServiceItemsDiffInput — service item form", () => {
   it("accepts a well-formed row and canonicalizes money to scale-2", () => {
-    const diff = validateTemplateServiceItemsDiffInput(diffWith({ bidCost: "10", unitPrice: "25.5" }))
+    const diff = validateTemplateServiceItemsDiffInput(diffWith({ bidCost: "10.5", tax: "2" }))
     expect(diff.added[0].form).toMatchObject({
       itemType: "Labor",
       itemName: "Install",
-      bidCost: "10.00",
-      unitPrice: "25.50",
+      bidCost: "10.50",
+      tax: "2.00",
     })
   })
 
   it("requires nothing — an all-blank row is valid", () => {
     const diff = validateTemplateServiceItemsDiffInput(
-      diffWith({ itemType: "", itemName: "", quantity: "", bidCost: "", unitPrice: "", tax: "", freight: "" }),
+      diffWith({ itemType: "", itemName: "", quantity: "", bidCost: "", tax: "", freight: "" }),
     )
-    expect(diff.added[0].form).toMatchObject({ itemType: "", itemName: "", bidCost: "", unitPrice: "" })
+    expect(diff.added[0].form).toMatchObject({ itemType: "", itemName: "", bidCost: "" })
   })
 
   it("treats a blank quantity as unset ('')", () => {

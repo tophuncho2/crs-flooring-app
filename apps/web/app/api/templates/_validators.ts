@@ -200,8 +200,8 @@ function validatePlannedProductForm(value: unknown, path: string): TemplatePlann
     unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
     // Job-costing money columns (money standard) — blank clears, else validated +
-    // canonicalized to scale-2. Bid cost is NOT here (live product join).
-    unitPrice: optionalMoney(obj.unitPrice, `${path}.unitPrice`, failDiff),
+    // canonicalized to scale-2. Bid cost is NOT here (live product join, the line-
+    // total basis).
     tax: optionalMoney(obj.tax, `${path}.tax`, failDiff),
     freight: optionalMoney(obj.freight, `${path}.freight`, failDiff),
     notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
@@ -275,9 +275,9 @@ function validateServiceItemForm(value: unknown, path: string): TemplateServiceI
     // Editable unit FK (UoM epic 2C); "" = no unit.
     unitId: optionalString(obj.unitId) ?? "",
     // Job-costing money columns (money standard) — blank clears, else validated +
-    // canonicalized. bidCost is MANUAL here (a persisted column, not a join).
+    // canonicalized. bidCost is MANUAL here (a persisted column, not a join) and is
+    // the per-unit basis for the derived line total.
     bidCost: optionalMoney(obj.bidCost, `${path}.bidCost`, failServiceItem),
-    unitPrice: optionalMoney(obj.unitPrice, `${path}.unitPrice`, failServiceItem),
     tax: optionalMoney(obj.tax, `${path}.tax`, failServiceItem),
     freight: optionalMoney(obj.freight, `${path}.freight`, failServiceItem),
   }

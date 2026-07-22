@@ -15,8 +15,8 @@ const templatePlannedProductSelect = {
   // display name/abbrev (snapshot columns fully de-referenced, 2D drops them).
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
-  // Persisted job-costing money columns (bid cost stays the live product join above).
-  unitPrice: true,
+  // Persisted job-costing money columns (bid cost stays the live product join above,
+  // and is the per-unit basis for the derived line total).
   tax: true,
   freight: true,
   notes: true,
