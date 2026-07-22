@@ -46,3 +46,19 @@ export function computeTemplatePlannedProductLineTotal(
   const productCents = (qtyCents * costCents + 50n) / 100n
   return centsToMoney(productCents)
 }
+
+// Section roll-up: the sum of every line total, using the same integer-cents math
+// as the per-line total so the roll-up agrees with the rows to the penny (never a
+// JS-float re-sum). Blank rows contribute nothing; an all-blank list totals
+// "0.00" — a cost roll-up is meaningfully zero, not "—".
+export function sumTemplatePlannedProductLineTotals(
+  inputs: TemplatePlannedProductLineInputs[],
+): string {
+  let totalCents = 0n
+  for (const input of inputs) {
+    const lineTotal = computeTemplatePlannedProductLineTotal(input)
+    if (lineTotal === "") continue
+    totalCents += BigInt(lineTotal.replace(".", ""))
+  }
+  return centsToMoney(totalCents)
+}

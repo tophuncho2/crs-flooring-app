@@ -1,6 +1,7 @@
 "use client"
 
 import { RecordItemSection } from "@/engines/record-view"
+import { formatMoney } from "@builders/domain"
 import type { useTemplateProductsSection } from "@/modules/templates/controllers/record/products/use-template-products-section"
 import { TemplatePlannedProductsGrid } from "./planned-products/template-planned-products-grid"
 import { TemplateServiceItemsGrid } from "./service-items/template-service-items-grid"
@@ -76,6 +77,16 @@ export function TemplateProductsSection({ products }: { products: ProductsContro
         onSetUnit={products.setServiceUnit}
         onRemoveItem={products.removeServiceItem}
       />
+      {/* Section roll-up — material cost = sum of the planned-product line totals
+          (live, recomputed as rows are edited). Placed beneath the service grid. */}
+      <div className="flex items-center justify-end gap-3 border-t border-[var(--panel-border)] pt-3">
+        <span className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">
+          Material Cost
+        </span>
+        <span className="text-lg font-semibold text-[var(--foreground)]">
+          {formatMoney(products.materialCost)}
+        </span>
+      </div>
     </RecordItemSection>
   )
 }

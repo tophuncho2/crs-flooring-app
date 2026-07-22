@@ -20,6 +20,7 @@ import type {
   UnitOfMeasureOption,
 } from "@builders/domain"
 import {
+  sumTemplatePlannedProductLineTotals,
   validateTemplatePlannedProductForm,
   validateTemplateServiceItemForm,
 } from "@builders/domain"
@@ -418,10 +419,21 @@ export function useTemplateProductsSection({
     if (section.error) section.setError(null)
   }
 
+  // Section roll-up: material cost = sum of the planned-product line totals,
+  // recomputed live off the local rows (qty × live product cost) so it tracks
+  // edits before Save. Same BigInt-cents math as the per-row line totals.
+  const materialCost = sumTemplatePlannedProductLineTotals(
+    section.localValue.plannedProducts.map((row) => ({
+      quantity: row.quantity,
+      bidCost: row.productCost,
+    })),
+  )
+
   return {
     ...section,
     plannedItems: section.localValue.plannedProducts,
     serviceItems: section.localValue.serviceItems,
+    materialCost,
     addPlannedItem,
     removePlannedItem,
     changePlannedField,
