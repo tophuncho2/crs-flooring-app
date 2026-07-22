@@ -25,4 +25,12 @@ describe("validateTemplatePlannedProductsDiffInput — planned product form", ()
   it("treats a blank quantity as unset ('')", () => {
     expect(validateTemplatePlannedProductsDiffInput(diffWith({ quantity: "" })).added[0].form.quantity).toBe("")
   })
+
+  it("defaults taxed to true when omitted (materials taxed)", () => {
+    expect(validateTemplatePlannedProductsDiffInput(diffWith({})).added[0].form.taxed).toBe(true)
+  })
+
+  it("honors an explicit taxed=false", () => {
+    expect(validateTemplatePlannedProductsDiffInput(diffWith({ taxed: false })).added[0].form.taxed).toBe(false)
+  })
 })

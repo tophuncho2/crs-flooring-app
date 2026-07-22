@@ -17,6 +17,9 @@ export type TemplateServiceItemRow = {
   // product and stores its own bid cost. Sent in the diff. It is the per-unit
   // basis for the line total.
   bidCost: string
+  // Whether this line is taxed (feeds the template Tax Cost roll-up). Service /
+  // labor lines default to NOT taxed. Sent in the diff.
+  taxed: boolean
   // Derived on read, display only — never sent in the diff. Line total (qty ×
   // bidCost, where bidCost is the manual column). "" when blank.
   lineTotal: string
@@ -38,4 +41,6 @@ export type TemplateServiceItemForm = {
   // Job-costing money column (persisted). "" = unset (stored NULL). bidCost is
   // manual entry on a service item.
   bidCost: string
+  // Whether this line is taxed. Service / labor lines default to NOT taxed.
+  taxed: boolean
 }

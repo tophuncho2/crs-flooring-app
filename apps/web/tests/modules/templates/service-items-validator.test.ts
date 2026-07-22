@@ -55,6 +55,14 @@ describe("validateTemplateServiceItemsDiffInput — service item form", () => {
     expect(validateTemplateServiceItemsDiffInput(diffWith({ quantity: "" })).added[0].form.quantity).toBe("")
   })
 
+  it("defaults taxed to false when omitted (service/labor not taxed)", () => {
+    expect(validateTemplateServiceItemsDiffInput(diffWith({})).added[0].form.taxed).toBe(false)
+  })
+
+  it("honors an explicit taxed=true", () => {
+    expect(validateTemplateServiceItemsDiffInput(diffWith({ taxed: true })).added[0].form.taxed).toBe(true)
+  })
+
   it("rejects a malformed money amount (bidCost)", () => {
     expect(() => validateTemplateServiceItemsDiffInput(diffWith({ bidCost: "abc" }))).toThrow()
   })

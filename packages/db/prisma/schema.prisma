@@ -796,6 +796,11 @@ model Template {
   // it on the record-view primary section. Deliberately NOT carried into the
   // template → work-order sync (mirrors planned_product.cost).
   totalTransaction     Decimal?                   @db.Decimal(12, 2)
+  // Manually-entered sales-tax rate as a PERCENT (e.g. 8.375 = 8.375%). Nullable —
+  // NULL = unset (no tax). Drives the derived Tax Cost roll-up (taxRate × the taxed
+  // line totals); never stored as a cost. A future state→rate table may replace the
+  // manual entry, but the rate is consumed as a resolved value so the math is stable.
+  taxRate              Decimal?                   @db.Decimal(6, 3)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   // Non-semantic palette tag (user-assigned visual color). Metadata-only — no
@@ -838,6 +843,9 @@ model TemplatePlannedProduct {
   // per-unit basis for the line total. Line total (qty × bidCost) is computed on
   // read, never stored.
   notes          String?          @db.VarChar(30)
+  // Whether this line is subject to sales tax (feeds the template Tax Cost roll-up).
+  // Materials are taxed by default.
+  taxed          Boolean          @default(true)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   createdBy      String?
@@ -926,6 +934,9 @@ model TemplateServiceItem {
   // bidCost has no product to seed from and is the per-unit basis for the line
   // total. NULL = unset.
   bidCost    Decimal? @db.Decimal(12, 2)
+  // Whether this line is subject to sales tax (feeds the template Tax Cost roll-up).
+  // Service / labor lines are NOT taxed by default.
+  taxed      Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   createdBy  String?

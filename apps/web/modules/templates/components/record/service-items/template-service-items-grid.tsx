@@ -1,6 +1,6 @@
 "use client"
 
-import { DropdownCell, MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
+import { CheckboxCell, DropdownCell, MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
@@ -23,6 +23,7 @@ const TEMPLATE_SERVICE_ITEMS_COLUMNS: DataTableColumn<TemplateServiceItemLocal>[
   { key: "unit", label: "Unit", width: 130 },
   { key: "bidCost", label: "Bid Cost", width: 120, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
+  { key: "taxed", label: "Taxed", width: 90, align: "center" },
 ]
 
 // Pure editable-table body for the service / misc items side. The
@@ -33,6 +34,7 @@ export function TemplateServiceItemsGrid({
   editable,
   onChangeField,
   onChangeQuantity,
+  onToggleTaxed,
   onSetUnit,
   onRemoveItem,
 }: {
@@ -40,6 +42,7 @@ export function TemplateServiceItemsGrid({
   editable: boolean
   onChangeField: (itemId: string, field: keyof TemplateServiceItemLocal, value: string) => void
   onChangeQuantity: (itemId: string, value: string) => void
+  onToggleTaxed: (itemId: string, next: boolean) => void
   onSetUnit: (itemId: string, option: UnitOfMeasureOption | null) => void
   onRemoveItem: (itemId: string) => void
 }) {
@@ -131,6 +134,15 @@ export function TemplateServiceItemsGrid({
               />
             )
           }
+          case "taxed":
+            return (
+              <CheckboxCell
+                editable={editable}
+                value={item.taxed}
+                onChange={(next) => onToggleTaxed(item.id, next)}
+                ariaLabel="Service item taxed"
+              />
+            )
           default:
             return null
         }

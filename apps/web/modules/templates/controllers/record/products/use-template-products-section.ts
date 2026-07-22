@@ -43,6 +43,8 @@ export type TemplatePlannedProductLocal = {
   unitAbbrev: string
   quantity: string
   notes: string
+  // Whether this line is taxed (feeds the Tax Cost roll-up). Sent in the diff.
+  taxed: boolean
   // LIVE cost read-joined off the product (seeded from the picked ProductOption
   // for unsaved rows; re-resolved server-side on save). Display only — NEVER sent
   // in the diff. This is the "bid cost" and the per-unit basis for the line total.
@@ -69,6 +71,8 @@ export type TemplateServiceItemLocal = {
   // cost is a live product join). Editable money, sent in the diff. It is the
   // per-unit basis for the line total.
   bidCost: string
+  // Whether this line is taxed (feeds the Tax Cost roll-up). Sent in the diff.
+  taxed: boolean
 }
 
 type TemplateProductsLocalState = {
@@ -88,6 +92,7 @@ function toPlannedLocal(row: TemplatePlannedProductRow): TemplatePlannedProductL
     unitAbbrev: row.unitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
+    taxed: row.taxed,
     productCost: row.productCost,
     categoryFilterId: null,
     categoryFilterName: row.categoryName || null,
@@ -104,6 +109,7 @@ function toServiceLocal(row: TemplateServiceItemRow): TemplateServiceItemLocal {
     unitName: row.unitName,
     unitAbbrev: row.unitAbbrev,
     bidCost: row.bidCost,
+    taxed: row.taxed,
   }
 }
 
@@ -120,11 +126,11 @@ function createItemsRevisionKey(record: TemplateDetail) {
     // re-seeds the local cost display.
     plannedProducts: record.plannedProducts.map(
       (row) =>
-        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.productCost}`,
+        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.taxed}:${row.productCost}`,
     ),
     serviceItems: record.serviceItems.map(
       (row) =>
-        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}`,
+        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.taxed}`,
     ),
   })
 }
@@ -136,7 +142,8 @@ function plannedDiffers(local: TemplatePlannedProductLocal, server: TemplatePlan
     local.productId !== server.productId ||
     local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
-    local.notes !== server.notes
+    local.notes !== server.notes ||
+    local.taxed !== server.taxed
   )
 }
 
@@ -146,6 +153,7 @@ function toPlannedForm(local: TemplatePlannedProductLocal): TemplatePlannedProdu
     unitId: local.unitId,
     quantity: local.quantity,
     notes: local.notes,
+    taxed: local.taxed,
   }
 }
 
@@ -170,7 +178,8 @@ function serviceDiffers(local: TemplateServiceItemLocal, server: TemplateService
     local.itemName !== server.itemName ||
     local.quantity !== server.quantity ||
     local.unitId !== server.unitId ||
-    local.bidCost !== server.bidCost
+    local.bidCost !== server.bidCost ||
+    local.taxed !== server.taxed
   )
 }
 
@@ -181,6 +190,7 @@ function toServiceForm(local: TemplateServiceItemLocal): TemplateServiceItemForm
     quantity: local.quantity,
     unitId: local.unitId,
     bidCost: local.bidCost,
+    taxed: local.taxed,
   }
 }
 
@@ -271,6 +281,7 @@ export function useTemplateProductsSection({
           unitAbbrev: "",
           quantity: "",
           notes: "",
+          taxed: true,
           productCost: "",
           categoryFilterId: null,
           categoryFilterName: null,
@@ -303,6 +314,17 @@ export function useTemplateProductsSection({
       ...previous,
       plannedProducts: previous.plannedProducts.map((row) =>
         row.id === itemId ? { ...row, quantity: value } : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  // Dedicated boolean setter — the generic `changePlannedField` is string-typed.
+  function changePlannedTaxed(itemId: string, next: boolean) {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      plannedProducts: previous.plannedProducts.map((row) =>
+        row.id === itemId ? { ...row, taxed: next } : row,
       ),
     }))
     if (section.error) section.setError(null)
@@ -370,6 +392,7 @@ export function useTemplateProductsSection({
           unitName: "",
           unitAbbrev: "",
           bidCost: "",
+          taxed: false,
         },
       ],
     }))
@@ -404,6 +427,17 @@ export function useTemplateProductsSection({
     if (section.error) section.setError(null)
   }
 
+  // Dedicated boolean setter — the generic `changeServiceField` is string-typed.
+  function changeServiceTaxed(itemId: string, next: boolean) {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      serviceItems: previous.serviceItems.map((row) =>
+        row.id === itemId ? { ...row, taxed: next } : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
   function setServiceUnit(itemId: string, option: UnitOfMeasureOption | null) {
     section.setLocalValue((previous) => ({
       ...previous,
@@ -428,6 +462,7 @@ export function useTemplateProductsSection({
     removePlannedItem,
     changePlannedField,
     changePlannedQuantity,
+    changePlannedTaxed,
     changeCategoryFilter,
     setProductSnapshot,
     setPlannedUnit,
@@ -435,6 +470,7 @@ export function useTemplateProductsSection({
     removeServiceItem,
     changeServiceField,
     changeServiceQuantity,
+    changeServiceTaxed,
     setServiceUnit,
   }
 }

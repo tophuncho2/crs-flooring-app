@@ -18,6 +18,7 @@ const templatePlannedProductSelect = {
   // Bid cost is the live product join above (the per-unit basis for the derived
   // line total) — not a stored column here.
   notes: true,
+  taxed: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,

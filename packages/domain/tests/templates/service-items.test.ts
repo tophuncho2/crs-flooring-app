@@ -13,6 +13,7 @@ describe("normalizeTemplateServiceItem", () => {
     unit: { name: "Hour", abbreviation: "hr" },
     // MANUAL bid cost (no product join) — the per-unit basis for the line total.
     bidCost: { toString: () => "3.5" } as { toString(): string },
+    taxed: false,
     createdAt: "2026-07-08T00:00:00.000Z",
     updatedAt: "2026-07-08T00:00:00.000Z",
     createdBy: "creator@example.com",
@@ -24,6 +25,8 @@ describe("normalizeTemplateServiceItem", () => {
     expect(row.bidCost).toBe("3.50")
     // 10 × 3.50 (bid cost) = 35.00
     expect(row.lineTotal).toBe("35.00")
+    // Taxed flag passes straight through.
+    expect(row.taxed).toBe(false)
   })
 
   it("passes the required itemType through and coalesces missing money/quantity", () => {

@@ -97,6 +97,7 @@ describe("saveTemplateProductsSectionUseCase", () => {
                 quantity: "2",
                 unitId: "",
                 bidCost: "10.00",
+                taxed: true,
               },
             },
           ],
@@ -107,8 +108,9 @@ describe("saveTemplateProductsSectionUseCase", () => {
       ACTOR,
     )
     const [, diff] = applyTemplateServiceItemsDiffMock.mock.calls[0]
-    // Manual bid cost survives to the writer (no product join, no re-seed).
+    // Manual bid cost + taxed flag survive to the writer (no product join, no re-seed).
     expect(diff.added[0].input.bidCost).toBe("10.00")
+    expect(diff.added[0].input.taxed).toBe(true)
   })
 
   it("keeps a cleared unit blank on a MODIFIED planned-product row (no re-seed)", async () => {

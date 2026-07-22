@@ -16,8 +16,11 @@ import type {
 import {
   isServiceItemType,
   isValidMoneyAmount,
+  isValidTaxRate,
   normalizeMoneyAmount,
+  normalizeTaxRate,
   SERVICE_ITEM_TYPE_INVALID_MESSAGE,
+  TAX_RATE_INVALID_MESSAGE,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
   TEMPLATE_CUSTOMER_NAME_MAX,
@@ -91,6 +94,24 @@ function optionalMoney(
   return normalizeMoneyAmount(value)
 }
 
+// Optional percent rate ("" = unset). When present, validate + canonicalize to a
+// scale-3 string. Mirrors `optionalMoney` but for the tax-rate percent.
+function optionalRate(
+  value: unknown,
+  path: string,
+  fail: (m: string, f?: string) => never,
+): string {
+  if (typeof value !== "string" || value.trim() === "") return ""
+  if (!isValidTaxRate(value)) fail(TAX_RATE_INVALID_MESSAGE, path)
+  return normalizeTaxRate(value)
+}
+
+// Optional boolean form field: use the value when it's a real boolean, else fall
+// back to the default (covers a stale client that omits the flag). No throw path.
+function optionalBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback
+}
+
 function requireBoundedString(
   value: unknown,
   max: number,
@@ -138,6 +159,7 @@ export function validateCreateTemplateInput(
       failTemplate,
     ),
     totalTransaction: optionalMoney(body.totalTransaction, "totalTransaction", failTemplate),
+    taxRate: optionalRate(body.taxRate, "taxRate", failTemplate),
   }
 }
 
@@ -178,6 +200,9 @@ export function validateUpdateTemplateInput(
   if ("totalTransaction" in body) {
     input.totalTransaction = optionalMoney(body.totalTransaction, "totalTransaction", failTemplate)
   }
+  if ("taxRate" in body) {
+    input.taxRate = optionalRate(body.taxRate, "taxRate", failTemplate)
+  }
   // Edit-only palette tag — strict when present, left unchanged when absent
   // (a stale client). Create has no equivalent (defaults to SLATE in the DB).
   if ("color" in body) input.color = requireColor(body.color, "color", failTemplate)
@@ -207,6 +232,8 @@ function validatePlannedProductForm(value: unknown, path: string): TemplatePlann
     // No stored money column — bid cost is a live product join (the line-total
     // basis), not a form field.
     notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
+    // Taxed flag — materials default to taxed on a stale client.
+    taxed: optionalBoolean(obj.taxed, true),
   }
 }
 
@@ -286,6 +313,8 @@ function validateServiceItemForm(value: unknown, path: string): TemplateServiceI
     // canonicalized. bidCost is MANUAL here (a persisted column, not a join) and is
     // the per-unit basis for the derived line total.
     bidCost: optionalMoney(obj.bidCost, `${path}.bidCost`, failServiceItem),
+    // Taxed flag — service / labor lines default to NOT taxed on a stale client.
+    taxed: optionalBoolean(obj.taxed, false),
   }
 }
 

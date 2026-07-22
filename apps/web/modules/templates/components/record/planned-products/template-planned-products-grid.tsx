@@ -1,6 +1,6 @@
 "use client"
 
-import { NumberCell, TextCell } from "@/engines/record-view"
+import { CheckboxCell, NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
@@ -24,6 +24,7 @@ const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductL
   { key: "bidCost", label: "Bid Cost", width: 110, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
   { key: "notes", label: "Notes", width: 240 },
+  { key: "taxed", label: "Taxed", width: 90, align: "center" },
 ]
 
 // Pure editable-table body for the Planned Products side. The RecordItemSection
@@ -34,6 +35,7 @@ export function TemplatePlannedProductsGrid({
   editable,
   onChangeField,
   onChangeQuantity,
+  onToggleTaxed,
   onChangeCategoryFilter,
   onSetProductSnapshot,
   onSetUnit,
@@ -43,6 +45,7 @@ export function TemplatePlannedProductsGrid({
   editable: boolean
   onChangeField: (itemId: string, field: keyof TemplatePlannedProductLocal, value: string) => void
   onChangeQuantity: (itemId: string, value: string) => void
+  onToggleTaxed: (itemId: string, next: boolean) => void
   onChangeCategoryFilter: (itemId: string, categoryId: string | null) => void
   onSetProductSnapshot: (itemId: string, option: ProductOption | null) => void
   onSetUnit: (itemId: string, option: UnitOfMeasureOption | null) => void
@@ -138,6 +141,15 @@ export function TemplatePlannedProductsGrid({
                 placeholder="Notes"
                 ariaLabel="Planned product notes"
                 maxLength={TEMPLATE_PLANNED_PRODUCT_NOTES_MAX}
+              />
+            )
+          case "taxed":
+            return (
+              <CheckboxCell
+                editable={editable}
+                value={item.taxed}
+                onChange={(next) => onToggleTaxed(item.id, next)}
+                ariaLabel="Planned product taxed"
               />
             )
           default:

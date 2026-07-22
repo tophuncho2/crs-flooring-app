@@ -6,6 +6,7 @@ import {
   FieldSection,
   FormField,
   MoneyCell,
+  NumberCell,
   RecordColumnBreak,
   RecordSectionDivider,
   StaticFieldValue,
@@ -74,6 +75,7 @@ export function TemplatePrimaryFieldsSection({
   materialCost,
   laborCost,
   miscCost,
+  taxCost,
   onFieldChange,
   onFieldsChange,
 }: {
@@ -94,6 +96,12 @@ export function TemplatePrimaryFieldsSection({
    */
   laborCost: string
   miscCost: string
+  /**
+   * Derived Tax Cost roll-up (canonical money string, "0.00" when no tax) = the
+   * saved taxRate applied to the saved taxed line totals. Same saved-record basis as
+   * the other roll-ups; sits under Misc. Cost. "0.00" on the create flow.
+   */
+  taxCost: string
   onFieldChange: (field: keyof TemplateForm, value: string | PaletteColor) => void
   /** Multi-field setter — used by the property-unit cluster for the entity→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
@@ -269,15 +277,29 @@ export function TemplatePrimaryFieldsSection({
           <FormField label="Misc. Cost">
             <StaticFieldValue>{formatMoney(miscCost) || "$0.00"}</StaticFieldValue>
           </FormField>
+          <FormField label="Tax Cost">
+            <StaticFieldValue>{formatMoney(taxCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
         </div>
-        <FormField label="Total Transaction">
-          <MoneyCell
-            editable={editable}
-            value={draft.totalTransaction}
-            onChange={(next) => onFieldChange("totalTransaction", next)}
-            ariaLabel="Total transaction"
-          />
-        </FormField>
+        <div className="space-y-2">
+          <FormField label="Total Transaction">
+            <MoneyCell
+              editable={editable}
+              value={draft.totalTransaction}
+              onChange={(next) => onFieldChange("totalTransaction", next)}
+              ariaLabel="Total transaction"
+            />
+          </FormField>
+          <FormField label="Tax Rate %">
+            <NumberCell
+              editable={editable}
+              value={draft.taxRate}
+              onChange={(next) => onFieldChange("taxRate", next)}
+              placeholder="e.g. 8.375"
+              ariaLabel="Tax rate percent"
+            />
+          </FormField>
+        </div>
       </div>
 
       <RecordSectionDivider />

@@ -19,6 +19,7 @@ export const templateServiceItemSelect = {
   // Persisted job-costing money column (bid cost is stored here, not a join, and
   // is the per-unit basis for the derived line total).
   bidCost: true,
+  taxed: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,

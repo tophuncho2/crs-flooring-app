@@ -62,6 +62,7 @@ export async function applyTemplatePlannedProductsDiff(
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
         notes: draft.input.notes ? draft.input.notes : null,
+        taxed: draft.input.taxed,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -76,6 +77,7 @@ export async function applyTemplatePlannedProductsDiff(
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),
         notes: update.input.notes ? update.input.notes : null,
+        taxed: update.input.taxed,
         updatedBy: input.actorEmail,
       },
     })

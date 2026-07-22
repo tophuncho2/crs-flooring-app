@@ -1,4 +1,5 @@
 export * from "./types.js"
+export * from "./tax.js"
 export * from "./column-limits.js"
 export * from "./list-config.js"
 export * from "./form-rules.js"

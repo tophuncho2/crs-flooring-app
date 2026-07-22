@@ -11,6 +11,7 @@ import { useTemplatePlannedPaymentsSection } from "@/modules/templates/controlle
 import { useTemplateEntityInvolvementSection } from "@/modules/templates/controllers/record/entity-involvement/use-template-entity-involvement-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import {
+  computeTemplateTaxCost,
   sumTemplatePlannedProductLineTotals,
   sumTemplateServiceItemLineTotalsByType,
   type TemplateDetail,
@@ -56,6 +57,20 @@ export function TemplateRecordPanel({
       quantity: row.quantity,
       bidCost: row.bidCost,
     })),
+  )
+  // Tax Cost roll-up = saved taxRate × the line totals of the TAXED rows across both
+  // tables (planned products use productCost as the per-unit basis; service items use
+  // bidCost). Saved-record based, like the cost roll-ups above.
+  const taxCost = computeTemplateTaxCost(
+    [
+      ...primary.record.plannedProducts
+        .filter((row) => row.taxed)
+        .map((row) => ({ quantity: row.quantity, bidCost: row.productCost })),
+      ...primary.record.serviceItems
+        .filter((row) => row.taxed)
+        .map((row) => ({ quantity: row.quantity, bidCost: row.bidCost })),
+    ],
+    primary.record.taxRate,
   )
   const isDirty =
     primary.primarySection.isDirty ||
@@ -132,6 +147,7 @@ export function TemplateRecordPanel({
                   materialCost={materialCost}
                   laborCost={serviceCostByType.LABOR}
                   miscCost={serviceCostByType.MISCELLANEOUS}
+                  taxCost={taxCost}
                   onFieldChange={(field, value) => {
                     primary.primarySection.setLocalValue((previous: TemplateForm) => ({
                       ...previous,

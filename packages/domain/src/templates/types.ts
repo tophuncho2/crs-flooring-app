@@ -16,6 +16,9 @@ export type TemplateListRow = {
   // Manually-entered transaction total — canonical money string ("" = unset).
   // Normalized on read so dirty-checks compare stable strings. List-visible.
   totalTransaction: string
+  // Manually-entered sales-tax rate as a percent string ("8.375"; "" = unset).
+  // Normalized to scale-3 on read. Drives the derived Tax Cost roll-up.
+  taxRate: string
   propertyId: string | null
   propertyName: string
   entityId: string | null
@@ -92,6 +95,9 @@ export type TemplateForm = {
   // Manually-entered transaction total (money-as-string; "" = unset). Edited via a
   // MoneyCell on the primary section; saved with the parent update.
   totalTransaction: string
+  // Manually-entered sales-tax rate (percent-as-string; "" = unset). Edited via a
+  // NumberCell in the primary totals area; saved with the parent update.
+  taxRate: string
   // Non-semantic palette tag. Carried on the draft so the record-view edit form
   // can re-pick it; the create flow renders no picker and the create API validator
   // ignores it, so new rows fall to the DB default SLATE.
@@ -108,5 +114,6 @@ export const EMPTY_TEMPLATE_FORM: TemplateForm = {
   internalNotes: "",
   installerInstructions: "",
   totalTransaction: "",
+  taxRate: "",
   color: DEFAULT_PALETTE_COLOR,
 }

@@ -1,6 +1,6 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
-import { normalizeMoneyAmount, type PaletteColor } from "@builders/domain"
+import { normalizeMoneyAmount, normalizeTaxRate, type PaletteColor } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -16,6 +16,9 @@ export type CreateTemplateRecordInput = {
   // Manual money column (money standard). "" / blank → NULL, else canonical
   // fixed-scale-2 before Prisma coerces to Decimal(12,2). Update inherits this.
   totalTransaction?: string | null
+  // Manual sales-tax rate (percent). "" / blank → NULL, else canonical scale-3
+  // before Prisma coerces to Decimal(6,3). Update inherits this.
+  taxRate?: string | null
   createdBy: string
   updatedBy: string
 }
@@ -24,6 +27,12 @@ export type CreateTemplateRecordInput = {
 // the canonical fixed-scale-2 string. Mirrors the service-item `toMoney` helper.
 function toMoney(value: string | null | undefined): string | null {
   return value && value.trim() ? normalizeMoneyAmount(value) : null
+}
+
+// Rate write boundary: blank / null → NULL, else canonical scale-3 percent string
+// before Prisma coerces to Decimal(6,3). Mirrors `toMoney`.
+function toRate(value: string | null | undefined): string | null {
+  return value && value.trim() ? normalizeTaxRate(value) : null
 }
 
 // `createdBy` is immutable post-create; `updatedBy` is always stamped on edit.
@@ -41,9 +50,9 @@ export async function createTemplateRecord(
   client: TemplatesDbClient = db,
 ): Promise<{ id: string }> {
   return client.template.create({
-    // Fold the manual money column ("" / null → NULL, else canonical) — the rest
-    // of the input maps straight through.
-    data: { ...input, totalTransaction: toMoney(input.totalTransaction) },
+    // Fold the manual money + rate columns ("" / null → NULL, else canonical) — the
+    // rest of the input maps straight through.
+    data: { ...input, totalTransaction: toMoney(input.totalTransaction), taxRate: toRate(input.taxRate) },
     select: { id: true },
   })
 }
@@ -65,6 +74,7 @@ export async function updateTemplateRecord(
       ...(input.totalTransaction === undefined
         ? {}
         : { totalTransaction: toMoney(input.totalTransaction) }),
+      ...(input.taxRate === undefined ? {} : { taxRate: toRate(input.taxRate) }),
     },
     select: { id: true },
   })

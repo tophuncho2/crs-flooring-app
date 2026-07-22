@@ -69,6 +69,7 @@ export async function applyTemplateServiceItemsDiff(
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
         bidCost: toMoney(draft.input.bidCost),
+        taxed: draft.input.taxed,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -84,6 +85,7 @@ export async function applyTemplateServiceItemsDiff(
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),
         bidCost: toMoney(update.input.bidCost),
+        taxed: update.input.taxed,
         updatedBy: input.actorEmail,
       },
     })

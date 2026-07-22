@@ -13,6 +13,7 @@ type TemplatePlannedProductInput = {
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
   notes: string | null
+  taxed: boolean
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -37,6 +38,7 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     unitName: item.unit?.name ?? "",
     unitAbbrev: item.unit?.abbreviation ?? "",
     notes: item.notes ?? "",
+    taxed: item.taxed,
     productCost,
     // Line total = qty × bidCost, where bidCost is the live product cost.
     lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost: productCost }),

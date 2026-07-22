@@ -60,6 +60,7 @@ const templateListSelect = {
   customerName: true,
   description: true,
   totalTransaction: true,
+  taxRate: true,
   propertyId: true,
   property: {
     select: { name: true, entity: { select: { id: true, entity: true } } },
@@ -107,6 +108,7 @@ const templateDetailSelect = {
       // Bid cost = live product.cost above (the per-unit basis for the derived
       // line total) — not a stored column here.
       notes: true,
+      taxed: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,

@@ -13,6 +13,9 @@ export type TemplatePlannedProductRow = {
   unitName: string
   unitAbbrev: string
   notes: string
+  // Whether this line is taxed (feeds the template Tax Cost roll-up). Materials
+  // default to taxed. Sent in the diff.
+  taxed: boolean
   // LIVE cost read-joined off the linked product (`product.cost`), NOT stored on
   // this row. Canonical money string ("10.00"); "" when the product has no cost.
   // Display only — never sent in the diff (like productName). This is the "bid
@@ -37,4 +40,6 @@ export type TemplatePlannedProductForm = {
   unitId: string
   quantity: string
   notes: string
+  // Whether this line is taxed. Materials default to taxed.
+  taxed: boolean
 }

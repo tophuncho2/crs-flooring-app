@@ -18,6 +18,7 @@ describe("normalizeTemplatePlannedProduct", () => {
     unitId: "unit-1",
     unit: { name: "Square Foot", abbreviation: "sqft" },
     notes: "rush",
+    taxed: true,
     createdAt: "2026-07-08T00:00:00.000Z",
     updatedAt: "2026-07-08T00:00:00.000Z",
     createdBy: "creator@example.com",
@@ -33,6 +34,8 @@ describe("normalizeTemplatePlannedProduct", () => {
     expect(row.quantity).toBe("10")
     // Live product cost, canonicalized (the round-trip trap guard).
     expect(row.productCost).toBe("10.50")
+    // Taxed flag passes straight through.
+    expect(row.taxed).toBe(true)
   })
 
   it("derives the line total off bid cost", () => {

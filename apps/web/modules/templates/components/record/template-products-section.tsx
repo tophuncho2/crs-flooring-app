@@ -63,6 +63,7 @@ export function TemplateProductsSection({ products }: { products: ProductsContro
         editable={editable}
         onChangeField={products.changePlannedField}
         onChangeQuantity={products.changePlannedQuantity}
+        onToggleTaxed={products.changePlannedTaxed}
         onChangeCategoryFilter={products.changeCategoryFilter}
         onSetProductSnapshot={products.setProductSnapshot}
         onSetUnit={products.setPlannedUnit}
@@ -73,6 +74,7 @@ export function TemplateProductsSection({ products }: { products: ProductsContro
         editable={editable}
         onChangeField={products.changeServiceField}
         onChangeQuantity={products.changeServiceQuantity}
+        onToggleTaxed={products.changeServiceTaxed}
         onSetUnit={products.setServiceUnit}
         onRemoveItem={products.removeServiceItem}
       />

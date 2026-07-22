@@ -17,6 +17,7 @@ type TemplateServiceItemInput = {
   unit?: { name: string; abbreviation: string } | null
   // Persisted job-costing money column (bidCost stored here, not a join).
   bidCost: { toString(): string } | null
+  taxed: boolean
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -41,6 +42,7 @@ export function normalizeTemplateServiceItem(item: TemplateServiceItemInput): Te
     unitName: item.unit?.name ?? "",
     unitAbbrev: item.unit?.abbreviation ?? "",
     bidCost,
+    taxed: item.taxed,
     // Line total = qty × bidCost, using the manual bid cost.
     lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost }),
     createdAt: toIsoTimestamp(item.createdAt),

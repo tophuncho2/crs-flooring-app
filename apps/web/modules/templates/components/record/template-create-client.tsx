@@ -54,6 +54,7 @@ function TemplateCreatePanel({
           materialCost="0.00"
           laborCost="0.00"
           miscCost="0.00"
+          taxCost="0.00"
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
               ...previous,
