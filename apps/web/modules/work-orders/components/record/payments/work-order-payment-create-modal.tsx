@@ -6,6 +6,8 @@ import {
   describePaymentFormIssues,
   EMPTY_PAYMENT_FORM,
   validatePaymentForm,
+  type EntityTypeRef,
+  type PaletteColor,
   type Payment,
   type PaymentForm,
   type WorkOrderDetail,
@@ -22,13 +24,29 @@ import { PaymentPrimaryFieldsSection } from "@/modules/payments/components/recor
  * (`hideWorkOrder`) — the payment always belongs to this WO. Color is omitted on
  * create (create face has no `paymentNumber`), so new rows fall to the DB default;
  * color is edited later on the payment's own record view.
+ *
+ * An optional `seed` pre-fills the form (e.g. launched from a planned-payment or
+ * entity-involvement row's ⋮ "Create payment"); `seedLabels` hydrates the
+ * entity/purpose picker triggers so the seeded links read back immediately. Both
+ * are omitted by the plain "+ Add Payment" flow, which starts blank.
  */
 export function WorkOrderPaymentCreateModal({
   workOrder,
+  seed,
+  seedLabels,
   onClose,
   onCreated,
 }: {
   workOrder: WorkOrderDetail
+  /** Optional partial form to pre-fill (from a planned-payment / involvement row). */
+  seed?: Partial<PaymentForm>
+  /** Picker-trigger label hydration so seeded entity/purpose links read back on open. */
+  seedLabels?: {
+    entityName?: string | null
+    entityType?: EntityTypeRef | null
+    paymentPurposeName?: string | null
+    paymentPurposeColor?: PaletteColor | null
+  }
   onClose: () => void
   /**
    * Fired after a successful create with the new payment — the host closes the
@@ -43,6 +61,8 @@ export function WorkOrderPaymentCreateModal({
 
   const [draft, setDraft] = useState<PaymentForm>({
     ...EMPTY_PAYMENT_FORM,
+    ...seed,
+    // Re-pin the WO after the seed so a seeded row can never override the link.
     workOrderId: workOrder.id,
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -88,6 +108,11 @@ export function WorkOrderPaymentCreateModal({
         draft={draft}
         editable={!isSaving}
         hideWorkOrder
+        entityName={seedLabels?.entityName}
+        entityType={seedLabels?.entityType}
+        linkedEntityId={draft.entityId}
+        paymentPurposeName={seedLabels?.paymentPurposeName}
+        paymentPurposeColor={seedLabels?.paymentPurposeColor}
         onFieldChange={(field, value) =>
           setDraft((previous) => ({ ...previous, [field]: value }))
         }

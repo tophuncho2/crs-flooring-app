@@ -1,8 +1,9 @@
 "use client"
 
+import { Banknote } from "lucide-react"
 import { TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
-import { CellChip, RecordDeleteButton } from "@/engines/common"
+import { CellChip, RecordDeleteButton, RecordOptionsMenu } from "@/engines/common"
 import { WORK_ORDER_ENTITY_INVOLVEMENT_TYPE_MAX, type EntityOption } from "@builders/domain"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import type { WorkOrderEntityInvolvementLocal } from "@/modules/work-orders/controllers/record/entity-involvement/use-work-order-entity-involvement-section"
@@ -24,6 +25,7 @@ export function WorkOrderEntityInvolvementGrid({
   onChangeField,
   onSelectEntity,
   onRemoveItem,
+  onCreatePayment,
 }: {
   items: WorkOrderEntityInvolvementLocal[]
   editable: boolean
@@ -34,6 +36,8 @@ export function WorkOrderEntityInvolvementGrid({
   ) => void
   onSelectEntity: (itemId: string, option: EntityOption | null) => void
   onRemoveItem: (itemId: string) => void
+  // Row ⋮ "Create payment" — opens a payment-create modal seeded from this row's entity.
+  onCreatePayment: (item: WorkOrderEntityInvolvementLocal) => void
 }) {
   return (
     <DataTable<WorkOrderEntityInvolvementLocal>
@@ -41,13 +45,28 @@ export function WorkOrderEntityInvolvementGrid({
       rows={items}
       columns={WORK_ORDER_ENTITY_INVOLVEMENT_COLUMNS}
       empty="No entity involvement yet."
+      // Two gutter controls (delete + ⋮ options) → widen past the 44px default.
+      rowActionsWidth={92}
       rowActions={(item) => (
-        <RecordDeleteButton
-          ariaLabel="Remove entity involvement"
-          title={editable ? "Remove this entity involvement" : "Saving..."}
-          disabled={!editable}
-          onClick={() => onRemoveItem(item.id)}
-        />
+        <>
+          <RecordDeleteButton
+            ariaLabel="Remove entity involvement"
+            title={editable ? "Remove this entity involvement" : "Saving..."}
+            disabled={!editable}
+            onClick={() => onRemoveItem(item.id)}
+          />
+          <RecordOptionsMenu
+            ariaLabel="Entity involvement options"
+            items={[
+              {
+                key: "create-payment",
+                label: "Create payment",
+                icon: <Banknote size={14} aria-hidden="true" />,
+                onClick: () => onCreatePayment(item),
+              },
+            ]}
+          />
+        </>
       )}
       renderCell={(column, item) => {
         switch (column.key) {

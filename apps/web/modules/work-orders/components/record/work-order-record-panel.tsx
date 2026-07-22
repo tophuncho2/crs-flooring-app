@@ -209,6 +209,7 @@ export function WorkOrderRecordPanel({
               <WorkOrderPlannedPaymentsSection
                 key={controller.record.id}
                 section={plannedPaymentsSection}
+                workOrder={controller.record}
               />
             ),
           },
@@ -238,6 +239,7 @@ export function WorkOrderRecordPanel({
               <WorkOrderEntityInvolvementSection
                 key={controller.record.id}
                 section={entityInvolvementSection}
+                workOrder={controller.record}
               />
             ),
           },

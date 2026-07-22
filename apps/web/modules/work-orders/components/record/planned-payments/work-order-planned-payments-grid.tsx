@@ -1,8 +1,9 @@
 "use client"
 
+import { Banknote } from "lucide-react"
 import { ChoiceChipCell, type ChoiceChipOption, MoneyCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
-import { CellChip, RecordDeleteButton } from "@/engines/common"
+import { CellChip, RecordDeleteButton, RecordOptionsMenu } from "@/engines/common"
 import {
   WORK_ORDER_PLANNED_PAYMENT_NOTES_MAX,
   type EntityOption,
@@ -41,6 +42,7 @@ export function WorkOrderPlannedPaymentsGrid({
   onSelectEntity,
   onSelectPaymentPurpose,
   onRemoveItem,
+  onCreatePayment,
 }: {
   items: WorkOrderPlannedPaymentLocal[]
   editable: boolean
@@ -48,6 +50,8 @@ export function WorkOrderPlannedPaymentsGrid({
   onSelectEntity: (itemId: string, option: EntityOption | null) => void
   onSelectPaymentPurpose: (itemId: string, option: PaymentPurposeOption | null) => void
   onRemoveItem: (itemId: string) => void
+  // Row ⋮ "Create payment" — opens a payment-create modal seeded from this row.
+  onCreatePayment: (item: WorkOrderPlannedPaymentLocal) => void
 }) {
   return (
     <DataTable<WorkOrderPlannedPaymentLocal>
@@ -55,13 +59,28 @@ export function WorkOrderPlannedPaymentsGrid({
       rows={items}
       columns={WORK_ORDER_PLANNED_PAYMENTS_COLUMNS}
       empty="No planned payments yet."
+      // Two gutter controls (delete + ⋮ options) → widen past the 44px default.
+      rowActionsWidth={92}
       rowActions={(item) => (
-        <RecordDeleteButton
-          ariaLabel="Remove planned payment"
-          title={editable ? "Remove this planned payment" : "Saving..."}
-          disabled={!editable}
-          onClick={() => onRemoveItem(item.id)}
-        />
+        <>
+          <RecordDeleteButton
+            ariaLabel="Remove planned payment"
+            title={editable ? "Remove this planned payment" : "Saving..."}
+            disabled={!editable}
+            onClick={() => onRemoveItem(item.id)}
+          />
+          <RecordOptionsMenu
+            ariaLabel="Planned payment options"
+            items={[
+              {
+                key: "create-payment",
+                label: "Create payment",
+                icon: <Banknote size={14} aria-hidden="true" />,
+                onClick: () => onCreatePayment(item),
+              },
+            ]}
+          />
+        </>
       )}
       renderCell={(column, item) => {
         switch (column.key) {
