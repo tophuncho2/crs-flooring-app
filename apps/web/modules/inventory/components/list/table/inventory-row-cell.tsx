@@ -63,12 +63,27 @@ export function renderInventoryRowCell(
       return row.purchaseOrderNumber || "-"
     case "importNumber":
       return row.importNumber != null ? String(row.importNumber) : "-"
-    case "createdAt":
-      return formatEasternDateTime(row.createdAt) || "—"
+    case "createdAt": {
+      // Age-indicator chip — color derived server-side (aged-past/floor). Guard
+      // nullish → plain text so a row with no matching threshold stays uncolored.
+      const text = formatEasternDateTime(row.createdAt) || "—"
+      return row.createdAtAgeColor ? (
+        <CellChip paletteColor={row.createdAtAgeColor}>{text}</CellChip>
+      ) : (
+        text
+      )
+    }
     case "updatedAt":
       return formatEasternDateTime(row.updatedAt) || "—"
-    case "balanceLastChangedAt":
-      return row.balanceLastChangedAt ? formatEasternDateTime(row.balanceLastChangedAt) : "—"
+    case "balanceLastChangedAt": {
+      if (!row.balanceLastChangedAt) return "—"
+      const text = formatEasternDateTime(row.balanceLastChangedAt)
+      return row.balanceChangedAgeColor ? (
+        <CellChip paletteColor={row.balanceChangedAgeColor}>{text}</CellChip>
+      ) : (
+        text
+      )
+    }
     case "createdBy":
       return <span>{row.createdBy ?? "—"}</span>
     case "updatedBy":

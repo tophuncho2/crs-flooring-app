@@ -1199,6 +1199,27 @@ model FlooringPaymentPurpose {
   @@map("flooring_payment_purpose")
 }
 
+// Standalone user-managed lookup row for INVENTORY AGE INDICATORS — a set of
+// day thresholds each carrying a palette color. An inventory row's Created /
+// Balance-Changed cell is colored by the LARGEST threshold whose `days` is <=
+// the row's age in days (aged-past/floor bucketing); rows younger than the
+// smallest threshold get no chip. The color derivation lives in the inventory
+// read (see resolveInventoryAgeColor); this table just stores the thresholds.
+// Self-contained — NO foreign keys. `days` is the identity + the locked ASC
+// sort key + the stepper-neighbor key, and is @unique (one color per threshold).
+model FlooringInventoryAgeIndicator {
+  id        String       @id @default(uuid())
+  days      Int          @unique
+  color     PaletteColor @default(SLATE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  @@index([days])
+  @@map("flooring_inventory_age_indicator")
+}
+
 // Standalone user-managed lookup row for WORK-ORDER PRINT/EXPORT document types
 // (e.g. "Picking Ticket", "Work Order"). Mirrors FlooringPaymentPurpose's
 // canonical numbered-record shape (sequence-backed `ROW-N` string + generated int

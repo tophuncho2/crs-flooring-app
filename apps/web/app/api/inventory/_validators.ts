@@ -208,6 +208,7 @@ const listInventoryQuerySchema = z.object({
 export const INVENTORY_UI_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
+  "balanceLastChangedAt",
   "location",
   "stockBalance",
   "productName",

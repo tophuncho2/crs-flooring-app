@@ -20,6 +20,10 @@ export function inventoryFieldOrderBy(
   switch (field) {
     case "location":
       return { location: { sort: direction, nulls: "last" } }
+    case "balanceLastChangedAt":
+      // Nullable — a row's balance-changed stamp is null until its first
+      // adjustment, so order nulls last (like `location`).
+      return { balanceLastChangedAt: { sort: direction, nulls: "last" } }
     case "stockBalance":
       return { stockQuantity: direction }
     case "productName":

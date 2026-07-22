@@ -38,6 +38,31 @@ export function requireColor(value: unknown, field: string, fail: FailFn): Palet
 }
 
 /**
+ * Require a whole number (optionally bounded). Accepts a `number` or a numeric
+ * `string` (the wire form of an editable NumberCell) and coerces to an integer;
+ * rejects non-integers and out-of-range values. Parametrized by the caller's `fail`.
+ */
+export function requireInt(
+  value: unknown,
+  field: string,
+  fail: FailFn,
+  options?: { min?: number; max?: number },
+): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value.trim())
+        : Number.NaN
+  if (!Number.isInteger(parsed)) fail(`${field} must be a whole number`, field)
+  if (options?.min !== undefined && parsed < options.min)
+    fail(`${field} must be at least ${options.min}`, field)
+  if (options?.max !== undefined && parsed > options.max)
+    fail(`${field} must be at most ${options.max}`, field)
+  return parsed
+}
+
+/**
  * Build a module's canonical `/options` query schema: `search?` + `skip`
  * (min 0, default 0) + `take` (min 1, max `takeMax`, default `takeDefault`).
  * Modules that add fields chain `.extend({ ... })` on the result; the one module

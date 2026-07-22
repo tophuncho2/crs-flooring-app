@@ -1,9 +1,11 @@
 import {
   buildFlooringProductDisplayName,
   computeInventoryBalance,
+  resolveInventoryAgeColor,
   toInventoryFixedString,
 } from "@builders/domain"
 import type {
+  InventoryAgeBucket,
   InventoryDetail,
   InventoryFormOptions,
   InventoryImportNumberOption,
@@ -15,6 +17,7 @@ import type {
 } from "@builders/domain"
 import { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
+import { listInventoryAgeBuckets } from "../inventory-age-indicators/read-repository.js"
 import { resolveNumberNeighbors } from "../shared/number-neighbors.js"
 import { exactNumberIntEquals } from "../shared/exact-number-search.js"
 import { sliceHasMore } from "../shared/paginate.js"
@@ -33,6 +36,21 @@ import { buildInventoryListViewOrderBy } from "./order-by.js"
 
 export type InventoryRecord = InventoryRow
 export type InventoryDetailRecord = InventoryDetail
+
+/**
+ * The clock + age-indicator thresholds used to derive the two date-cell chip
+ * colors on a row. Loaded once per list/detail read and threaded into
+ * {@link normalizeInventoryRow}; when absent the derived colors stay null.
+ */
+export type InventoryAgeContext = { nowMs: number; buckets: InventoryAgeBucket[] }
+
+/** Load the age-indicator thresholds + capture "now" for the read's row shaping. */
+async function loadInventoryAgeContext(
+  client: InventoryDbClient,
+): Promise<InventoryAgeContext> {
+  const buckets = await listInventoryAgeBuckets(client)
+  return { nowMs: Date.now(), buckets }
+}
 
 export type InventoryListFilter = {
   importEntryId?: string
@@ -66,11 +84,18 @@ function decimalToNumber(value: { toNumber(): number } | null | undefined): numb
  * `productName` is likewise derived from the live `product` join (not a snapshot
  * column) so product edits propagate.
  */
-export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
+export function normalizeInventoryRow(
+  payload: InventoryRowPayload,
+  ageContext?: InventoryAgeContext,
+): InventoryRecord {
   const balanceNum = computeInventoryBalance({
     startingStock: payload.startingStock.toString(),
     netDeducted: payload.netDeducted.toString(),
   })
+  const createdAtIso = payload.createdAt.toISOString()
+  const balanceLastChangedAtIso = payload.balanceLastChangedAt
+    ? payload.balanceLastChangedAt.toISOString()
+    : null
   const stockBalance = toInventoryFixedString(balanceNum)
   const coveragePerUnit = toDecimalString(payload.coveragePerUnit)
   // convertedStockBalance + the target-unit labels are DERIVED here (never
@@ -118,9 +143,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     cost: toDecimalString(payload.cost),
     freight: toDecimalString(payload.freight),
     netDeducted: toDecimalString(payload.netDeducted),
-    balanceLastChangedAt: payload.balanceLastChangedAt
-      ? payload.balanceLastChangedAt.toISOString()
-      : null,
+    balanceLastChangedAt: balanceLastChangedAtIso,
     stockBalance,
     coverageUnitId: payload.coverageUnitId ?? "",
     coverageUnitName: payload.coverageUnit?.name ?? "",
@@ -135,7 +158,16 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
     color: payload.color,
-    createdAt: payload.createdAt.toISOString(),
+    // Aged-past (floor) chip colors for the two date cells — derived here (never
+    // stored) from the global age-indicator thresholds. Null when no threshold
+    // matches or the read wasn't age-enriched (no `ageContext`).
+    createdAtAgeColor: ageContext
+      ? resolveInventoryAgeColor(createdAtIso, ageContext.nowMs, ageContext.buckets)
+      : null,
+    balanceChangedAgeColor: ageContext
+      ? resolveInventoryAgeColor(balanceLastChangedAtIso, ageContext.nowMs, ageContext.buckets)
+      : null,
+    createdAt: createdAtIso,
     updatedAt: payload.updatedAt.toISOString(),
     createdBy: payload.createdBy ?? null,
     updatedBy: payload.updatedBy ?? null,
@@ -155,9 +187,10 @@ const NO_INVENTORY_NEIGHBORS: InventoryNeighbors = {
 export function normalizeInventoryDetail(
   payload: InventoryDetailPayload,
   neighbors: InventoryNeighbors = NO_INVENTORY_NEIGHBORS,
+  ageContext?: InventoryAgeContext,
 ): InventoryDetailRecord {
   return {
-    ...normalizeInventoryRow(payload),
+    ...normalizeInventoryRow(payload, ageContext),
     inventoryAdjustments: payload.inventoryAdjustments.map(
       normalizeEnrichedInventoryAdjustmentRow,
     ),
@@ -216,7 +249,10 @@ export async function listInventory(
     select: inventoryRowSelect,
     orderBy: [{ createdAt: "asc" }, { rollNumber: "asc" }, { id: "asc" }],
   })
-  return rows.map(normalizeInventoryRow)
+  // Not age-enriched — this read feeds the imports "live rows" section, which
+  // does not render the age chips. Wrapped so `.map`'s index arg can't land in
+  // the optional `ageContext` slot.
+  return rows.map((row) => normalizeInventoryRow(row))
 }
 
 export async function getInventoryById(
@@ -227,7 +263,11 @@ export async function getInventoryById(
     where: { id },
     select: inventoryRowSelect,
   })
-  return row ? normalizeInventoryRow(row) : null
+  if (!row) return null
+  // Age-enriched: this by-id read feeds the adjustment-modal identity row, which
+  // reuses the inventory list cell renderer — so the two date chips must resolve.
+  const ageContext = await loadInventoryAgeContext(client)
+  return normalizeInventoryRow(row, ageContext)
 }
 
 /**
@@ -270,7 +310,8 @@ export async function getInventoryDetailById(
     options.withNeighbors === false
       ? NO_INVENTORY_NEIGHBORS
       : await getInventoryNeighbors(row.inventoryNumberInt, client)
-  return normalizeInventoryDetail(row, neighbors)
+  const ageContext = await loadInventoryAgeContext(client)
+  return normalizeInventoryDetail(row, neighbors, ageContext)
 }
 
 export async function getInventoryDeleteState(
@@ -513,7 +554,7 @@ export async function listInventoryForListView(
   const where = buildListViewWhere(options)
   const orderBy = buildInventoryListViewOrderBy(options.sort)
 
-  const [total, rows, aggregate] = await Promise.all([
+  const [total, rows, aggregate, ageContext] = await Promise.all([
     client.flooringInventory.count({ where }),
     client.flooringInventory.findMany({
       where,
@@ -529,11 +570,12 @@ export async function listInventoryForListView(
       where,
       _sum: { stockQuantity: true, netDeducted: true, startingStock: true },
     }),
+    loadInventoryAgeContext(client),
   ])
 
   return {
     total,
-    rows: rows.map(normalizeInventoryRow),
+    rows: rows.map((row) => normalizeInventoryRow(row, ageContext)),
     totals: {
       stockBalance: toInventoryFixedString(decimalToNumber(aggregate._sum.stockQuantity)),
       netDeducted: toInventoryFixedString(decimalToNumber(aggregate._sum.netDeducted)),
@@ -570,7 +612,7 @@ export async function exportInventoryForListView(
   const where = buildListViewWhere(options)
   const orderBy = buildInventoryListViewOrderBy(options.sort)
 
-  const [total, rows] = await Promise.all([
+  const [total, rows, ageContext] = await Promise.all([
     client.flooringInventory.count({ where }),
     client.flooringInventory.findMany({
       where,
@@ -578,9 +620,10 @@ export async function exportInventoryForListView(
       take: options.take,
       select: inventoryRowSelect,
     }),
+    loadInventoryAgeContext(client),
   ])
 
-  return { total, rows: rows.map(normalizeInventoryRow) }
+  return { total, rows: rows.map((row) => normalizeInventoryRow(row, ageContext)) }
 }
 
 export type InventoryLocationsSearchArgs = {

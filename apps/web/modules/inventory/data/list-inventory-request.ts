@@ -62,6 +62,7 @@ const TEXT_FILTER_KEYS = [
 export const INVENTORY_LIST_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
+  "balanceLastChangedAt",
   "location",
   "stockBalance",
   "productName",

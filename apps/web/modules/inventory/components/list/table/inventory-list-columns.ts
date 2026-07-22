@@ -42,6 +42,7 @@ export const INVENTORY_SORT_OPTIONS: ReadonlyArray<SortMenuOption> = [
   ...PRODUCT_SORT_OPTIONS_FRAGMENT,
   { key: "location", label: "Location", type: "text" },
   { key: "warehouse", label: "Warehouse", type: "text" },
+  { key: "balanceLastChangedAt", label: "Balance Changed", type: "date" },
   { key: "createdAt", label: "Created", type: "date" },
   { key: "updatedAt", label: "Updated", type: "date" },
 ]

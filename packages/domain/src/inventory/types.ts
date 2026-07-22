@@ -62,6 +62,13 @@ export type InventoryRow = {
   note: string
   internalNotes: string
   color: PaletteColor
+  // Derived (never stored) age-indicator chip colors for the two date cells,
+  // bucketed at read time from the global inventory-age-indicator thresholds
+  // (aged-past/floor). `null` when no threshold matches; `undefined`/absent when
+  // the read wasn't age-enriched (e.g. the sacred WO-adjustment synthesized row
+  // literal). Consumers guard nullish → plain text.
+  createdAtAgeColor?: PaletteColor | null
+  balanceChangedAgeColor?: PaletteColor | null
   createdAt: string
   updatedAt: string
   createdBy: string | null

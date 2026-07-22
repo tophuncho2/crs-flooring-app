@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
-import { SortMenuBody, useFetchListController, useListSelection, ListExportButton, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, FilterGroupLabel, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
+import { SortMenuBody, useFetchListController, useListSelection, ListExportButton, ListOptionsMenu, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, FilterGroupLabel, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
 import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
 import { reconnectGoogleForSheets } from "@/modules/auth/reconnect-google"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -593,6 +593,14 @@ export default function InventoryClient({
           filename="inventory-export.csv"
           selectedIds={selectedIds}
           onReauthRequired={reconnectGoogleForSheets}
+        />
+
+        {/* Options — routes to the user-managed lookups that configure this list.
+            Age Indicators drive the Created / Balance-Changed date-cell chips. */}
+        <ListOptionsMenu
+          items={[
+            { href: "/dashboard/inventory-age-indicators", label: "Age Indicators" },
+          ]}
         />
       </ListActionBar>
 
