@@ -19,21 +19,28 @@ function agedIso(days: number): string {
   return new Date(NOW_MS - days * DAY_MS).toISOString()
 }
 
-describe("resolveInventoryAgeColor (aged-past / floor)", () => {
-  it("returns null for a row younger than the smallest threshold", () => {
-    expect(resolveInventoryAgeColor(agedIso(5), NOW_MS, BUCKETS)).toBeNull()
-    expect(resolveInventoryAgeColor(agedIso(29), NOW_MS, BUCKETS)).toBeNull()
+describe("resolveInventoryAgeColor (ceiling / up-to)", () => {
+  it("colors a brand-new row with the youngest threshold's color", () => {
+    expect(resolveInventoryAgeColor(agedIso(0), NOW_MS, BUCKETS)).toBe("GREEN")
+    expect(resolveInventoryAgeColor(agedIso(5), NOW_MS, BUCKETS)).toBe("GREEN")
+    expect(resolveInventoryAgeColor(agedIso(29), NOW_MS, BUCKETS)).toBe("GREEN")
   })
 
-  it("picks the largest threshold whose days <= age", () => {
-    expect(resolveInventoryAgeColor(agedIso(45), NOW_MS, BUCKETS)).toBe("GREEN")
-    expect(resolveInventoryAgeColor(agedIso(75), NOW_MS, BUCKETS)).toBe("AMBER")
-    expect(resolveInventoryAgeColor(agedIso(200), NOW_MS, BUCKETS)).toBe("RED")
+  it("picks the smallest threshold whose days >= age", () => {
+    expect(resolveInventoryAgeColor(agedIso(31), NOW_MS, BUCKETS)).toBe("AMBER")
+    expect(resolveInventoryAgeColor(agedIso(45), NOW_MS, BUCKETS)).toBe("AMBER")
+    expect(resolveInventoryAgeColor(agedIso(75), NOW_MS, BUCKETS)).toBe("RED")
   })
 
-  it("treats the boundary as inclusive (days <= age)", () => {
+  it("treats the boundary as inclusive (days >= age)", () => {
     expect(resolveInventoryAgeColor(agedIso(30), NOW_MS, BUCKETS)).toBe("GREEN")
+    expect(resolveInventoryAgeColor(agedIso(60), NOW_MS, BUCKETS)).toBe("AMBER")
     expect(resolveInventoryAgeColor(agedIso(90), NOW_MS, BUCKETS)).toBe("RED")
+  })
+
+  it("returns null for a row older than the largest threshold (open gap)", () => {
+    expect(resolveInventoryAgeColor(agedIso(91), NOW_MS, BUCKETS)).toBeNull()
+    expect(resolveInventoryAgeColor(agedIso(200), NOW_MS, BUCKETS)).toBeNull()
   })
 
   it("returns null for a null/undefined/unparseable timestamp", () => {
@@ -43,7 +50,7 @@ describe("resolveInventoryAgeColor (aged-past / floor)", () => {
   })
 
   it("returns null when there are no thresholds", () => {
-    expect(resolveInventoryAgeColor(agedIso(200), NOW_MS, [])).toBeNull()
+    expect(resolveInventoryAgeColor(agedIso(5), NOW_MS, [])).toBeNull()
   })
 
   it("returns null for a future timestamp (negative age)", () => {

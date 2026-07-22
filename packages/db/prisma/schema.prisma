@@ -1201,10 +1201,12 @@ model FlooringPaymentPurpose {
 
 // Standalone user-managed lookup row for INVENTORY AGE INDICATORS — a set of
 // day thresholds each carrying a palette color. An inventory row's Created /
-// Balance-Changed cell is colored by the LARGEST threshold whose `days` is <=
-// the row's age in days (aged-past/floor bucketing); rows younger than the
-// smallest threshold get no chip. The color derivation lives in the inventory
-// read (see resolveInventoryAgeColor); this table just stores the thresholds.
+// Balance-Changed cell is colored by the SMALLEST threshold whose `days` is >=
+// the row's age in days (ceiling/up-to bucketing — "until a row is this many
+// days old it is this color", so a brand-new row takes the youngest color);
+// rows older than the largest threshold get no chip. The color derivation lives
+// in the inventory read (see resolveInventoryAgeColor); this table just stores
+// the thresholds.
 // Self-contained — NO foreign keys. `days` is the identity + the locked ASC
 // sort key + the stepper-neighbor key, and is @unique (one color per threshold).
 model FlooringInventoryAgeIndicator {

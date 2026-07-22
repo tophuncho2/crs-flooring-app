@@ -64,8 +64,8 @@ export function renderInventoryRowCell(
     case "importNumber":
       return row.importNumber != null ? String(row.importNumber) : "-"
     case "createdAt": {
-      // Age-indicator chip — color derived server-side (aged-past/floor). Guard
-      // nullish → plain text so a row with no matching threshold stays uncolored.
+      // Age-indicator chip — color derived server-side (ceiling/up-to). Guard
+      // nullish → plain text so a row older than every threshold stays uncolored.
       const text = formatEasternDateTime(row.createdAt) || "—"
       return row.createdAtAgeColor ? (
         <CellChip paletteColor={row.createdAtAgeColor}>{text}</CellChip>

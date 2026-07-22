@@ -158,9 +158,9 @@ export function normalizeInventoryRow(
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
     color: payload.color,
-    // Aged-past (floor) chip colors for the two date cells — derived here (never
-    // stored) from the global age-indicator thresholds. Null when no threshold
-    // matches or the read wasn't age-enriched (no `ageContext`).
+    // Ceiling (up-to) chip colors for the two date cells — derived here (never
+    // stored) from the global age-indicator thresholds. Null when the row is
+    // older than every threshold or the read wasn't age-enriched (no `ageContext`).
     createdAtAgeColor: ageContext
       ? resolveInventoryAgeColor(createdAtIso, ageContext.nowMs, ageContext.buckets)
       : null,

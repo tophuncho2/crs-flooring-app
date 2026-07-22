@@ -64,7 +64,8 @@ export type InventoryRow = {
   color: PaletteColor
   // Derived (never stored) age-indicator chip colors for the two date cells,
   // bucketed at read time from the global inventory-age-indicator thresholds
-  // (aged-past/floor). `null` when no threshold matches; `undefined`/absent when
+  // (ceiling/up-to). `null` when the row is older than every threshold (open
+  // gap) or no thresholds exist; `undefined`/absent when
   // the read wasn't age-enriched (e.g. the sacred WO-adjustment synthesized row
   // literal). Consumers guard nullish → plain text.
   createdAtAgeColor?: PaletteColor | null
