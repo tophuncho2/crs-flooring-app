@@ -92,7 +92,7 @@ describe("saveTemplateProductsSectionUseCase", () => {
             {
               tempId: "t1",
               form: {
-                itemType: "Labor",
+                itemType: "LABOR",
                 itemName: "Install",
                 quantity: "2",
                 unitId: "",

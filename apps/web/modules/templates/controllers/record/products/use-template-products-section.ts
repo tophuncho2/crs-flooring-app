@@ -20,6 +20,7 @@ import type {
   UnitOfMeasureOption,
 } from "@builders/domain"
 import {
+  DEFAULT_SERVICE_ITEM_TYPE,
   validateTemplatePlannedProductForm,
   validateTemplateServiceItemForm,
 } from "@builders/domain"
@@ -55,7 +56,8 @@ export type TemplatePlannedProductLocal = {
 
 export type TemplateServiceItemLocal = {
   id: string
-  // Free-text classification + label (no enum). "" = unset.
+  // Required classification enum (ServiceItemType member) — never "". Seeded to the
+  // default on add; edited via the Labor / Miscellaneous dropdown.
   itemType: string
   itemName: string
   quantity: string
@@ -361,7 +363,7 @@ export function useTemplateProductsSection({
         ...previous.serviceItems,
         {
           id: createLocalRecordRowId("template-service-item"),
-          itemType: "",
+          itemType: DEFAULT_SERVICE_ITEM_TYPE,
           itemName: "",
           quantity: "",
           unitId: "",

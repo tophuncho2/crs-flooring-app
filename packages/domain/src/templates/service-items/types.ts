@@ -1,7 +1,9 @@
 export type TemplateServiceItemRow = {
   id: string
-  // Free-text classification + label (no enum yet — mirrors the WO
-  // involvementType precedent). "" when unset.
+  // Required classification — always a ServiceItemType member ("LABOR" |
+  // "MISCELLANEOUS"), never "". Typed `string` at the DTO boundary (the grid's
+  // generic string setter); membership is guaranteed by validation + the NOT NULL
+  // column default.
   itemType: string
   itemName: string
   quantity: string
@@ -27,6 +29,7 @@ export type TemplateServiceItemRow = {
 }
 
 export type TemplateServiceItemForm = {
+  // Required ServiceItemType member (validated); never "".
   itemType: string
   itemName: string
   quantity: string

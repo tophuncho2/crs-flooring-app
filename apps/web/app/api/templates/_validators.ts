@@ -14,8 +14,10 @@ import type {
   UpdateTemplateUseCaseInput,
 } from "@builders/application"
 import {
+  isServiceItemType,
   isValidMoneyAmount,
   normalizeMoneyAmount,
+  SERVICE_ITEM_TYPE_INVALID_MESSAGE,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
   TEMPLATE_CUSTOMER_NAME_MAX,
@@ -26,7 +28,6 @@ import {
   TEMPLATE_PLANNED_PAYMENT_NOTES_MAX,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_SERVICE_ITEM_ITEM_NAME_MAX,
-  TEMPLATE_SERVICE_ITEM_ITEM_TYPE_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type FlooringPaymentDirection,
   type TemplateEntityInvolvementForm,
@@ -237,9 +238,9 @@ export function validateTemplatePlannedProductsDiffInput(
 }
 
 // --- Service / misc items section diff validator ---
-// The second table in the "products" section. No product link + no required
-// fields: itemType/itemName are free-text (bounded), bidCost is a MANUAL money
-// column (unlike planned products' live product-cost join). Uses its OWN structural
+// The second table in the "products" section. No product link. itemType is a
+// REQUIRED enum (ServiceItemType); itemName is free-text (bounded); bidCost is a
+// MANUAL money column (unlike planned products' live product-cost join). Uses its OWN structural
 // require helpers so EVERY error (structural + field-level) throws the service-item
 // error class + code — the client keys off it to route errors to the right table
 // (mirrors the planned-payments precedent).
@@ -265,11 +266,17 @@ function requireServiceItemsObject(value: unknown, path: string): Record<string,
   return value as Record<string, unknown>
 }
 
+// itemType is a REQUIRED enum (ServiceItemType) — must be one of the known members,
+// else a 400 keyed to the service-item error class (mirrors `_shared` requireColor).
+function requireServiceItemType(value: unknown, path: string): string {
+  if (!isServiceItemType(value)) failServiceItem(SERVICE_ITEM_TYPE_INVALID_MESSAGE, `${path}.itemType`)
+  return value
+}
+
 function validateServiceItemForm(value: unknown, path: string): TemplateServiceItemForm {
   const obj = requireServiceItemsObject(value, path)
   return {
-    itemType:
-      optionalBoundedText(obj.itemType, TEMPLATE_SERVICE_ITEM_ITEM_TYPE_MAX, `${path}.itemType`, failServiceItem) ?? "",
+    itemType: requireServiceItemType(obj.itemType, path),
     itemName:
       optionalBoundedText(obj.itemName, TEMPLATE_SERVICE_ITEM_ITEM_NAME_MAX, `${path}.itemName`, failServiceItem) ?? "",
     quantity: optionalQuantity(obj.quantity),

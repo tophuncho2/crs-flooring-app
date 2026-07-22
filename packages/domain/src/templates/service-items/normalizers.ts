@@ -9,7 +9,8 @@ import type { TemplateServiceItemRow } from "./types.js"
 
 type TemplateServiceItemInput = {
   id: string
-  itemType: string | null
+  // Required enum column (ServiceItemType) — always present on a persisted row.
+  itemType: string
   itemName: string | null
   quantity: { toString(): string } | null
   unitId: string | null
@@ -33,7 +34,7 @@ export function normalizeTemplateServiceItem(item: TemplateServiceItemInput): Te
   const bidCost = normalizeMoneyColumn(item.bidCost)
   return {
     id: item.id,
-    itemType: item.itemType ?? "",
+    itemType: item.itemType,
     itemName: item.itemName ?? "",
     quantity,
     unitId: item.unitId ?? "",

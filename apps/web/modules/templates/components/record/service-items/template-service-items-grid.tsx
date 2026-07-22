@@ -1,6 +1,6 @@
 "use client"
 
-import { MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
+import { DropdownCell, MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
@@ -9,9 +9,9 @@ import {
   formatMoney,
   type UnitOfMeasureOption,
   TEMPLATE_SERVICE_ITEM_ITEM_NAME_MAX,
-  TEMPLATE_SERVICE_ITEM_ITEM_TYPE_MAX,
 } from "@builders/domain"
 import type { TemplateServiceItemLocal } from "@/modules/templates/controllers/record/products/use-template-products-section"
+import { SERVICE_ITEM_TYPE_OPTIONS } from "./service-item-type-options"
 
 const TEMPLATE_SERVICE_ITEMS_COLUMNS: DataTableColumn<TemplateServiceItemLocal>[] = [
   // Item Type + Name are free-text; Bid Cost is a MANUAL editable money column
@@ -60,14 +60,15 @@ export function TemplateServiceItemsGrid({
       renderCell={(column, item) => {
         switch (column.key) {
           case "itemType":
+            // Required enum — a Labor / Miscellaneous dropdown (no free text, no
+            // clear). New rows seed the default in the controller.
             return (
-              <TextCell
+              <DropdownCell
                 editable={editable}
                 value={item.itemType}
-                onChange={(next) => onChangeField(item.id, "itemType", next)}
-                placeholder="Item type"
+                options={SERVICE_ITEM_TYPE_OPTIONS}
+                onChange={(next) => onChangeField(item.id, "itemType", next ?? "")}
                 ariaLabel="Service item type"
-                maxLength={TEMPLATE_SERVICE_ITEM_ITEM_TYPE_MAX}
               />
             )
           case "itemName":

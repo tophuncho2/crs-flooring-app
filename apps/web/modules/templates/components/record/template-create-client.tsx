@@ -49,8 +49,11 @@ function TemplateCreatePanel({
           draft={controller.primarySection.localValue}
           detail={null}
           disabled={controller.primarySection.isSaving}
-          // No planned products exist pre-creation — material cost is always zero here.
+          // No products or service items exist pre-creation — every cost roll-up is
+          // zero here.
           materialCost="0.00"
+          laborCost="0.00"
+          miscCost="0.00"
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
               ...previous,

@@ -10,7 +10,12 @@ import { useTemplateProductsSection } from "@/modules/templates/controllers/reco
 import { useTemplatePlannedPaymentsSection } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
 import { useTemplateEntityInvolvementSection } from "@/modules/templates/controllers/record/entity-involvement/use-template-entity-involvement-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
-import { sumTemplatePlannedProductLineTotals, type TemplateDetail, type TemplateForm } from "@builders/domain"
+import {
+  sumTemplatePlannedProductLineTotals,
+  sumTemplateServiceItemLineTotalsByType,
+  type TemplateDetail,
+  type TemplateForm,
+} from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
 import { TemplateProductsSection } from "./template-products-section"
 import { TemplatePaymentsSection } from "./template-payments-section"
@@ -42,6 +47,15 @@ export function TemplateRecordPanel({
   // line totals (reflects the last products save, not live unsaved grid edits).
   const materialCost = sumTemplatePlannedProductLineTotals(
     primary.record.plannedProducts.map((row) => ({ quantity: row.quantity, bidCost: row.productCost })),
+  )
+  // Per-item-type service-cost roll-up (Labor / Misc.) from the SAVED service items,
+  // mirroring the Material Cost figure — reflects the last products save, not live edits.
+  const serviceCostByType = sumTemplateServiceItemLineTotalsByType(
+    primary.record.serviceItems.map((row) => ({
+      itemType: row.itemType,
+      quantity: row.quantity,
+      bidCost: row.bidCost,
+    })),
   )
   const isDirty =
     primary.primarySection.isDirty ||
@@ -116,6 +130,8 @@ export function TemplateRecordPanel({
                   }}
                   disabled={primary.primarySection.isSaving}
                   materialCost={materialCost}
+                  laborCost={serviceCostByType.LABOR}
+                  miscCost={serviceCostByType.MISCELLANEOUS}
                   onFieldChange={(field, value) => {
                     primary.primarySection.setLocalValue((previous: TemplateForm) => ({
                       ...previous,

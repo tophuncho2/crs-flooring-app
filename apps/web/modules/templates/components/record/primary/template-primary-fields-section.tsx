@@ -72,6 +72,8 @@ export function TemplatePrimaryFieldsSection({
   detail,
   disabled,
   materialCost,
+  laborCost,
+  miscCost,
   onFieldChange,
   onFieldsChange,
 }: {
@@ -85,6 +87,13 @@ export function TemplatePrimaryFieldsSection({
    * unsaved edits in the products section. "0.00" on the create flow.
    */
   materialCost: string
+  /**
+   * Per-item-type service-cost roll-ups (canonical money strings, "0.00" when none)
+   * from the saved service items — Labor Cost + Misc. Cost stacked under Material
+   * Cost. Same saved-record basis as materialCost; "0.00" on the create flow.
+   */
+  laborCost: string
+  miscCost: string
   onFieldChange: (field: keyof TemplateForm, value: string | PaletteColor) => void
   /** Multi-field setter — used by the property-unit cluster for the entity→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
@@ -245,13 +254,22 @@ export function TemplatePrimaryFieldsSection({
 
       <RecordSectionDivider />
 
-      {/* Transaction totals row: Material Cost (derived roll-up of the saved
-          planned-product line totals, read-only) beside Total Transaction (the
-          manual money field). Then a second divider closes it above the footer. */}
+      {/* Transaction totals row: the left column stacks the derived read-only cost
+          roll-ups of the saved rows — Material Cost (planned products) then Labor
+          Cost + Misc. Cost (service items, per item type) — beside Total Transaction
+          (the manual money field). Then a second divider closes it above the footer. */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-        <FormField label="Material Cost">
-          <StaticFieldValue>{formatMoney(materialCost) || "$0.00"}</StaticFieldValue>
-        </FormField>
+        <div className="space-y-2">
+          <FormField label="Material Cost">
+            <StaticFieldValue>{formatMoney(materialCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Labor Cost">
+            <StaticFieldValue>{formatMoney(laborCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Misc. Cost">
+            <StaticFieldValue>{formatMoney(miscCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
+        </div>
         <FormField label="Total Transaction">
           <MoneyCell
             editable={editable}

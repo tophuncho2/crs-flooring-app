@@ -1,9 +1,9 @@
 import type { Prisma } from "../../generated/prisma/client.js"
-import { normalizeMoneyAmount, type TemplateServiceItemForm } from "@builders/domain"
+import { normalizeMoneyAmount, type ServiceItemType, type TemplateServiceItemForm } from "@builders/domain"
 
 // Wire-input shape for service-item writes. The user-supplied form carries the
-// free-text itemType/itemName, the editable unit FK, and the manual money column
-// (bidCost).
+// required itemType enum, free-text itemName, the editable unit FK, and the manual
+// money column (bidCost).
 export type WriteTemplateServiceItemInput = TemplateServiceItemForm
 
 // Quantity is optional: a blank string means "unset" (stored NULL); a non-blank
@@ -62,7 +62,9 @@ export async function applyTemplateServiceItemsDiff(
       data: input.added.map((draft) => ({
         id: draft.id,
         templateId: input.templateId,
-        itemType: toText(draft.input.itemType),
+        // Required enum — validated upstream (API + domain), so a plain cast to the
+        // shared domain type (structurally identical to Prisma's ServiceItemType).
+        itemType: draft.input.itemType as ServiceItemType,
         itemName: toText(draft.input.itemName),
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
@@ -77,7 +79,7 @@ export async function applyTemplateServiceItemsDiff(
     await tx.templateServiceItem.update({
       where: { id: update.id },
       data: {
-        itemType: toText(update.input.itemType),
+        itemType: update.input.itemType as ServiceItemType,
         itemName: toText(update.input.itemName),
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),

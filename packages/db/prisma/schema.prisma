@@ -896,10 +896,19 @@ model TemplateEntityInvolvement {
   @@map("template_entity_involvement")
 }
 
+// Service-item classification. A small REQUIRED enum (default LABOR), shared so
+// work-order service items can reuse it verbatim when they arrive. The domain
+// source of truth + validation live in
+// packages/domain/src/shared/service-item-type.ts.
+enum ServiceItemType {
+  LABOR
+  MISCELLANEOUS
+}
+
 // A service / miscellaneous line item on a template — the SECOND table in the
 // "products" record section (saved in the same atomic diff as TemplatePlannedProduct).
-// No product link: itemType/itemName are free-text (no enum yet, mirroring the WO
-// involvementType precedent). Bid cost is a MANUAL persisted column here (unlike
+// No product link: itemName is free-text; itemType is a REQUIRED enum
+// (ServiceItemType, default LABOR). Bid cost is a MANUAL persisted column here (unlike
 // TemplatePlannedProduct, where it's a live read-join off `product.cost`). Line
 // total/profit/margin are computed on read, never stored. Structure mirrors the
 // other template child tables (Cascade off the template, editable unit FK, actor +
@@ -908,7 +917,7 @@ model TemplateServiceItem {
   id         String   @id @default(uuid())
   templateId String
   template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  itemType   String?  @db.VarChar(40)
+  itemType   ServiceItemType @default(LABOR)
   itemName   String?  @db.VarChar(80)
   quantity   Decimal? @db.Decimal(10, 2)
   unitId     String?
