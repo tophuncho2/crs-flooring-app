@@ -1,4 +1,5 @@
 import { toIsoTimestamp } from "../shared/date-format.js"
+import { normalizeMoneyAmount } from "../shared/money.js"
 import type { PaletteColor } from "../shared/palette.js"
 import { normalizeTemplatePlannedProduct } from "./planned-products/normalizers.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
@@ -32,6 +33,7 @@ type TemplateListInput = {
   unitType: string
   customerName: string | null
   description: string | null
+  totalTransaction: { toString(): string } | null
   propertyId: string | null
   property: { name: string; entity: { id: string; entity: string } | null } | null
   jobTypeId: string | null
@@ -71,6 +73,10 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     unitType: template.unitType,
     customerName: template.customerName ?? "",
     description: template.description ?? "",
+    // Money-on-read: canonical "X.XX" / "" so dirty-checks compare stable strings
+    // (no trailing-zero false-dirty). Mirrors the service-item bidCost normalizer.
+    totalTransaction:
+      template.totalTransaction == null ? "" : normalizeMoneyAmount(template.totalTransaction.toString()),
     propertyId: template.propertyId,
     propertyName: template.property?.name ?? "",
     entityId: template.property?.entity?.id ?? null,

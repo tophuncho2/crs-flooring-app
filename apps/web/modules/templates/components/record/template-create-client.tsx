@@ -49,6 +49,8 @@ function TemplateCreatePanel({
           draft={controller.primarySection.localValue}
           detail={null}
           disabled={controller.primarySection.isSaving}
+          // No planned products exist pre-creation — material cost is always zero here.
+          materialCost="0.00"
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
               ...previous,

@@ -59,6 +59,7 @@ const templateListSelect = {
   unitType: true,
   customerName: true,
   description: true,
+  totalTransaction: true,
   propertyId: true,
   property: {
     select: { name: true, entity: { select: { id: true, entity: true } } },

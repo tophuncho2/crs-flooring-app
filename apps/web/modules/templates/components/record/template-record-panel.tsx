@@ -10,7 +10,7 @@ import { useTemplateProductsSection } from "@/modules/templates/controllers/reco
 import { useTemplatePlannedPaymentsSection } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
 import { useTemplateEntityInvolvementSection } from "@/modules/templates/controllers/record/entity-involvement/use-template-entity-involvement-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
-import type { TemplateDetail, TemplateForm } from "@builders/domain"
+import { sumTemplatePlannedProductLineTotals, type TemplateDetail, type TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
 import { TemplateProductsSection } from "./template-products-section"
 import { TemplatePaymentsSection } from "./template-payments-section"
@@ -38,6 +38,11 @@ export function TemplateRecordPanel({
     publishTemplate: primary.publishRecord,
   })
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
+  // Material Cost roll-up for the primary section = sum of the SAVED planned-product
+  // line totals (reflects the last products save, not live unsaved grid edits).
+  const materialCost = sumTemplatePlannedProductLineTotals(
+    primary.record.plannedProducts.map((row) => ({ quantity: row.quantity, bidCost: row.productCost })),
+  )
   const isDirty =
     primary.primarySection.isDirty ||
     products.isDirty ||
@@ -110,6 +115,7 @@ export function TemplateRecordPanel({
                     updatedBy: primary.record.updatedBy,
                   }}
                   disabled={primary.primarySection.isSaving}
+                  materialCost={materialCost}
                   onFieldChange={(field, value) => {
                     primary.primarySection.setLocalValue((previous: TemplateForm) => ({
                       ...previous,

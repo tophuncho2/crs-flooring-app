@@ -1,3 +1,4 @@
+import { isValidMoneyAmount } from "../shared/money.js"
 import type { TemplateDetail, TemplateForm } from "./types.js"
 
 export function validateTemplateForm(input: TemplateForm) {
@@ -5,6 +6,11 @@ export function validateTemplateForm(input: TemplateForm) {
   // record is never empty even with no property. Unit type stays required: it is
   // the defining attribute of a template.
   if (!input.unitType.trim()) return "Unit type is required"
+  // Total transaction is optional (nullable money). When present it must be a
+  // valid amount — the MoneyCell normalizes on blur, this is the defensive guard.
+  if (input.totalTransaction.trim() && !isValidMoneyAmount(input.totalTransaction)) {
+    return "Total transaction must be a valid amount"
+  }
   return ""
 }
 
@@ -18,6 +24,7 @@ export function toTemplateForm(template: TemplateDetail): TemplateForm {
     description: template.description,
     internalNotes: template.internalNotes,
     installerInstructions: template.installerInstructions,
+    totalTransaction: template.totalTransaction,
     color: template.color,
   }
 }

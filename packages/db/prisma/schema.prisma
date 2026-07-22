@@ -791,6 +791,11 @@ model Template {
   description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
   installerInstructions String?                   @db.VarChar(500)
+  // Manually-entered transaction total (money standard: Decimal(12,2), nullable —
+  // NULL = unset, normalized at every write boundary). NOT derived; the user types
+  // it on the record-view primary section. Deliberately NOT carried into the
+  // template → work-order sync (mirrors planned_product.cost).
+  totalTransaction     Decimal?                   @db.Decimal(12, 2)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   // Non-semantic palette tag (user-assigned visual color). Metadata-only — no

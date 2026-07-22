@@ -11,6 +11,7 @@ describe("normalizeTemplateListRow entity", () => {
     unitType: "2BR",
     customerName: null,
     description: null,
+    totalTransaction: null,
     propertyId: "prop-1",
     property: { name: "Maple Court", entity: { id: "entity-1", entity: "Acme" } },
     jobTypeId: null,
@@ -41,6 +42,11 @@ describe("normalizeTemplateListRow entity", () => {
     expect(normalizeTemplateListRow({ ...base, customerName: "Acme Corp" }).customerName).toBe("Acme Corp")
   })
 
+  it("normalizes the total transaction, defaulting null to empty string", () => {
+    expect(normalizeTemplateListRow(base).totalTransaction).toBe("")
+    expect(normalizeTemplateListRow({ ...base, totalTransaction: "10" }).totalTransaction).toBe("10.00")
+  })
+
   it("passes the actor emails through, coalescing missing ones to null", () => {
     const row = normalizeTemplateListRow(base)
     expect(row.createdBy).toBe("creator@example.com")
@@ -59,6 +65,7 @@ describe("normalizeTemplate neighbors", () => {
     unitType: "2BR",
     customerName: null,
     description: null,
+    totalTransaction: null,
     propertyId: "prop-1",
     property: {
       name: "Maple Court",

@@ -13,6 +13,9 @@ export type TemplateListRow = {
   unitType: string
   customerName: string
   description: string
+  // Manually-entered transaction total — canonical money string ("" = unset).
+  // Normalized on read so dirty-checks compare stable strings. List-visible.
+  totalTransaction: string
   propertyId: string | null
   propertyName: string
   entityId: string | null
@@ -86,6 +89,9 @@ export type TemplateForm = {
   description: string
   internalNotes: string
   installerInstructions: string
+  // Manually-entered transaction total (money-as-string; "" = unset). Edited via a
+  // MoneyCell on the primary section; saved with the parent update.
+  totalTransaction: string
   // Non-semantic palette tag. Carried on the draft so the record-view edit form
   // can re-pick it; the create flow renders no picker and the create API validator
   // ignores it, so new rows fall to the DB default SLATE.
@@ -101,5 +107,6 @@ export const EMPTY_TEMPLATE_FORM: TemplateForm = {
   description: "",
   internalNotes: "",
   installerInstructions: "",
+  totalTransaction: "",
   color: DEFAULT_PALETTE_COLOR,
 }

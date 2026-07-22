@@ -136,6 +136,7 @@ export function validateCreateTemplateInput(
       "installerInstructions",
       failTemplate,
     ),
+    totalTransaction: optionalMoney(body.totalTransaction, "totalTransaction", failTemplate),
   }
 }
 
@@ -172,6 +173,9 @@ export function validateUpdateTemplateInput(
       "installerInstructions",
       failTemplate,
     )
+  }
+  if ("totalTransaction" in body) {
+    input.totalTransaction = optionalMoney(body.totalTransaction, "totalTransaction", failTemplate)
   }
   // Edit-only palette tag — strict when present, left unchanged when absent
   // (a stale client). Create has no equivalent (defaults to SLATE in the DB).

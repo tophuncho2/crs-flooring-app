@@ -22,4 +22,14 @@ describe("validateTemplateForm", () => {
   it("rejects a whitespace-only unit type", () => {
     expect(validateTemplateForm({ ...baseForm, unitType: "   " })).toBe("Unit type is required")
   })
+
+  it("accepts a valid total transaction amount", () => {
+    expect(validateTemplateForm({ ...baseForm, totalTransaction: "1234.56" })).toBe("")
+  })
+
+  it("rejects an invalid total transaction amount", () => {
+    expect(validateTemplateForm({ ...baseForm, totalTransaction: "abc" })).toBe(
+      "Total transaction must be a valid amount",
+    )
+  })
 })

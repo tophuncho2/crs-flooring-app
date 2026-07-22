@@ -5,6 +5,7 @@ import {
   CellAt,
   FieldSection,
   FormField,
+  MoneyCell,
   RecordColumnBreak,
   RecordSectionDivider,
   StaticFieldValue,
@@ -16,6 +17,7 @@ import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-pi
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatEasternDateTime,
+  formatMoney,
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
@@ -69,12 +71,20 @@ export function TemplatePrimaryFieldsSection({
   draft,
   detail,
   disabled,
+  materialCost,
   onFieldChange,
   onFieldsChange,
 }: {
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
   disabled: boolean
+  /**
+   * Derived roll-up = sum of the saved planned-product line totals (canonical
+   * money string, "0.00" when none). Read-only reference figure shown beside the
+   * manual Total Transaction; it reflects the last-saved products, not live
+   * unsaved edits in the products section. "0.00" on the create flow.
+   */
+  materialCost: string
   onFieldChange: (field: keyof TemplateForm, value: string | PaletteColor) => void
   /** Multi-field setter — used by the property-unit cluster for the entity→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
@@ -232,6 +242,25 @@ export function TemplatePrimaryFieldsSection({
           </FieldSection>
         }
       />
+
+      <RecordSectionDivider />
+
+      {/* Transaction totals row: Material Cost (derived roll-up of the saved
+          planned-product line totals, read-only) beside Total Transaction (the
+          manual money field). Then a second divider closes it above the footer. */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+        <FormField label="Material Cost">
+          <StaticFieldValue>{formatMoney(materialCost) || "$0.00"}</StaticFieldValue>
+        </FormField>
+        <FormField label="Total Transaction">
+          <MoneyCell
+            editable={editable}
+            value={draft.totalTransaction}
+            onChange={(next) => onFieldChange("totalTransaction", next)}
+            ariaLabel="Total transaction"
+          />
+        </FormField>
+      </div>
 
       <RecordSectionDivider />
 

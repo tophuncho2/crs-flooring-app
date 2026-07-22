@@ -33,6 +33,7 @@ function input(overrides: Record<string, unknown> = {}) {
     description: null,
     internalNotes: null,
     installerInstructions: null,
+    totalTransaction: null,
     ...overrides,
   }
 }
@@ -75,7 +76,7 @@ describe("createTemplateUseCase", () => {
     getTemplateByIdMock.mockResolvedValue(enriched)
 
     const result = await createTemplateUseCase(
-      input({ unitType: "3BR", customerName: "Jane Doe" }) as never,
+      input({ unitType: "3BR", customerName: "Jane Doe", totalTransaction: "1500.00" }) as never,
       ACTOR,
     )
 
@@ -84,6 +85,7 @@ describe("createTemplateUseCase", () => {
       expect.objectContaining({
         unitType: "3BR",
         customerName: "Jane Doe",
+        totalTransaction: "1500.00",
         createdBy: ACTOR,
         updatedBy: ACTOR,
       }),

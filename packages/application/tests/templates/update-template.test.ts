@@ -83,6 +83,15 @@ describe("updateTemplateUseCase", () => {
     )
   })
 
+  it("sends the total transaction through when provided, stamping updatedBy", async () => {
+    await updateTemplateUseCase(ID, { totalTransaction: "250.00" } as never, ACTOR)
+    expect(updateTemplateRecordMock).toHaveBeenCalledWith(
+      ID,
+      expect.objectContaining({ totalTransaction: "250.00", updatedBy: ACTOR }),
+      expect.anything(),
+    )
+  })
+
   it("maps a P2025 to a 404 not-found", async () => {
     updateTemplateRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
     await expect(
