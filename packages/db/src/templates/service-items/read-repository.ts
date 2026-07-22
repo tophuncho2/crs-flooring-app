@@ -16,10 +16,9 @@ export const templateServiceItemSelect = {
   // name/abbrev.
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
-  // Persisted job-costing money columns (bid cost is stored here, not a join, and
+  // Persisted job-costing money column (bid cost is stored here, not a join, and
   // is the per-unit basis for the derived line total).
   bidCost: true,
-  tax: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,

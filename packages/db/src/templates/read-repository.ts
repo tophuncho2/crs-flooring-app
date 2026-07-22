@@ -103,9 +103,8 @@ const templateDetailSelect = {
       // de-referenced (2D drops them).
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
-      // Persisted job-costing money column (bid cost = live product.cost above,
-      // the per-unit basis for the derived line total).
-      tax: true,
+      // Bid cost = live product.cost above (the per-unit basis for the derived
+      // line total) — not a stored column here.
       notes: true,
       createdAt: true,
       updatedAt: true,

@@ -1,6 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeMoneyAmount, type TemplatePlannedProductForm } from "@builders/domain"
+import type { TemplatePlannedProductForm } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -21,12 +21,6 @@ function toDecimal(value: string): Prisma.Decimal | string | null {
 // "" / whitespace disconnects the unit (stored NULL); otherwise the FK id.
 function toUnitId(value: string): string | null {
   return value.trim() ? value : null
-}
-
-// Money write boundary (money standard): blank → NULL, else normalize to the
-// canonical fixed-scale-2 string before Prisma coerces it to Decimal(12,2).
-function toMoney(value: string): string | null {
-  return value.trim() ? normalizeMoneyAmount(value) : null
 }
 
 export type ApplyTemplatePlannedProductsDiffInput = {
@@ -67,7 +61,6 @@ export async function applyTemplatePlannedProductsDiff(
         productId: draft.input.productId,
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
-        tax: toMoney(draft.input.tax),
         notes: draft.input.notes ? draft.input.notes : null,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
@@ -82,7 +75,6 @@ export async function applyTemplatePlannedProductsDiff(
         productId: update.input.productId,
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),
-        tax: toMoney(update.input.tax),
         notes: update.input.notes ? update.input.notes : null,
         updatedBy: input.actorEmail,
       },

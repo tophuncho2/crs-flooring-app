@@ -12,19 +12,11 @@ type TemplatePlannedProductInput = {
   quantity: { toString(): string } | null
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
-  // Persisted job-costing money column.
-  tax: { toString(): string } | null
   notes: string | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
   updatedBy: string | null
-}
-
-// Normalize a persisted money column on read to a canonical "X.XX" ("" when
-// NULL) so dirty-checks compare stable strings (no trailing-zero false-dirty).
-function normalizeMoneyColumn(value: { toString(): string } | null): string {
-  return value == null ? "" : normalizeMoneyAmount(value.toString())
 }
 
 export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInput): TemplatePlannedProductRow {
@@ -33,7 +25,6 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
   // line total and any dirty-check compare against a stable string. "" = no cost.
   // This is the "bid cost" — the per-unit basis for the line total.
   const productCost = item.product.cost == null ? "" : normalizeMoneyAmount(item.product.cost.toString())
-  const tax = normalizeMoneyColumn(item.tax)
   return {
     id: item.id,
     productId: item.productId,
@@ -47,9 +38,8 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     unitAbbrev: item.unit?.abbreviation ?? "",
     notes: item.notes ?? "",
     productCost,
-    tax,
-    // Line total = qty × bidCost + tax, where bidCost is the live product cost.
-    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost: productCost, tax }),
+    // Line total = qty × bidCost, where bidCost is the live product cost.
+    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost: productCost }),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

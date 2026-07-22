@@ -1,6 +1,6 @@
 "use client"
 
-import { MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
+import { NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
@@ -16,13 +16,12 @@ import type { TemplatePlannedProductLocal } from "@/modules/templates/controller
 
 const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductLocal>[] = [
   // Product carries the wide 360 floor + sole grow. Bid Cost is a read-only live
-  // join off the product and the per-unit basis for Line Total; Tax is editable
-  // money; Line Total is the derived total. Notes is the pinned tail.
+  // join off the product and the per-unit basis for Line Total; Line Total is the
+  // derived total. Notes is the pinned tail.
   { key: "product", label: "Product", minWidth: 360, grow: 1 },
   { key: "quantity", label: "Quantity", width: 120, align: "end" },
   { key: "unit", label: "Unit", width: 130 },
   { key: "bidCost", label: "Bid Cost", width: 110, align: "end" },
-  { key: "tax", label: "Tax", width: 110, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
   { key: "notes", label: "Notes", width: 240 },
 ]
@@ -113,23 +112,13 @@ export function TemplatePlannedProductsGrid({
                 ariaLabel="Planned product bid cost (from product)"
               />
             )
-          case "tax":
-            return (
-              <MoneyCell
-                editable={editable}
-                value={item.tax}
-                onChange={(next) => onChangeField(item.id, "tax", next)}
-                ariaLabel="Planned product tax"
-              />
-            )
           case "lineTotal": {
-            // Derived: qty × bidCost + tax, where bid cost is the live product
-            // cost. Read-only, recomputed live from the local row. "—" when all
-            // inputs are blank.
+            // Derived: qty × bidCost, where bid cost is the live product cost.
+            // Read-only, recomputed live from the local row. "—" when all inputs
+            // are blank.
             const lineTotal = computeTemplatePlannedProductLineTotal({
               quantity: item.quantity,
               bidCost: item.productCost,
-              tax: item.tax,
             })
             return (
               <NumberCell

@@ -829,11 +829,9 @@ model TemplatePlannedProduct {
   quantity       Decimal?         @db.Decimal(10, 2)
   unitId         String?
   unit           FlooringUnitOfMeasure? @relation("TemplatePlannedProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
-  // Job-costing money columns (money standard: Decimal(12,2)). Manual entry. Bid
-  // cost is NOT stored here — it's a live read-join off `product.cost` and the
-  // per-unit basis for the line total. Line total (qty × bidCost + tax) is
-  // computed on read, never stored. NULL = unset.
-  tax            Decimal?         @db.Decimal(12, 2)
+  // Bid cost is NOT stored here — it's a live read-join off `product.cost` and the
+  // per-unit basis for the line total. Line total (qty × bidCost) is computed on
+  // read, never stored.
   notes          String?          @db.VarChar(30)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -910,11 +908,10 @@ model TemplateServiceItem {
   quantity   Decimal? @db.Decimal(10, 2)
   unitId     String?
   unit       FlooringUnitOfMeasure? @relation("TemplateServiceItemUnit", fields: [unitId], references: [id], onDelete: Restrict)
-  // Job-costing money columns (money standard: Decimal(12,2)). All manual entry —
-  // bidCost included (no product to seed from) and the per-unit basis for the line
+  // Job-costing money column (money standard: Decimal(12,2)). Manual entry —
+  // bidCost has no product to seed from and is the per-unit basis for the line
   // total. NULL = unset.
   bidCost    Decimal? @db.Decimal(12, 2)
-  tax        Decimal? @db.Decimal(12, 2)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   createdBy  String?

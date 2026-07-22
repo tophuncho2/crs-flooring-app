@@ -3,7 +3,7 @@
 // the grid cell (live client recompute as the user edits). Integer-cents BigInt
 // math (no JS floats) so it agrees exactly with the money standard.
 //
-// Line total = quantity × bidCost + tax. These rows track what a job
+// Line total = quantity × bidCost. These rows track what a job
 // will cost the company, so the bid cost IS the per-unit basis. For a planned
 // product the bid cost is the live product-cost read-join; for a service item it
 // is the manual bidCost column. Blank inputs coerce to 0; the result is "" only
@@ -29,25 +29,20 @@ function centsToMoney(cents: bigint): string {
 export type TemplatePlannedProductLineInputs = {
   quantity: string
   bidCost: string
-  tax: string
 }
 
 export function computeTemplatePlannedProductLineTotal(
   input: TemplatePlannedProductLineInputs,
 ): string {
-  const allBlank =
-    !input.quantity.trim() &&
-    !input.bidCost.trim() &&
-    !input.tax.trim()
+  const allBlank = !input.quantity.trim() && !input.bidCost.trim()
   if (allBlank) return ""
 
   const qtyCents = toCents(input.quantity)
   const costCents = toCents(input.bidCost)
-  const taxCents = toCents(input.tax)
 
   // qtyCents × costCents is value × 10000 (each factor is value × 100). Divide by
   // 100 to land on cents (value × 100), rounding half-up — all values are
   // non-negative, so half-up = (n + 50) / 100 under floor division.
   const productCents = (qtyCents * costCents + 50n) / 100n
-  return centsToMoney(productCents + taxCents)
+  return centsToMoney(productCents)
 }

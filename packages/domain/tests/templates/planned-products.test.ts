@@ -17,8 +17,6 @@ describe("normalizeTemplatePlannedProduct", () => {
     quantity: { toString: () => "10" } as { toString(): string },
     unitId: "unit-1",
     unit: { name: "Square Foot", abbreviation: "sqft" },
-    // Persisted job-costing money column.
-    tax: { toString: () => "2" } as { toString(): string },
     notes: "rush",
     createdAt: "2026-07-08T00:00:00.000Z",
     updatedAt: "2026-07-08T00:00:00.000Z",
@@ -37,14 +35,13 @@ describe("normalizeTemplatePlannedProduct", () => {
     expect(row.productCost).toBe("10.50")
   })
 
-  it("normalizes the persisted money column and derives the line total off bid cost", () => {
+  it("derives the line total off bid cost", () => {
     const row = normalizeTemplatePlannedProduct(base)
-    expect(row.tax).toBe("2.00")
-    // 10 × 10.50 (bid cost) + 2.00 = 107.00
-    expect(row.lineTotal).toBe("107.00")
+    // 10 × 10.50 (bid cost) = 105.00
+    expect(row.lineTotal).toBe("105.00")
   })
 
-  it("coalesces missing quantity/unit/notes/cost/money to empty", () => {
+  it("coalesces missing quantity/unit/notes/cost to empty", () => {
     const row = normalizeTemplatePlannedProduct({
       ...base,
       quantity: null,
@@ -52,7 +49,6 @@ describe("normalizeTemplatePlannedProduct", () => {
       unit: null,
       notes: null,
       product: { name: "Oak Plank", cost: null },
-      tax: null,
       createdBy: null,
       updatedBy: null,
     })
@@ -62,7 +58,6 @@ describe("normalizeTemplatePlannedProduct", () => {
     expect(row.categoryName).toBe("")
     expect(row.notes).toBe("")
     expect(row.productCost).toBe("")
-    expect(row.tax).toBe("")
     // All inputs blank → blank line total (UI renders "—").
     expect(row.lineTotal).toBe("")
     expect(row.createdBy).toBeNull()
@@ -74,7 +69,6 @@ describe("validateTemplatePlannedProductForm", () => {
     productId: "prod-1",
     unitId: "",
     quantity: "",
-    tax: "",
     notes: "",
   }
 
@@ -93,40 +87,30 @@ describe("validateTemplatePlannedProductForm", () => {
   it("accepts a valid positive quantity", () => {
     expect(validateTemplatePlannedProductForm({ ...form, quantity: "5" })).toBe("")
   })
-
-  it("rejects an invalid money amount in a job-costing field", () => {
-    expect(validateTemplatePlannedProductForm({ ...form, tax: "-1" })).toMatch(/Tax/)
-  })
-
-  it("accepts blank / valid money amounts", () => {
-    expect(validateTemplatePlannedProductForm({ ...form, tax: "2" })).toBe("")
-  })
 })
 
 describe("computeTemplatePlannedProductLineTotal", () => {
-  it("computes qty × bidCost + tax", () => {
+  it("computes qty × bidCost", () => {
     expect(
       computeTemplatePlannedProductLineTotal({
         quantity: "10",
         bidCost: "3.50",
-        tax: "2.00",
       }),
-    ).toBe("37.00")
+    ).toBe("35.00")
   })
 
-  it("coerces blank inputs to zero", () => {
+  it("coerces a blank quantity to zero", () => {
     expect(
       computeTemplatePlannedProductLineTotal({
         quantity: "",
         bidCost: "3.50",
-        tax: "2.00",
       }),
-    ).toBe("2.00")
+    ).toBe("0.00")
   })
 
   it("returns blank when every input is blank", () => {
     expect(
-      computeTemplatePlannedProductLineTotal({ quantity: "", bidCost: "", tax: "" }),
+      computeTemplatePlannedProductLineTotal({ quantity: "", bidCost: "" }),
     ).toBe("")
   })
 
@@ -137,7 +121,6 @@ describe("computeTemplatePlannedProductLineTotal", () => {
       computeTemplatePlannedProductLineTotal({
         quantity: "0.5",
         bidCost: "0.05",
-        tax: "",
       }),
     ).toBe("0.03")
   })

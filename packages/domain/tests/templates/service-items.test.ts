@@ -12,7 +12,6 @@ describe("normalizeTemplateServiceItem", () => {
     unit: { name: "Hour", abbreviation: "hr" },
     // MANUAL bid cost (no product join) — the per-unit basis for the line total.
     bidCost: { toString: () => "3.5" } as { toString(): string },
-    tax: { toString: () => "2" } as { toString(): string },
     createdAt: "2026-07-08T00:00:00.000Z",
     updatedAt: "2026-07-08T00:00:00.000Z",
     createdBy: "creator@example.com",
@@ -22,9 +21,8 @@ describe("normalizeTemplateServiceItem", () => {
   it("derives the line total off the manual bid cost", () => {
     const row = normalizeTemplateServiceItem(base)
     expect(row.bidCost).toBe("3.50")
-    expect(row.tax).toBe("2.00")
-    // 10 × 3.50 (bid cost) + 2.00 = 37.00
-    expect(row.lineTotal).toBe("37.00")
+    // 10 × 3.50 (bid cost) = 35.00
+    expect(row.lineTotal).toBe("35.00")
   })
 
   it("coalesces missing money/quantity to empty and blanks the line total", () => {
@@ -36,7 +34,6 @@ describe("normalizeTemplateServiceItem", () => {
       itemType: null,
       itemName: null,
       bidCost: null,
-      tax: null,
       createdBy: null,
       updatedBy: null,
     })
@@ -44,7 +41,6 @@ describe("normalizeTemplateServiceItem", () => {
     expect(row.itemName).toBe("")
     expect(row.quantity).toBe("")
     expect(row.bidCost).toBe("")
-    expect(row.tax).toBe("")
     // All inputs blank → blank line total (UI renders "—").
     expect(row.lineTotal).toBe("")
     expect(row.createdBy).toBeNull()
@@ -52,15 +48,14 @@ describe("normalizeTemplateServiceItem", () => {
 })
 
 describe("validateTemplateServiceItemForm", () => {
-  const form = { itemType: "", itemName: "", quantity: "", bidCost: "", tax: "" }
+  const form = { itemType: "", itemName: "", quantity: "", bidCost: "" }
 
   it("requires nothing — an all-blank row is valid", () => {
     expect(validateTemplateServiceItemForm(form)).toBe("")
   })
 
-  it("rejects an invalid money amount in a job-costing field", () => {
+  it("rejects an invalid money amount in the bid-cost field", () => {
     expect(validateTemplateServiceItemForm({ ...form, bidCost: "abc" })).toMatch(/Bid cost/)
-    expect(validateTemplateServiceItemForm({ ...form, tax: "-1" })).toMatch(/Tax/)
   })
 
   it("rejects a non-positive quantity when provided", () => {

@@ -97,7 +97,6 @@ describe("saveTemplateProductsSectionUseCase", () => {
                 quantity: "2",
                 unitId: "",
                 bidCost: "10.00",
-                tax: "",
               },
             },
           ],
@@ -120,7 +119,7 @@ describe("saveTemplateProductsSectionUseCase", () => {
         plannedProducts: {
           added: [],
           modified: [
-            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", tax: "", notes: "" } },
+            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } },
           ],
           deleted: [],
         },

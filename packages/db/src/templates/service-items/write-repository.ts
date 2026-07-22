@@ -2,8 +2,8 @@ import type { Prisma } from "../../generated/prisma/client.js"
 import { normalizeMoneyAmount, type TemplateServiceItemForm } from "@builders/domain"
 
 // Wire-input shape for service-item writes. The user-supplied form carries the
-// free-text itemType/itemName, the editable unit FK, and the manual money columns
-// (bidCost/tax).
+// free-text itemType/itemName, the editable unit FK, and the manual money column
+// (bidCost).
 export type WriteTemplateServiceItemInput = TemplateServiceItemForm
 
 // Quantity is optional: a blank string means "unset" (stored NULL); a non-blank
@@ -67,7 +67,6 @@ export async function applyTemplateServiceItemsDiff(
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
         bidCost: toMoney(draft.input.bidCost),
-        tax: toMoney(draft.input.tax),
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -83,7 +82,6 @@ export async function applyTemplateServiceItemsDiff(
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),
         bidCost: toMoney(update.input.bidCost),
-        tax: toMoney(update.input.tax),
         updatedBy: input.actorEmail,
       },
     })

@@ -1,6 +1,6 @@
 import { toIsoTimestamp } from "../../shared/date-format.js"
 import { normalizeMoneyAmount } from "../../shared/money.js"
-// The job-costing line total is generic (qty × bidCost + tax) — reuse
+// The job-costing line total is generic (qty × bidCost) — reuse
 // the planned-product function verbatim rather than forking a second copy. The
 // only divergence is that a service item's bidCost is a stored column, not a live
 // product join.
@@ -14,9 +14,8 @@ type TemplateServiceItemInput = {
   quantity: { toString(): string } | null
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
-  // Persisted job-costing money columns (bidCost stored here, not a join).
+  // Persisted job-costing money column (bidCost stored here, not a join).
   bidCost: { toString(): string } | null
-  tax: { toString(): string } | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -32,7 +31,6 @@ function normalizeMoneyColumn(value: { toString(): string } | null): string {
 export function normalizeTemplateServiceItem(item: TemplateServiceItemInput): TemplateServiceItemRow {
   const quantity = item.quantity == null ? "" : item.quantity.toString()
   const bidCost = normalizeMoneyColumn(item.bidCost)
-  const tax = normalizeMoneyColumn(item.tax)
   return {
     id: item.id,
     itemType: item.itemType ?? "",
@@ -42,9 +40,8 @@ export function normalizeTemplateServiceItem(item: TemplateServiceItemInput): Te
     unitName: item.unit?.name ?? "",
     unitAbbrev: item.unit?.abbreviation ?? "",
     bidCost,
-    tax,
-    // Line total = qty × bidCost + tax, using the manual bid cost.
-    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost, tax }),
+    // Line total = qty × bidCost, using the manual bid cost.
+    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost }),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,
