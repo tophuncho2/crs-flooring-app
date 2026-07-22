@@ -60,7 +60,7 @@ export function WorkOrderPlannedPaymentsGrid({
       columns={WORK_ORDER_PLANNED_PAYMENTS_COLUMNS}
       empty="No planned payments yet."
       // Two gutter controls (delete + ⋮ options) → widen past the 44px default.
-      rowActionsWidth={92}
+      rowActionsWidth={72}
       rowActions={(item) => (
         <>
           <RecordDeleteButton

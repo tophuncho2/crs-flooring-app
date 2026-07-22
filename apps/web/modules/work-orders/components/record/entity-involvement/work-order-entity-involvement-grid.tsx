@@ -46,7 +46,7 @@ export function WorkOrderEntityInvolvementGrid({
       columns={WORK_ORDER_ENTITY_INVOLVEMENT_COLUMNS}
       empty="No entity involvement yet."
       // Two gutter controls (delete + ⋮ options) → widen past the 44px default.
-      rowActionsWidth={92}
+      rowActionsWidth={72}
       rowActions={(item) => (
         <>
           <RecordDeleteButton
