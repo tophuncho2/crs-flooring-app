@@ -16,14 +16,13 @@ import type { TemplatePlannedProductLocal } from "@/modules/templates/controller
 
 const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductLocal>[] = [
   // Product carries the wide 360 floor + sole grow. Bid Cost is a read-only live
-  // join off the product and the per-unit basis for Line Total; Tax/Freight are
-  // editable money; Line Total is the derived total. Notes is the pinned tail.
+  // join off the product and the per-unit basis for Line Total; Tax is editable
+  // money; Line Total is the derived total. Notes is the pinned tail.
   { key: "product", label: "Product", minWidth: 360, grow: 1 },
   { key: "quantity", label: "Quantity", width: 120, align: "end" },
   { key: "unit", label: "Unit", width: 130 },
   { key: "bidCost", label: "Bid Cost", width: 110, align: "end" },
   { key: "tax", label: "Tax", width: 110, align: "end" },
-  { key: "freight", label: "Freight", width: 110, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
   { key: "notes", label: "Notes", width: 240 },
 ]
@@ -123,24 +122,14 @@ export function TemplatePlannedProductsGrid({
                 ariaLabel="Planned product tax"
               />
             )
-          case "freight":
-            return (
-              <MoneyCell
-                editable={editable}
-                value={item.freight}
-                onChange={(next) => onChangeField(item.id, "freight", next)}
-                ariaLabel="Planned product freight"
-              />
-            )
           case "lineTotal": {
-            // Derived: qty × bidCost + tax + freight, where bid cost is the live
-            // product cost. Read-only, recomputed live from the local row. "—" when
-            // all inputs are blank.
+            // Derived: qty × bidCost + tax, where bid cost is the live product
+            // cost. Read-only, recomputed live from the local row. "—" when all
+            // inputs are blank.
             const lineTotal = computeTemplatePlannedProductLineTotal({
               quantity: item.quantity,
               bidCost: item.productCost,
               tax: item.tax,
-              freight: item.freight,
             })
             return (
               <NumberCell

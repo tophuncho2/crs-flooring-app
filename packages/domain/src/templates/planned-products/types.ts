@@ -18,11 +18,10 @@ export type TemplatePlannedProductRow = {
   // Display only — never sent in the diff (like productName). This is the "bid
   // cost" and the per-unit basis for the line total.
   productCost: string
-  // Job-costing money columns (persisted). Canonical money strings ("" when
-  // unset). Both are manual entry; both are sent in the diff.
+  // Job-costing money column (persisted). Canonical money string ("" when
+  // unset). Manual entry; sent in the diff.
   tax: string
-  freight: string
-  // Derived line total (qty × bidCost + tax + freight, where bidCost = the live
+  // Derived line total (qty × bidCost + tax, where bidCost = the live
   // productCost), computed on read via computeTemplatePlannedProductLineTotal.
   // Display only — never sent in the diff. "" when all inputs are blank.
   lineTotal: string
@@ -40,9 +39,8 @@ export type TemplatePlannedProductForm = {
   // Editable unit FK (UoM epic 2C). "" disconnects the unit.
   unitId: string
   quantity: string
-  // Job-costing money columns (persisted). "" = unset (stored NULL). tax + freight
-  // are manual entry. (Bid cost is the live product-cost read-join, not stored.)
+  // Job-costing money column (persisted). "" = unset (stored NULL). tax is manual
+  // entry. (Bid cost is the live product-cost read-join, not stored.)
   tax: string
-  freight: string
   notes: string
 }

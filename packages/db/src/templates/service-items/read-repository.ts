@@ -20,7 +20,6 @@ export const templateServiceItemSelect = {
   // is the per-unit basis for the derived line total).
   bidCost: true,
   tax: true,
-  freight: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,

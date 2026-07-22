@@ -19,7 +19,6 @@ function diffWith(form: Record<string, unknown>) {
           unitId: "",
           bidCost: "10",
           tax: "",
-          freight: "",
           ...form,
         },
       },
@@ -42,7 +41,7 @@ describe("validateTemplateServiceItemsDiffInput — service item form", () => {
 
   it("requires nothing — an all-blank row is valid", () => {
     const diff = validateTemplateServiceItemsDiffInput(
-      diffWith({ itemType: "", itemName: "", quantity: "", bidCost: "", tax: "", freight: "" }),
+      diffWith({ itemType: "", itemName: "", quantity: "", bidCost: "", tax: "" }),
     )
     expect(diff.added[0].form).toMatchObject({ itemType: "", itemName: "", bidCost: "" })
   })

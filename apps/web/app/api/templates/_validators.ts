@@ -199,11 +199,10 @@ function validatePlannedProductForm(value: unknown, path: string): TemplatePlann
     // Editable unit FK (UoM epic 2C); "" = no unit.
     unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
-    // Job-costing money columns (money standard) — blank clears, else validated +
+    // Job-costing money column (money standard) — blank clears, else validated +
     // canonicalized to scale-2. Bid cost is NOT here (live product join, the line-
     // total basis).
     tax: optionalMoney(obj.tax, `${path}.tax`, failDiff),
-    freight: optionalMoney(obj.freight, `${path}.freight`, failDiff),
     notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
   }
 }
@@ -279,7 +278,6 @@ function validateServiceItemForm(value: unknown, path: string): TemplateServiceI
     // the per-unit basis for the derived line total.
     bidCost: optionalMoney(obj.bidCost, `${path}.bidCost`, failServiceItem),
     tax: optionalMoney(obj.tax, `${path}.tax`, failServiceItem),
-    freight: optionalMoney(obj.freight, `${path}.freight`, failServiceItem),
   }
 }
 

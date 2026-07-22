@@ -16,15 +16,13 @@ import type { TemplateServiceItemLocal } from "@/modules/templates/controllers/r
 const TEMPLATE_SERVICE_ITEMS_COLUMNS: DataTableColumn<TemplateServiceItemLocal>[] = [
   // Item Type + Name are free-text; Bid Cost is a MANUAL editable money column
   // (the divergence from planned products, where it's a read-only product join) and
-  // the per-unit basis for Line Total; Tax/Freight are editable money; Line Total
-  // is derived.
+  // the per-unit basis for Line Total; Tax is editable money; Line Total is derived.
   { key: "itemType", label: "Item Type", minWidth: 160, grow: 1 },
   { key: "itemName", label: "Item Name", minWidth: 200, grow: 1 },
   { key: "quantity", label: "Quantity", width: 120, align: "end" },
   { key: "unit", label: "Unit", width: 130 },
   { key: "bidCost", label: "Bid Cost", width: 120, align: "end" },
   { key: "tax", label: "Tax", width: 110, align: "end" },
-  { key: "freight", label: "Freight", width: 110, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
 ]
 
@@ -125,24 +123,14 @@ export function TemplateServiceItemsGrid({
                 ariaLabel="Service item tax"
               />
             )
-          case "freight":
-            return (
-              <MoneyCell
-                editable={editable}
-                value={item.freight}
-                onChange={(next) => onChangeField(item.id, "freight", next)}
-                ariaLabel="Service item freight"
-              />
-            )
           case "lineTotal": {
-            // Derived: qty × bidCost + tax + freight, using the manual bid cost
-            // (reuses the planned-product line math). Read-only, recomputed live.
-            // "—" when all inputs blank.
+            // Derived: qty × bidCost + tax, using the manual bid cost (reuses the
+            // planned-product line math). Read-only, recomputed live. "—" when all
+            // inputs blank.
             const lineTotal = computeTemplatePlannedProductLineTotal({
               quantity: item.quantity,
               bidCost: item.bidCost,
               tax: item.tax,
-              freight: item.freight,
             })
             return (
               <NumberCell

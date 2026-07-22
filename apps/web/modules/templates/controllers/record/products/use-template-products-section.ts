@@ -46,10 +46,8 @@ export type TemplatePlannedProductLocal = {
   // for unsaved rows; re-resolved server-side on save). Display only — NEVER sent
   // in the diff. This is the "bid cost" and the per-unit basis for the line total.
   productCost: string
-  // Persisted job-costing money columns (all sent in the diff). tax + freight are
-  // manual entry.
+  // Persisted job-costing money column (sent in the diff). tax is manual entry.
   tax: string
-  freight: string
   // Client-only ergonomic for narrowing the row's product picker. NOT persisted.
   categoryFilterId: string | null
   categoryFilterName: string | null
@@ -72,7 +70,6 @@ export type TemplateServiceItemLocal = {
   // per-unit basis for the line total.
   bidCost: string
   tax: string
-  freight: string
 }
 
 type TemplateProductsLocalState = {
@@ -94,7 +91,6 @@ function toPlannedLocal(row: TemplatePlannedProductRow): TemplatePlannedProductL
     notes: row.notes,
     productCost: row.productCost,
     tax: row.tax,
-    freight: row.freight,
     categoryFilterId: null,
     categoryFilterName: row.categoryName || null,
   }
@@ -111,7 +107,6 @@ function toServiceLocal(row: TemplateServiceItemRow): TemplateServiceItemLocal {
     unitAbbrev: row.unitAbbrev,
     bidCost: row.bidCost,
     tax: row.tax,
-    freight: row.freight,
   }
 }
 
@@ -128,11 +123,11 @@ function createItemsRevisionKey(record: TemplateDetail) {
     // re-seeds the local cost display.
     plannedProducts: record.plannedProducts.map(
       (row) =>
-        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.productCost}:${row.tax}:${row.freight}`,
+        `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.productCost}:${row.tax}`,
     ),
     serviceItems: record.serviceItems.map(
       (row) =>
-        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.tax}:${row.freight}`,
+        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.tax}`,
     ),
   })
 }
@@ -145,7 +140,6 @@ function plannedDiffers(local: TemplatePlannedProductLocal, server: TemplatePlan
     local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
     local.tax !== server.tax ||
-    local.freight !== server.freight ||
     local.notes !== server.notes
   )
 }
@@ -156,7 +150,6 @@ function toPlannedForm(local: TemplatePlannedProductLocal): TemplatePlannedProdu
     unitId: local.unitId,
     quantity: local.quantity,
     tax: local.tax,
-    freight: local.freight,
     notes: local.notes,
   }
 }
@@ -183,8 +176,7 @@ function serviceDiffers(local: TemplateServiceItemLocal, server: TemplateService
     local.quantity !== server.quantity ||
     local.unitId !== server.unitId ||
     local.bidCost !== server.bidCost ||
-    local.tax !== server.tax ||
-    local.freight !== server.freight
+    local.tax !== server.tax
   )
 }
 
@@ -196,7 +188,6 @@ function toServiceForm(local: TemplateServiceItemLocal): TemplateServiceItemForm
     unitId: local.unitId,
     bidCost: local.bidCost,
     tax: local.tax,
-    freight: local.freight,
   }
 }
 
@@ -289,7 +280,6 @@ export function useTemplateProductsSection({
           notes: "",
           productCost: "",
           tax: "",
-          freight: "",
           categoryFilterId: null,
           categoryFilterName: null,
         },
@@ -389,7 +379,6 @@ export function useTemplateProductsSection({
           unitAbbrev: "",
           bidCost: "",
           tax: "",
-          freight: "",
         },
       ],
     }))

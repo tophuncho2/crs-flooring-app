@@ -12,9 +12,8 @@ type TemplatePlannedProductInput = {
   quantity: { toString(): string } | null
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
-  // Persisted job-costing money columns.
+  // Persisted job-costing money column.
   tax: { toString(): string } | null
-  freight: { toString(): string } | null
   notes: string | null
   createdAt: Date | string
   updatedAt: Date | string
@@ -35,7 +34,6 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
   // This is the "bid cost" — the per-unit basis for the line total.
   const productCost = item.product.cost == null ? "" : normalizeMoneyAmount(item.product.cost.toString())
   const tax = normalizeMoneyColumn(item.tax)
-  const freight = normalizeMoneyColumn(item.freight)
   return {
     id: item.id,
     productId: item.productId,
@@ -50,9 +48,8 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     notes: item.notes ?? "",
     productCost,
     tax,
-    freight,
-    // Line total = qty × bidCost + tax + freight, where bidCost is the live product cost.
-    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost: productCost, tax, freight }),
+    // Line total = qty × bidCost + tax, where bidCost is the live product cost.
+    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost: productCost, tax }),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

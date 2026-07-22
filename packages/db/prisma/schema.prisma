@@ -831,10 +831,9 @@ model TemplatePlannedProduct {
   unit           FlooringUnitOfMeasure? @relation("TemplatePlannedProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
   // Job-costing money columns (money standard: Decimal(12,2)). Manual entry. Bid
   // cost is NOT stored here — it's a live read-join off `product.cost` and the
-  // per-unit basis for the line total. Line total (qty × bidCost + tax + freight)
-  // is computed on read, never stored. NULL = unset.
+  // per-unit basis for the line total. Line total (qty × bidCost + tax) is
+  // computed on read, never stored. NULL = unset.
   tax            Decimal?         @db.Decimal(12, 2)
-  freight        Decimal?         @db.Decimal(12, 2)
   notes          String?          @db.VarChar(30)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -916,7 +915,6 @@ model TemplateServiceItem {
   // total. NULL = unset.
   bidCost    Decimal? @db.Decimal(12, 2)
   tax        Decimal? @db.Decimal(12, 2)
-  freight    Decimal? @db.Decimal(12, 2)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   createdBy  String?

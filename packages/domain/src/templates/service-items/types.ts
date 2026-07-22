@@ -15,12 +15,11 @@ export type TemplateServiceItemRow = {
   // product and stores its own bid cost. Sent in the diff. It is the per-unit
   // basis for the line total.
   bidCost: string
-  // Persisted job-costing money columns ("" when unset). tax + freight are manual.
-  // Both sent in the diff.
+  // Persisted job-costing money column ("" when unset). tax is manual. Sent in
+  // the diff.
   tax: string
-  freight: string
   // Derived on read, display only — never sent in the diff. Line total (qty ×
-  // bidCost + tax + freight, where bidCost is the manual column). "" when blank.
+  // bidCost + tax, where bidCost is the manual column). "" when blank.
   lineTotal: string
   createdAt: string
   updatedAt: string
@@ -36,9 +35,8 @@ export type TemplateServiceItemForm = {
   quantity: string
   // Editable unit FK (UoM epic 2C). "" disconnects the unit.
   unitId: string
-  // Job-costing money columns (persisted). "" = unset (stored NULL). bidCost, tax,
-  // and freight are all manual entry on a service item.
+  // Job-costing money columns (persisted). "" = unset (stored NULL). bidCost and
+  // tax are both manual entry on a service item.
   bidCost: string
   tax: string
-  freight: string
 }
