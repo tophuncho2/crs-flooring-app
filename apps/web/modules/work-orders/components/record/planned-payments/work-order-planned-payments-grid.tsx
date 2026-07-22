@@ -21,13 +21,13 @@ const DIRECTION_OPTIONS: ChoiceChipOption[] = [
 ]
 
 const WORK_ORDER_PLANNED_PAYMENTS_COLUMNS: DataTableColumn<WorkOrderPlannedPaymentLocal>[] = [
-  // Entity link leads; Type is a read-only lookup off the picked entity.
+  // Amount leads; Direction sits to its RIGHT and carries the tone chip/badge.
+  { key: "amount", label: "Amount", width: 160, align: "end" },
+  { key: "direction", label: "Direction", width: 160 },
+  { key: "purpose", label: "Purpose", width: 200 },
+  // Entity link, then Type (a read-only lookup off the picked entity).
   { key: "entity", label: "Entity", width: 220 },
   { key: "types", label: "Type", width: 200 },
-  { key: "purpose", label: "Purpose", width: 200 },
-  { key: "amount", label: "Amount", width: 160, align: "end" },
-  // Direction sits to the RIGHT of amount and carries the tone chip/badge.
-  { key: "direction", label: "Direction", width: 160 },
   { key: "notes", label: "Notes", width: 320 },
 ]
 
