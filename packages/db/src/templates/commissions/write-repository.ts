@@ -2,18 +2,13 @@ import type { Prisma } from "../../generated/prisma/client.js"
 import { normalizePercent, type TemplateCommissionForm } from "@builders/domain"
 
 // Wire-input shape for commission writes. The user-supplied form carries the
-// optional entity link (the sales rep), the manual percent, and free-text notes.
+// optional entity link (the sales rep) and the manual percent.
 export type WriteTemplateCommissionInput = TemplateCommissionForm
 
 // Rate write boundary: blank → NULL, else canonical scale-3 percent string before
 // Prisma coerces it to Decimal(6,3). Mirrors the template taxRate `toRate` helper.
 function toRate(value: string): string | null {
   return value.trim() ? normalizePercent(value) : null
-}
-
-// Free-text column: blank → NULL, else the value.
-function toText(value: string): string | null {
-  return value.trim() ? value : null
 }
 
 export type ApplyTemplateCommissionsDiffInput = {
@@ -54,7 +49,6 @@ export async function applyTemplateCommissionsDiff(
         // (null = unlinked). The form always carries entityId, so no tri-state.
         entityId: draft.input.entityId,
         percent: toRate(draft.input.percent),
-        notes: toText(draft.input.notes),
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -67,7 +61,6 @@ export async function applyTemplateCommissionsDiff(
     const data: Prisma.TemplateCommissionUncheckedUpdateInput = {
       entityId: update.input.entityId,
       percent: toRate(update.input.percent),
-      notes: toText(update.input.notes),
       updatedBy: input.actorEmail,
     }
     await tx.templateCommission.update({ where: { id: update.id }, data })

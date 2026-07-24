@@ -94,8 +94,6 @@ export type TemplateCommissionLocal = {
   // Manual scale-3 percent ("" = unset). Sent in the diff. The per-row basis for the
   // line total (× Net Cost).
   percent: string
-  // Short free-text note. Sent in the diff.
-  notes: string
 }
 
 type TemplateProductsLocalState = {
@@ -143,7 +141,6 @@ function toCommissionLocal(row: TemplateCommissionRow): TemplateCommissionLocal 
     entityId: row.entityId,
     entityName: row.entityName,
     percent: row.percent,
-    notes: row.notes,
   }
 }
 
@@ -168,7 +165,7 @@ function createItemsRevisionKey(record: TemplateDetail) {
         `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.taxed}`,
     ),
     commissions: record.commissions.map(
-      (row) => `${row.id}:${row.entityId}:${row.percent}:${row.notes}`,
+      (row) => `${row.id}:${row.entityId}:${row.percent}`,
     ),
   })
 }
@@ -248,11 +245,7 @@ function buildServiceDiff(
 }
 
 function commissionDiffers(local: TemplateCommissionLocal, server: TemplateCommissionRow) {
-  return (
-    local.entityId !== server.entityId ||
-    local.percent !== server.percent ||
-    local.notes !== server.notes
-  )
+  return local.entityId !== server.entityId || local.percent !== server.percent
 }
 
 function toCommissionForm(local: TemplateCommissionLocal): TemplateCommissionForm {
@@ -261,7 +254,6 @@ function toCommissionForm(local: TemplateCommissionLocal): TemplateCommissionFor
     // the diff form.
     entityId: local.entityId,
     percent: local.percent,
-    notes: local.notes,
   }
 }
 
@@ -555,7 +547,6 @@ export function useTemplateProductsSection({
           entityId: null,
           entityName: null,
           percent: "",
-          notes: "",
         },
       ],
     }))

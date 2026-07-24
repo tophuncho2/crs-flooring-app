@@ -1,12 +1,11 @@
 "use client"
 
-import { NumberCell, TextCell } from "@/engines/record-view"
+import { NumberCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import {
   computeTemplateCommissionLineTotal,
   formatMoney,
-  TEMPLATE_COMMISSION_NOTES_MAX,
   type EntityOption,
 } from "@builders/domain"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
@@ -18,7 +17,6 @@ const TEMPLATE_COMMISSIONS_COLUMNS: DataTableColumn<TemplateCommissionLocal>[] =
   { key: "entity", label: "Sales Rep", width: 220 },
   { key: "percent", label: "Percent", width: 120, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 140, align: "end" },
-  { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
 ]
 
 // Pure editable-table body for the commissions side — the THIRD grid in the
@@ -67,7 +65,7 @@ export function TemplateCommissionsGrid({
                 disabled={!editable}
                 onChange={(id) => {
                   // Only the clear path needs handling here — a real pick fires
-                  // onOptionSelected with the full option. Snapshotting id+name+type
+                  // onOptionSelected with the full option. Snapshotting id+name
                   // together keeps selectedLabel from ever desyncing.
                   if (id === null) onSelectEntity(item.id, null)
                 }}
@@ -100,17 +98,6 @@ export function TemplateCommissionsGrid({
               />
             )
           }
-          case "notes":
-            return (
-              <TextCell
-                editable={editable}
-                value={item.notes}
-                onChange={(next) => onChangeField(item.id, "notes", next)}
-                placeholder="Notes"
-                ariaLabel="Commission notes"
-                maxLength={TEMPLATE_COMMISSION_NOTES_MAX}
-              />
-            )
           default:
             return null
         }

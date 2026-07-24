@@ -16,8 +16,6 @@ export type TemplateCommissionRow = {
   // Manual commission rate as a canonical scale-3 percent string ("5.000"; "" =
   // unset). Sent in the diff. The per-row basis for the line total (× Net Cost).
   percent: string
-  // Short free-text note; "" when unset (persisted NULL). Sent in the diff.
-  notes: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -32,6 +30,4 @@ export type TemplateCommissionForm = {
   entityId: string | null
   // Manual scale-3 percent ("" = unset, stored NULL). Validated when present.
   percent: string
-  // Short free-text note; "" = unset (persisted NULL).
-  notes: string
 }

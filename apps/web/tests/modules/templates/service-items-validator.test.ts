@@ -92,7 +92,7 @@ describe("validateTemplateProductsSectionInput — combined envelope", () => {
       },
       serviceItems: diffWith({}),
       commissions: {
-        added: [{ tempId: "c1", form: { entityId: null, percent: "10", notes: "" } }],
+        added: [{ tempId: "c1", form: { entityId: null, percent: "10" } }],
         modified: [],
         deleted: [],
       },

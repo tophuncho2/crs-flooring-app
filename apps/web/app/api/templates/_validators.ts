@@ -24,7 +24,6 @@ import {
   normalizeTaxRate,
   SERVICE_ITEM_TYPE_INVALID_MESSAGE,
   TAX_RATE_INVALID_MESSAGE,
-  TEMPLATE_COMMISSION_NOTES_MAX,
   TEMPLATE_COMMISSION_PERCENT_INVALID_MESSAGE,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
@@ -414,8 +413,6 @@ function validateCommissionForm(value: unknown, path: string): TemplateCommissio
       failCommission,
       TEMPLATE_COMMISSION_PERCENT_INVALID_MESSAGE,
     ),
-    notes:
-      optionalBoundedText(obj.notes, TEMPLATE_COMMISSION_NOTES_MAX, `${path}.notes`, failCommission) ?? "",
   }
 }
 

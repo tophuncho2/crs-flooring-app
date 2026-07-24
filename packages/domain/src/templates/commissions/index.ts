@@ -1,5 +1,4 @@
 export * from "./types.js"
-export * from "./column-limits.js"
 export * from "./rules.js"
 export * from "./diff-rules.js"
 export * from "./normalizers.js"

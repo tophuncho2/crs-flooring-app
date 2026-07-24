@@ -15,7 +15,6 @@ export const templateCommissionSelect = {
   // (feeds the picker's selectedLabel).
   entity: { select: { entity: true } },
   percent: true,
-  notes: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,
