@@ -254,17 +254,36 @@ export function TemplatePrimaryFieldsSection({
 
       <RecordSectionDivider />
 
-      {/* Transaction totals: a column break flanks the manual inputs + direct-cost
-          buildup (left) against the derived summary (right). Left flank — Total
-          Transaction + Tax Rate share the top row (half width each, sitting over
-          Material Cost), then the cost stack Material / Labor / Misc / Commission /
-          Tax Cost runs down full-width. Right flank — two vertical columns: the
-          Projected column (Cost → Profit → Margin) beside the Net column (Cost →
-          Profit → Margin). A second divider then closes it above the footer. */}
+      {/* Transaction totals: a column break flanks the direct-cost buildup (left)
+          against the manual inputs + derived summary (right). Left flank — the cost
+          stack Material / Labor / Misc / Commission / Tax Cost, full-width. Right
+          flank — two vertical columns topped by the manual inputs: Total Transaction
+          over the Projected column (Cost → Profit → Margin), Tax Rate over the Net
+          column (Cost → Profit → Margin). A second divider then closes it above the
+          footer. */}
       <RecordColumnBreak
         left={
-          <FieldSection gap="0.5rem">
-            <CellAt col={1} row={1} colSpan={4}>
+          <div className="space-y-2">
+            <FormField label="Material Cost">
+              <StaticFieldValue>{formatMoney(ledger.materialCost) || "$0.00"}</StaticFieldValue>
+            </FormField>
+            <FormField label="Labor Cost">
+              <StaticFieldValue>{formatMoney(ledger.laborCost) || "$0.00"}</StaticFieldValue>
+            </FormField>
+            <FormField label="Misc. Cost">
+              <StaticFieldValue>{formatMoney(ledger.miscCost) || "$0.00"}</StaticFieldValue>
+            </FormField>
+            <FormField label="Commission Cost">
+              <StaticFieldValue>{formatMoney(ledger.commissionCost) || "$0.00"}</StaticFieldValue>
+            </FormField>
+            <FormField label="Tax Cost">
+              <StaticFieldValue>{formatMoney(ledger.taxCost) || "$0.00"}</StaticFieldValue>
+            </FormField>
+          </div>
+        }
+        right={
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+            <div className="space-y-2">
               <FormField label="Total Transaction">
                 <MoneyCell
                   editable={editable}
@@ -273,48 +292,6 @@ export function TemplatePrimaryFieldsSection({
                   ariaLabel="Total transaction"
                 />
               </FormField>
-            </CellAt>
-            <CellAt col={5} row={1} colSpan={4}>
-              <FormField label="Tax Rate %">
-                <NumberCell
-                  editable={editable}
-                  value={draft.taxRate}
-                  onChange={(next) => onFieldChange("taxRate", next)}
-                  placeholder="e.g. 8.375"
-                  ariaLabel="Tax rate percent"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={2} colSpan={8}>
-              <FormField label="Material Cost">
-                <StaticFieldValue>{formatMoney(ledger.materialCost) || "$0.00"}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
-              <FormField label="Labor Cost">
-                <StaticFieldValue>{formatMoney(ledger.laborCost) || "$0.00"}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={4} colSpan={8}>
-              <FormField label="Misc. Cost">
-                <StaticFieldValue>{formatMoney(ledger.miscCost) || "$0.00"}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={5} colSpan={8}>
-              <FormField label="Commission Cost">
-                <StaticFieldValue>{formatMoney(ledger.commissionCost) || "$0.00"}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={6} colSpan={8}>
-              <FormField label="Tax Cost">
-                <StaticFieldValue>{formatMoney(ledger.taxCost) || "$0.00"}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-          </FieldSection>
-        }
-        right={
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-            <div className="space-y-2">
               <FormField label="Projected Cost">
                 <StaticFieldValue>{formatMoney(ledger.projectedCost) || "$0.00"}</StaticFieldValue>
               </FormField>
@@ -326,6 +303,15 @@ export function TemplatePrimaryFieldsSection({
               </FormField>
             </div>
             <div className="space-y-2">
+              <FormField label="Tax Rate %">
+                <NumberCell
+                  editable={editable}
+                  value={draft.taxRate}
+                  onChange={(next) => onFieldChange("taxRate", next)}
+                  placeholder="e.g. 8.375"
+                  ariaLabel="Tax rate percent"
+                />
+              </FormField>
               <FormField label="Net Cost">
                 <StaticFieldValue>{formatMoney(ledger.netCost) || "$0.00"}</StaticFieldValue>
               </FormField>
