@@ -10,7 +10,6 @@ import {
 } from "@/engines/record-view"
 import type {
   EntityOption,
-  EntityTypeRef,
   ProductOption,
   TemplateCommissionForm,
   TemplateCommissionRow,
@@ -89,11 +88,9 @@ export type TemplateCommissionLocal = {
   // Optional entity link (null = unlinked) — the sales rep. The only writable/diffed
   // link field.
   entityId: string | null
-  // Read-only hydration co-located with entityId so the picker's selectedLabel + the
-  // Type chip never desync from the id. Never sent on save; seeded on load,
-  // snapshotted on pick.
+  // Read-only hydration co-located with entityId so the picker's selectedLabel never
+  // desyncs from the id. Never sent on save; seeded on load, snapshotted on pick.
   entityName: string | null
-  entityType: EntityTypeRef | null
   // Manual scale-3 percent ("" = unset). Sent in the diff. The per-row basis for the
   // line total (× Net Cost).
   percent: string
@@ -145,7 +142,6 @@ function toCommissionLocal(row: TemplateCommissionRow): TemplateCommissionLocal 
     id: row.id,
     entityId: row.entityId,
     entityName: row.entityName,
-    entityType: row.entityType,
     percent: row.percent,
     notes: row.notes,
   }
@@ -261,8 +257,8 @@ function commissionDiffers(local: TemplateCommissionLocal, server: TemplateCommi
 
 function toCommissionForm(local: TemplateCommissionLocal): TemplateCommissionForm {
   return {
-    // Only the writable link — entityName/entityType are display hydration and must
-    // never enter the diff form.
+    // Only the writable link — entityName is display hydration and must never enter
+    // the diff form.
     entityId: local.entityId,
     percent: local.percent,
     notes: local.notes,
@@ -558,7 +554,6 @@ export function useTemplateProductsSection({
           id: createLocalRecordRowId("template-commission"),
           entityId: null,
           entityName: null,
-          entityType: null,
           percent: "",
           notes: "",
         },
@@ -589,9 +584,9 @@ export function useTemplateProductsSection({
     if (section.error) section.setError(null)
   }
 
-  // Snapshot the picked entity's id + name + type chip into the row atomically, so
-  // selectedLabel and the read-only Type column populate instantly with no server
-  // round-trip and never desync from entityId. Null clears the link.
+  // Snapshot the picked entity's id + name into the row atomically, so selectedLabel
+  // populates instantly with no server round-trip and never desyncs from entityId.
+  // Null clears the link.
   function selectCommissionEntity(itemId: string, option: EntityOption | null) {
     section.setLocalValue((previous) => ({
       ...previous,
@@ -601,7 +596,6 @@ export function useTemplateProductsSection({
               ...row,
               entityId: option?.id ?? null,
               entityName: option?.entity ?? null,
-              entityType: option?.type ?? null,
             }
           : row,
       ),

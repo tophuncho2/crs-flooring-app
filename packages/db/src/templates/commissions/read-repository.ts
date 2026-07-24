@@ -1,7 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import { normalizeTemplateCommission, type TemplateCommissionRow } from "@builders/domain"
-import { entityTypeSelect } from "../../entities/read-repository.js"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -12,9 +11,9 @@ type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 export const templateCommissionSelect = {
   id: true,
   entityId: true,
-  // Linked entity name + type chip — read-only hydration flattened by the domain
-  // normalizer (reuses the canonical entityTypeSelect fragment).
-  entity: { select: { id: true, entity: true, entityType: entityTypeSelect } },
+  // Linked entity name — read-only hydration flattened by the domain normalizer
+  // (feeds the picker's selectedLabel).
+  entity: { select: { entity: true } },
   percent: true,
   notes: true,
   createdAt: true,

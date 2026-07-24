@@ -2,7 +2,7 @@
 
 import { NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
-import { CellChip, RecordDeleteButton } from "@/engines/common"
+import { RecordDeleteButton } from "@/engines/common"
 import {
   computeTemplateCommissionLineTotal,
   formatMoney,
@@ -13,10 +13,9 @@ import { EntityTypePicker } from "@/modules/entities/components/picker/entity-ty
 import type { TemplateCommissionLocal } from "@/modules/templates/controllers/record/products/use-template-products-section"
 
 const TEMPLATE_COMMISSIONS_COLUMNS: DataTableColumn<TemplateCommissionLocal>[] = [
-  // Entity (the sales rep) leads; Type is a read-only lookup off the picked entity.
-  // Percent is manual; Line Total is derived (percent × the template's Net Cost).
+  // Entity (the sales rep) leads. Percent is manual; Line Total is derived
+  // (percent × the template's Net Cost).
   { key: "entity", label: "Sales Rep", width: 220 },
-  { key: "types", label: "Type", width: 180 },
   { key: "percent", label: "Percent", width: 120, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 140, align: "end" },
   { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
@@ -77,12 +76,6 @@ export function TemplateCommissionsGrid({
                 ariaLabel="Commission sales rep"
                 align="left"
               />
-            )
-          case "types":
-            return item.entityType ? (
-              <CellChip paletteColor={item.entityType.color}>{item.entityType.type}</CellChip>
-            ) : (
-              "—"
             )
           case "percent":
             return (

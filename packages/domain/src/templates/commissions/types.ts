@@ -1,5 +1,3 @@
-import type { EntityTypeRef } from "../../entities/types.js"
-
 /**
  * A sales-rep commission line on a template — the THIRD table in the "products"
  * record section. The entity link is a label-only writable FK (who the rep is); it
@@ -12,10 +10,9 @@ export type TemplateCommissionRow = {
   // Optional entity link — the writable FK (the sales rep). null = unlinked.
   entityId: string | null
   // Read-only hydration off the entity link (never round-trips on save): the linked
-  // entity's name + its type chip. Null when unlinked. Mirrors the planned-payment
-  // entity hydration.
+  // entity's name. Null when unlinked. Feeds the picker's selectedLabel. Mirrors the
+  // planned-payment entity hydration.
   entityName: string | null
-  entityType: EntityTypeRef | null
   // Manual commission rate as a canonical scale-3 percent string ("5.000"; "" =
   // unset). Sent in the diff. The per-row basis for the line total (× Net Cost).
   percent: string
@@ -31,7 +28,7 @@ export type TemplateCommissionRow = {
 
 export type TemplateCommissionForm = {
   // Optional entity link (null = unlinked). The only writable link field —
-  // entityName/entityType are read-only hydration and never enter the form.
+  // entityName is read-only hydration and never enters the form.
   entityId: string | null
   // Manual scale-3 percent ("" = unset, stored NULL). Validated when present.
   percent: string
