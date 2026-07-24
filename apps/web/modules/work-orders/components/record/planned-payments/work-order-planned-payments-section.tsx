@@ -71,6 +71,7 @@ export function WorkOrderPlannedPaymentsSection({
     <>
       <RecordItemSection
         title="Planned Payments"
+        flush
         capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={section.noticeMessage}
         noticeError={section.noticeError}

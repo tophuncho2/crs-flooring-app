@@ -57,6 +57,7 @@ export function WorkOrderEntityInvolvementSection({
     <>
       <RecordItemSection
         title="Entity Involvement"
+        flush
         capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={section.noticeMessage}
         noticeError={section.noticeError}

@@ -18,6 +18,7 @@ export function TemplatePaymentsSection({ planned }: { planned: PlannedControlle
   return (
     <RecordItemSection
       title="Planned Payments"
+      flush
       capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
       noticeMessage={planned.noticeMessage}
       noticeError={planned.noticeError}

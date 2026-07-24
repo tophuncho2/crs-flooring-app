@@ -52,6 +52,7 @@ export function TemplatePlannedPaymentsGrid({
   return (
     <DataTable<TemplatePlannedPaymentLocal>
       variant="editable"
+      flush
       rows={items}
       columns={TEMPLATE_PLANNED_PAYMENTS_COLUMNS}
       empty="No planned payments yet."

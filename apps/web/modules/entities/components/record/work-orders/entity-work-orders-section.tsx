@@ -48,6 +48,7 @@ export function EntityWorkOrdersSection({
   return (
     <RecordItemSection
       title="Work Orders"
+      flush
       subHeader={{
         canManage: false,
         showStatus: false,
@@ -58,6 +59,7 @@ export function EntityWorkOrdersSection({
       }}
     >
       <DataTable<WorkOrderListRow>
+        flush
         rows={grid.rows}
         columns={WORK_ORDERS_LIST_COLUMNS}
         renderCell={renderWorkOrderRowCell}

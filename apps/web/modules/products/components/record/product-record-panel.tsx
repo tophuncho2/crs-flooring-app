@@ -130,6 +130,7 @@ export function ProductRecordPanel({
       render: () => (
         <RecordItemSection
           title="Inventory Indicators"
+          flush
           capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
           noticeMessage={indicators.noticeMessage}
           noticeError={indicators.noticeError}

@@ -38,6 +38,7 @@ export function TemplateEntityInvolvementGrid({
   return (
     <DataTable<TemplateEntityInvolvementLocal>
       variant="editable"
+      flush
       rows={items}
       columns={TEMPLATE_ENTITY_INVOLVEMENT_COLUMNS}
       empty="No entity involvement yet."

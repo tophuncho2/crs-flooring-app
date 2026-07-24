@@ -42,6 +42,7 @@ export function WorkOrderEntityInvolvementGrid({
   return (
     <DataTable<WorkOrderEntityInvolvementLocal>
       variant="editable"
+      flush
       rows={items}
       columns={WORK_ORDER_ENTITY_INVOLVEMENT_COLUMNS}
       empty="No entity involvement yet."

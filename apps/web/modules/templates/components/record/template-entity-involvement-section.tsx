@@ -23,6 +23,7 @@ export function TemplateEntityInvolvementSection({
   return (
     <RecordItemSection
       title="Entity Involvement"
+      flush
       capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
       noticeMessage={section.noticeMessage}
       noticeError={section.noticeError}

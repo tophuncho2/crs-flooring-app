@@ -192,6 +192,7 @@ export function ImportStagedInventorySection({
     <>
       <RecordItemSection
         title={activeLabel}
+        flush
         capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={section.noticeMessage}
         subHeader={subHeader}

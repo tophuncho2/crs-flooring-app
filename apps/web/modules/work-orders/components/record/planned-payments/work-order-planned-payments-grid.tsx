@@ -56,6 +56,7 @@ export function WorkOrderPlannedPaymentsGrid({
   return (
     <DataTable<WorkOrderPlannedPaymentLocal>
       variant="editable"
+      flush
       rows={items}
       columns={WORK_ORDER_PLANNED_PAYMENTS_COLUMNS}
       empty="No planned payments yet."

@@ -369,6 +369,7 @@ export function ImportStagedInventoryGrid({
             {rows.length > 0 ? (
               <DataTable<StagedGridRow>
                 variant="editable"
+                flush
                 rows={rows}
                 columns={STAGED_COLUMNS}
                 rowActionsWidth={STAGED_GUTTER_WIDTH}

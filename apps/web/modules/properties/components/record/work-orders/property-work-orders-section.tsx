@@ -44,6 +44,7 @@ export function PropertyWorkOrdersSection({
   return (
     <RecordItemSection
       title="Work Orders"
+      flush
       subHeader={{
         canManage: false,
         showStatus: false,
@@ -54,6 +55,7 @@ export function PropertyWorkOrdersSection({
       }}
     >
       <DataTable<WorkOrderListRow>
+        flush
         rows={grid.rows}
         columns={WORK_ORDERS_LIST_COLUMNS}
         renderCell={renderWorkOrderRowCell}

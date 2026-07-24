@@ -57,6 +57,7 @@ export function LinkedPropertiesList({
   return (
     <RecordItemSection
       title="Properties"
+      flush
       subHeader={{
         canManage: false,
         showStatus: false,
@@ -69,6 +70,7 @@ export function LinkedPropertiesList({
       }}
     >
       <DataTable<PropertyListRow>
+        flush
         rows={rows}
         columns={PROPERTIES_SECTION_COLUMNS}
         renderCell={renderPropertyRowCell}

@@ -80,6 +80,7 @@ export function EntityTemplatesSection({
   return (
     <RecordItemSection
       title="Templates"
+      flush
       noticeError={sync.errorMessage || undefined}
       subHeader={{
         canManage: false,
@@ -98,6 +99,7 @@ export function EntityTemplatesSection({
       }}
     >
       <DataTable<TemplateListRow>
+        flush
         rows={grid.rows}
         columns={TEMPLATES_LIST_COLUMNS}
         renderCell={renderTemplateRowCell}

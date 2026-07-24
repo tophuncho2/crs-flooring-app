@@ -132,6 +132,7 @@ export function ImportPlannedImportsGrid({
   return (
     <DataTable<PlannedImportGridRow>
       variant="editable"
+      flush
       rows={rows}
       columns={PLANNED_IMPORT_COLUMNS}
       empty="No planned imports yet. Add one to start staging inventory."

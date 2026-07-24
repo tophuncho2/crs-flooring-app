@@ -45,6 +45,7 @@ export function ProductIndicatorsGrid({
   return (
     <DataTable<InventoryIndicatorRow>
       variant="editable"
+      flush
       rows={items}
       columns={PRODUCT_INDICATORS_COLUMNS}
       empty="No indicators yet."
