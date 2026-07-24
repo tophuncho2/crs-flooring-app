@@ -47,7 +47,12 @@ export function AdjustmentInventoryIdentityRow({
           </button>
         ) : null}
       </div>
-      <DataTable rows={[row]} columns={INVENTORY_LIST_COLUMNS} renderCell={renderInventoryRowCell} />
+      {/* Bleed the row to the modal panel wall (-mx-5 cancels the RecordModal
+          body's px-5) + squared corners, so it reads flush like every other
+          table. The "Selected item" label above stays inset. */}
+      <div className="-mx-5">
+        <DataTable rows={[row]} columns={INVENTORY_LIST_COLUMNS} renderCell={renderInventoryRowCell} flush />
+      </div>
     </div>
   )
 }

@@ -174,15 +174,21 @@ export function InventoryOptionsGrid({
         </ToolbarMenuButton>
       </div>
 
-      <DataTable
-        rows={grid.rows}
-        columns={INVENTORY_LIST_COLUMNS}
-        renderCell={renderInventoryRowCell}
-        onRowClick={(row) => onSelectInventory(row)}
-        getRowAriaLabel={(row) => row.inventoryNumber}
-        empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
-        pagination={grid.pagination}
-      />
+      {/* Bleed the picker list to the modal panel wall (-mx-5 cancels the
+          RecordModal body's px-5) + squared corners — flush like every other
+          table. The filter/search/sort toolbar above stays inset. */}
+      <div className="-mx-5">
+        <DataTable
+          rows={grid.rows}
+          columns={INVENTORY_LIST_COLUMNS}
+          renderCell={renderInventoryRowCell}
+          onRowClick={(row) => onSelectInventory(row)}
+          getRowAriaLabel={(row) => row.inventoryNumber}
+          empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
+          pagination={grid.pagination}
+          flush
+        />
+      </div>
     </div>
   )
 }
