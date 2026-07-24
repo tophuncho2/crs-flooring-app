@@ -1,21 +1,25 @@
 import { randomUUID } from "node:crypto"
 import {
   Prisma,
+  applyTemplateCommissionsDiff,
   applyTemplatePlannedProductsDiff,
   applyTemplateServiceItemsDiff,
   db,
   getProductById,
+  listTemplateCommissions,
   listTemplatePlannedProducts,
   listTemplateServiceItems,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
   assignDraftIds,
+  validateTemplateCommissionForm,
   validateTemplatePlannedProductForm,
   validateTemplateServiceItemForm,
 } from "@builders/domain"
 import { assertActorEmail } from "../../shared/assert-actor-email.js"
 import { guardProductsExist } from "../../shared/guard-products-exist.js"
+import { TemplateCommissionExecutionError } from "../commissions/errors.js"
 import { TemplatePlannedProductExecutionError } from "../planned-products/errors.js"
 import { TemplateServiceItemExecutionError } from "../service-items/errors.js"
 import type {
@@ -24,14 +28,14 @@ import type {
 } from "./types.js"
 
 /**
- * Diff-save use case for the templates' "products" section — TWO editable tables
- * (planned products + service / misc items) reconciled in ONE atomic diff:
- *  1. Validate every draft + update on BOTH tables.
+ * Diff-save use case for the templates' "products" section — THREE editable tables
+ * (planned products + service / misc items + commissions) reconciled in ONE atomic diff:
+ *  1. Validate every draft + update on ALL tables.
  *  2. Batch-guard every distinct planned product the diff touches — on the pool.
- *     (Service items have no product, so no guard.)
- *  3. Assign UUIDs to drafts on both tables via `assignDraftIds`.
- *  4. Apply both diffs inside ONE transaction (lock-free — just the writes). One
- *     transaction so a single Save is all-or-nothing across both tables (and one
+ *     (Service items + commissions have no product, so no guard.)
+ *  3. Assign UUIDs to drafts on all tables via `assignDraftIds`.
+ *  4. Apply every diff inside ONE transaction (lock-free — just the writes). One
+ *     transaction so a single Save is all-or-nothing across every table (and one
  *     round-trip). NOTE: child-row writes never bump the parent `template.updatedAt`,
  *     so the route's optimistic-concurrency token only catches a concurrent PARENT
  *     edit, not concurrent child edits — atomicity is the reason to combine, not the
@@ -96,6 +100,30 @@ export async function saveTemplateProductsSectionUseCase(
     }
   }
 
+  // Validate commissions.
+  for (const draft of input.commissions.added) {
+    const validationError = validateTemplateCommissionForm(draft.form)
+    if (validationError) {
+      throw new TemplateCommissionExecutionError({
+        code: "TEMPLATE_COMMISSION_VALIDATION_FAILED",
+        message: validationError,
+        status: 400,
+        payload: { refKind: "tempId", ref: draft.tempId },
+      })
+    }
+  }
+  for (const update of input.commissions.modified) {
+    const validationError = validateTemplateCommissionForm(update.form)
+    if (validationError) {
+      throw new TemplateCommissionExecutionError({
+        code: "TEMPLATE_COMMISSION_VALIDATION_FAILED",
+        message: validationError,
+        status: 400,
+        payload: { refKind: "id", ref: update.id },
+      })
+    }
+  }
+
   // Batch-fetch every distinct planned product touched by the diff (added +
   // modified) to validate it still exists — on the pool. Service items carry no
   // product, so they're excluded. One query per product.
@@ -121,6 +149,7 @@ export async function saveTemplateProductsSectionUseCase(
 
   const plannedAdded = assignDraftIds(input.plannedProducts.added, randomUUID)
   const serviceAdded = assignDraftIds(input.serviceItems.added, randomUUID)
+  const commissionAdded = assignDraftIds(input.commissions.added, randomUUID)
 
   const { tempIdMap } = await withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
@@ -154,11 +183,28 @@ export async function saveTemplateProductsSectionUseCase(
       })),
       deleted: input.serviceItems.deleted.map((d) => ({ id: d.id })),
     })
-    return { tempIdMap: { ...planned.tempIdMap, ...service.tempIdMap } }
+    const commission = await applyTemplateCommissionsDiff(c, {
+      templateId: input.templateId,
+      actorEmail,
+      added: commissionAdded.map((draft) => ({
+        id: draft.id,
+        tempId: draft.tempId,
+        input: { ...draft.form },
+      })),
+      modified: input.commissions.modified.map((update) => ({
+        id: update.id,
+        input: { ...update.form },
+      })),
+      deleted: input.commissions.deleted.map((d) => ({ id: d.id })),
+    })
+    return {
+      tempIdMap: { ...planned.tempIdMap, ...service.tempIdMap, ...commission.tempIdMap },
+    }
   })
 
-  // Enrich both updated lists on the pool after commit.
+  // Enrich all three updated lists on the pool after commit.
   const plannedProducts = await listTemplatePlannedProducts(input.templateId, reader)
   const serviceItems = await listTemplateServiceItems(input.templateId, reader)
-  return { plannedProducts, serviceItems, tempIdMap }
+  const commissions = await listTemplateCommissions(input.templateId, reader)
+  return { plannedProducts, serviceItems, commissions, tempIdMap }
 }

@@ -3,6 +3,7 @@
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
 import type {
+  TemplateCommissionsDiff,
   TemplateDetail,
   TemplateEntityInvolvementsDiff,
   TemplateForm,
@@ -56,12 +57,16 @@ export async function syncTemplateToWorkOrderRequest(templateId: string) {
   )
 }
 
-// The "products" section saves BOTH editable tables (planned products + service /
-// misc items) in one atomic PATCH so the parent template's concurrency token stays
-// valid. The body carries a named diff per table.
+// The "products" section saves the THREE editable tables (planned products + service
+// / misc items + commissions) in one atomic PATCH so the parent template's
+// concurrency token stays valid. The body carries a named diff per table.
 export async function saveTemplateProductsSectionRequest(
   templateId: string,
-  diffs: { plannedProducts: TemplatePlannedProductsDiff; serviceItems: TemplateServiceItemsDiff },
+  diffs: {
+    plannedProducts: TemplatePlannedProductsDiff
+    serviceItems: TemplateServiceItemsDiff
+    commissions: TemplateCommissionsDiff
+  },
   revisionKey: string,
 ) {
   return requestJson<{ template: TemplateDetail; tempIdMap: Record<string, string> }>(

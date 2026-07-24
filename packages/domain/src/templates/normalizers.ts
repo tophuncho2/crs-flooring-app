@@ -10,6 +10,8 @@ import { normalizeTemplateEntityInvolvement } from "./entity-involvement/normali
 import type { TemplateEntityInvolvementRow } from "./entity-involvement/types.js"
 import { normalizeTemplateServiceItem } from "./service-items/normalizers.js"
 import type { TemplateServiceItemRow } from "./service-items/types.js"
+import { normalizeTemplateCommission } from "./commissions/normalizers.js"
+import type { TemplateCommissionRow } from "./commissions/types.js"
 import type {
   TemplateDetail,
   TemplateListRow,
@@ -65,6 +67,7 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
   serviceItems: Array<Parameters<typeof normalizeTemplateServiceItem>[0]>
   plannedPayments: Array<Parameters<typeof normalizeTemplatePlannedPayment>[0]>
   entityInvolvements: Array<Parameters<typeof normalizeTemplateEntityInvolvement>[0]>
+  commissions: Array<Parameters<typeof normalizeTemplateCommission>[0]>
 }
 
 export function normalizeTemplateListRow(template: TemplateListInput): TemplateListRow {
@@ -109,6 +112,7 @@ export function normalizeTemplate(
   const entityInvolvements: TemplateEntityInvolvementRow[] = template.entityInvolvements.map(
     normalizeTemplateEntityInvolvement,
   )
+  const commissions: TemplateCommissionRow[] = template.commissions.map(normalizeTemplateCommission)
   return {
     ...base,
     internalNotes: template.internalNotes ?? "",
@@ -122,6 +126,7 @@ export function normalizeTemplate(
     serviceItems,
     plannedPayments,
     entityInvolvements,
+    commissions,
     previousTemplate: neighbors.previousTemplate,
     nextTemplate: neighbors.nextTemplate,
   }

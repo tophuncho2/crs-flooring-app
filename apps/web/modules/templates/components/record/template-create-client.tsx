@@ -8,7 +8,7 @@ import {
 } from "@/engines/record-view"
 import { buildTemplateHubHref } from "@/hooks/navigation"
 import { createTemplateRequest } from "@/modules/templates/data/mutations"
-import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
+import { computeTemplateCostLedger, EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
 import { TemplateRecordFooter } from "./footer"
 
@@ -36,6 +36,18 @@ function TemplateCreatePanel({
     },
   })
 
+  // No products / service / commission rows exist pre-creation — the ledger is
+  // computed from empty tables + the draft's Total Transaction / Tax Rate, so the
+  // Net figures track what the user types (all costs zero; margins "—" until a
+  // revenue is entered).
+  const ledger = computeTemplateCostLedger({
+    totalTransaction: controller.primarySection.localValue.totalTransaction,
+    taxRate: controller.primarySection.localValue.taxRate,
+    plannedProducts: [],
+    serviceItems: [],
+    commissions: [],
+  })
+
   return (
     <div className="space-y-4">
       <RecordSingleSectionPanel
@@ -49,12 +61,7 @@ function TemplateCreatePanel({
           draft={controller.primarySection.localValue}
           detail={null}
           disabled={controller.primarySection.isSaving}
-          // No products or service items exist pre-creation — every cost roll-up is
-          // zero here.
-          materialCost="0.00"
-          laborCost="0.00"
-          miscCost="0.00"
-          taxCost="0.00"
+          ledger={ledger}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
               ...previous,

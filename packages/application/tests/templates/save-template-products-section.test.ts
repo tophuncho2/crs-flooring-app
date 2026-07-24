@@ -4,17 +4,21 @@ const {
   withDatabaseTransactionMock,
   applyTemplatePlannedProductsDiffMock,
   applyTemplateServiceItemsDiffMock,
+  applyTemplateCommissionsDiffMock,
   getProductByIdMock,
   listTemplatePlannedProductsMock,
   listTemplateServiceItemsMock,
+  listTemplateCommissionsMock,
 } = vi.hoisted(() => {
   return {
     withDatabaseTransactionMock: vi.fn(),
     applyTemplatePlannedProductsDiffMock: vi.fn(),
     applyTemplateServiceItemsDiffMock: vi.fn(),
+    applyTemplateCommissionsDiffMock: vi.fn(),
     getProductByIdMock: vi.fn(),
     listTemplatePlannedProductsMock: vi.fn(),
     listTemplateServiceItemsMock: vi.fn(),
+    listTemplateCommissionsMock: vi.fn(),
   }
 })
 
@@ -25,31 +29,42 @@ vi.mock("@builders/db", () => ({
   withDatabaseTransaction: withDatabaseTransactionMock,
   applyTemplatePlannedProductsDiff: applyTemplatePlannedProductsDiffMock,
   applyTemplateServiceItemsDiff: applyTemplateServiceItemsDiffMock,
+  applyTemplateCommissionsDiff: applyTemplateCommissionsDiffMock,
   getProductById: getProductByIdMock,
   listTemplatePlannedProducts: listTemplatePlannedProductsMock,
   listTemplateServiceItems: listTemplateServiceItemsMock,
+  listTemplateCommissions: listTemplateCommissionsMock,
 }))
 
 import { saveTemplateProductsSectionUseCase } from "../../src/templates/products/save-template-products-section.js"
 
 const ACTOR = "actor@example.com"
 const EMPTY_DIFF = { added: [], modified: [], deleted: [] }
-const EMPTY_INPUT = { templateId: "tpl-1", plannedProducts: EMPTY_DIFF, serviceItems: EMPTY_DIFF }
+const EMPTY_INPUT = {
+  templateId: "tpl-1",
+  plannedProducts: EMPTY_DIFF,
+  serviceItems: EMPTY_DIFF,
+  commissions: EMPTY_DIFF,
+}
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   applyTemplatePlannedProductsDiffMock.mockReset()
   applyTemplateServiceItemsDiffMock.mockReset()
+  applyTemplateCommissionsDiffMock.mockReset()
   getProductByIdMock.mockReset()
   listTemplatePlannedProductsMock.mockReset()
   listTemplateServiceItemsMock.mockReset()
+  listTemplateCommissionsMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
   // The appliers now return only tempIdMap; the lists are enriched on the pool.
   applyTemplatePlannedProductsDiffMock.mockResolvedValue({ tempIdMap: {} })
   applyTemplateServiceItemsDiffMock.mockResolvedValue({ tempIdMap: {} })
+  applyTemplateCommissionsDiffMock.mockResolvedValue({ tempIdMap: {} })
   listTemplatePlannedProductsMock.mockResolvedValue([])
   listTemplateServiceItemsMock.mockResolvedValue([])
+  listTemplateCommissionsMock.mockResolvedValue([])
 })
 
 describe("saveTemplateProductsSectionUseCase", () => {
@@ -104,6 +119,7 @@ describe("saveTemplateProductsSectionUseCase", () => {
           modified: [],
           deleted: [],
         },
+        commissions: EMPTY_DIFF,
       } as never,
       ACTOR,
     )
@@ -126,6 +142,7 @@ describe("saveTemplateProductsSectionUseCase", () => {
           deleted: [],
         },
         serviceItems: EMPTY_DIFF,
+        commissions: EMPTY_DIFF,
       } as never,
       ACTOR,
     )

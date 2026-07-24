@@ -54,6 +54,7 @@ function template(overrides: Record<string, unknown> = {}) {
     serviceItems: [],
     plannedPayments: [],
     entityInvolvements: [],
+    commissions: [],
     ...overrides,
   }
 }

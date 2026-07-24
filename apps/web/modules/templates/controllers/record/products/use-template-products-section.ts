@@ -9,7 +9,12 @@ import {
   useRecordScopedSectionController,
 } from "@/engines/record-view"
 import type {
+  EntityOption,
+  EntityTypeRef,
   ProductOption,
+  TemplateCommissionForm,
+  TemplateCommissionRow,
+  TemplateCommissionsDiff,
   TemplateDetail,
   TemplatePlannedProductForm,
   TemplatePlannedProductRow,
@@ -21,6 +26,8 @@ import type {
 } from "@builders/domain"
 import {
   DEFAULT_SERVICE_ITEM_TYPE,
+  sumTemplatePlannedProductLineTotals,
+  validateTemplateCommissionForm,
   validateTemplatePlannedProductForm,
   validateTemplateServiceItemForm,
 } from "@builders/domain"
@@ -75,9 +82,29 @@ export type TemplateServiceItemLocal = {
   taxed: boolean
 }
 
+// ── Commissions (table 3) ──────────────────────────────────────────────────
+
+export type TemplateCommissionLocal = {
+  id: string
+  // Optional entity link (null = unlinked) — the sales rep. The only writable/diffed
+  // link field.
+  entityId: string | null
+  // Read-only hydration co-located with entityId so the picker's selectedLabel + the
+  // Type chip never desync from the id. Never sent on save; seeded on load,
+  // snapshotted on pick.
+  entityName: string | null
+  entityType: EntityTypeRef | null
+  // Manual scale-3 percent ("" = unset). Sent in the diff. The per-row basis for the
+  // line total (× Net Cost).
+  percent: string
+  // Short free-text note. Sent in the diff.
+  notes: string
+}
+
 type TemplateProductsLocalState = {
   plannedProducts: TemplatePlannedProductLocal[]
   serviceItems: TemplateServiceItemLocal[]
+  commissions: TemplateCommissionLocal[]
 }
 
 // ── Local mappers ──────────────────────────────────────────────────────────
@@ -113,10 +140,22 @@ function toServiceLocal(row: TemplateServiceItemRow): TemplateServiceItemLocal {
   }
 }
 
+function toCommissionLocal(row: TemplateCommissionRow): TemplateCommissionLocal {
+  return {
+    id: row.id,
+    entityId: row.entityId,
+    entityName: row.entityName,
+    entityType: row.entityType,
+    percent: row.percent,
+    notes: row.notes,
+  }
+}
+
 function createLocalState(record: TemplateDetail): TemplateProductsLocalState {
   return {
     plannedProducts: record.plannedProducts.map(toPlannedLocal),
     serviceItems: record.serviceItems.map(toServiceLocal),
+    commissions: record.commissions.map(toCommissionLocal),
   }
 }
 
@@ -131,6 +170,9 @@ function createItemsRevisionKey(record: TemplateDetail) {
     serviceItems: record.serviceItems.map(
       (row) =>
         `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.taxed}`,
+    ),
+    commissions: record.commissions.map(
+      (row) => `${row.id}:${row.entityId}:${row.percent}:${row.notes}`,
     ),
   })
 }
@@ -209,6 +251,50 @@ function buildServiceDiff(
   })
 }
 
+function commissionDiffers(local: TemplateCommissionLocal, server: TemplateCommissionRow) {
+  return (
+    local.entityId !== server.entityId ||
+    local.percent !== server.percent ||
+    local.notes !== server.notes
+  )
+}
+
+function toCommissionForm(local: TemplateCommissionLocal): TemplateCommissionForm {
+  return {
+    // Only the writable link — entityName/entityType are display hydration and must
+    // never enter the diff form.
+    entityId: local.entityId,
+    percent: local.percent,
+    notes: local.notes,
+  }
+}
+
+function buildCommissionDiff(
+  locals: TemplateCommissionLocal[],
+  server: TemplateDetail,
+): TemplateCommissionsDiff {
+  return buildRowDiff({
+    locals,
+    serverRows: server.commissions,
+    getLocalId: (item) => item.id,
+    isLocalOnly: isLocalOnlyRecordRow,
+    differs: commissionDiffers,
+    toAdded: (item) => ({ tempId: item.id, form: toCommissionForm(item) }),
+    toModified: (item) => ({ id: item.id, form: toCommissionForm(item) }),
+  })
+}
+
+// Live Net Cost = Σ of every planned-product + service-item line total, computed
+// directly from the current local rows (the commission line total is a % of this).
+// Planned products use their live productCost as the per-unit basis; service items
+// use the manual bidCost. Mirrors the domain ledger's Net Cost, on unsaved edits.
+function computeLiveNetCost(state: TemplateProductsLocalState): string {
+  return sumTemplatePlannedProductLineTotals([
+    ...state.plannedProducts.map((row) => ({ quantity: row.quantity, bidCost: row.productCost })),
+    ...state.serviceItems.map((row) => ({ quantity: row.quantity, bidCost: row.bidCost })),
+  ])
+}
+
 // ── Controller ─────────────────────────────────────────────────────────────
 
 export function useTemplateProductsSection({
@@ -242,15 +328,22 @@ export function useTemplateProductsSection({
           throw createRecordSectionError({ kind: "validation", message: validationError, retryable: true })
         }
       }
+      for (const item of localValue.commissions) {
+        const validationError = validateTemplateCommissionForm(toCommissionForm(item))
+        if (validationError) {
+          throw createRecordSectionError({ kind: "validation", message: validationError, retryable: true })
+        }
+      }
 
-      // Both tables ride ONE atomic PATCH so a single Save is all-or-nothing
-      // across both grids (and one round-trip). (Child writes don't bump the
+      // All three tables ride ONE atomic PATCH so a single Save is all-or-nothing
+      // across every grid (and one round-trip). (Child writes don't bump the
       // parent template.updatedAt, so this isn't about token-staleness.)
       const { template: nextTemplate } = await saveTemplateProductsSectionRequest(
         template.id,
         {
           plannedProducts: buildPlannedDiff(localValue.plannedProducts, currentRecord),
           serviceItems: buildServiceDiff(localValue.serviceItems, currentRecord),
+          commissions: buildCommissionDiff(localValue.commissions, currentRecord),
         },
         template.updatedAt,
       )
@@ -454,10 +547,78 @@ export function useTemplateProductsSection({
     if (section.error) section.setError(null)
   }
 
+  // ── Commission mutators ───────────────────────────────────────────────────
+
+  function addCommission() {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      commissions: [
+        ...previous.commissions,
+        {
+          id: createLocalRecordRowId("template-commission"),
+          entityId: null,
+          entityName: null,
+          entityType: null,
+          percent: "",
+          notes: "",
+        },
+      ],
+    }))
+    section.setError(null)
+  }
+
+  function removeCommission(itemId: string) {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      commissions: previous.commissions.filter((row) => row.id !== itemId),
+    }))
+    section.setError(null)
+  }
+
+  function changeCommissionField(
+    itemId: string,
+    field: keyof TemplateCommissionLocal,
+    value: string,
+  ) {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      commissions: previous.commissions.map((row) =>
+        row.id === itemId ? { ...row, [field]: value } : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  // Snapshot the picked entity's id + name + type chip into the row atomically, so
+  // selectedLabel and the read-only Type column populate instantly with no server
+  // round-trip and never desync from entityId. Null clears the link.
+  function selectCommissionEntity(itemId: string, option: EntityOption | null) {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      commissions: previous.commissions.map((row) =>
+        row.id === itemId
+          ? {
+              ...row,
+              entityId: option?.id ?? null,
+              entityName: option?.entity ?? null,
+              entityType: option?.type ?? null,
+            }
+          : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  // Live Net Cost — the shared per-unit basis every commission line total is a
+  // percent of. Recomputed from the current planned + service local rows.
+  const commissionNetCost = computeLiveNetCost(section.localValue)
+
   return {
     ...section,
     plannedItems: section.localValue.plannedProducts,
     serviceItems: section.localValue.serviceItems,
+    commissions: section.localValue.commissions,
+    commissionNetCost,
     addPlannedItem,
     removePlannedItem,
     changePlannedField,
@@ -472,5 +633,9 @@ export function useTemplateProductsSection({
     changeServiceQuantity,
     changeServiceTaxed,
     setServiceUnit,
+    addCommission,
+    removeCommission,
+    changeCommissionField,
+    selectCommissionEntity,
   }
 }

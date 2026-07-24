@@ -94,6 +94,7 @@ describe("normalizeTemplate neighbors", () => {
     serviceItems: [],
     plannedPayments: [],
     entityInvolvements: [],
+    commissions: [],
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
     createdBy: "creator@example.com",

@@ -11,9 +11,7 @@ import { useTemplatePlannedPaymentsSection } from "@/modules/templates/controlle
 import { useTemplateEntityInvolvementSection } from "@/modules/templates/controllers/record/entity-involvement/use-template-entity-involvement-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import {
-  computeTemplateTaxCost,
-  sumTemplatePlannedProductLineTotals,
-  sumTemplateServiceItemLineTotalsByType,
+  computeTemplateCostLedger,
   type TemplateDetail,
   type TemplateForm,
 } from "@builders/domain"
@@ -44,34 +42,27 @@ export function TemplateRecordPanel({
     publishTemplate: primary.publishRecord,
   })
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
-  // Material Cost roll-up for the primary section = sum of the SAVED planned-product
-  // line totals (reflects the last products save, not live unsaved grid edits).
-  const materialCost = sumTemplatePlannedProductLineTotals(
-    primary.record.plannedProducts.map((row) => ({ quantity: row.quantity, bidCost: row.productCost })),
-  )
-  // Per-item-type service-cost roll-up (Labor / Misc.) from the SAVED service items,
-  // mirroring the Material Cost figure — reflects the last products save, not live edits.
-  const serviceCostByType = sumTemplateServiceItemLineTotalsByType(
-    primary.record.serviceItems.map((row) => ({
+  // The full derived cost/profit/margin ledger for the primary section, from ONE
+  // authoritative domain function. Computed from the SAVED record (reflects the last
+  // products save, not live unsaved grid edits) — planned products use their live
+  // productCost as the per-unit basis; service items + commissions use their manual
+  // columns. Margins are "" when Total Transaction is blank/zero (rendered "—").
+  const ledger = computeTemplateCostLedger({
+    totalTransaction: primary.record.totalTransaction,
+    taxRate: primary.record.taxRate,
+    plannedProducts: primary.record.plannedProducts.map((row) => ({
+      quantity: row.quantity,
+      bidCost: row.productCost,
+      taxed: row.taxed,
+    })),
+    serviceItems: primary.record.serviceItems.map((row) => ({
       itemType: row.itemType,
       quantity: row.quantity,
       bidCost: row.bidCost,
+      taxed: row.taxed,
     })),
-  )
-  // Tax Cost roll-up = saved taxRate × the line totals of the TAXED rows across both
-  // tables (planned products use productCost as the per-unit basis; service items use
-  // bidCost). Saved-record based, like the cost roll-ups above.
-  const taxCost = computeTemplateTaxCost(
-    [
-      ...primary.record.plannedProducts
-        .filter((row) => row.taxed)
-        .map((row) => ({ quantity: row.quantity, bidCost: row.productCost })),
-      ...primary.record.serviceItems
-        .filter((row) => row.taxed)
-        .map((row) => ({ quantity: row.quantity, bidCost: row.bidCost })),
-    ],
-    primary.record.taxRate,
-  )
+    commissions: primary.record.commissions.map((row) => ({ percent: row.percent })),
+  })
   const isDirty =
     primary.primarySection.isDirty ||
     products.isDirty ||
@@ -144,10 +135,7 @@ export function TemplateRecordPanel({
                     updatedBy: primary.record.updatedBy,
                   }}
                   disabled={primary.primarySection.isSaving}
-                  materialCost={materialCost}
-                  laborCost={serviceCostByType.LABOR}
-                  miscCost={serviceCostByType.MISCELLANEOUS}
-                  taxCost={taxCost}
+                  ledger={ledger}
                   onFieldChange={(field, value) => {
                     primary.primarySection.setLocalValue((previous: TemplateForm) => ({
                       ...previous,

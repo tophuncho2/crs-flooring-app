@@ -1,5 +1,6 @@
 import { z } from "zod"
 import {
+  TemplateCommissionExecutionError,
   TemplateEntityInvolvementExecutionError,
   TemplateExecutionError,
   TemplatePlannedPaymentExecutionError,
@@ -16,11 +17,15 @@ import type {
 import {
   isServiceItemType,
   isValidMoneyAmount,
+  isValidPercent,
   isValidTaxRate,
   normalizeMoneyAmount,
+  normalizePercent,
   normalizeTaxRate,
   SERVICE_ITEM_TYPE_INVALID_MESSAGE,
   TAX_RATE_INVALID_MESSAGE,
+  TEMPLATE_COMMISSION_NOTES_MAX,
+  TEMPLATE_COMMISSION_PERCENT_INVALID_MESSAGE,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
   TEMPLATE_CUSTOMER_NAME_MAX,
@@ -33,6 +38,8 @@ import {
   TEMPLATE_SERVICE_ITEM_ITEM_NAME_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type FlooringPaymentDirection,
+  type TemplateCommissionForm,
+  type TemplateCommissionsDiff,
   type TemplateEntityInvolvementForm,
   type TemplateEntityInvolvementsDiff,
   type TemplatePlannedPaymentForm,
@@ -104,6 +111,20 @@ function optionalRate(
   if (typeof value !== "string" || value.trim() === "") return ""
   if (!isValidTaxRate(value)) fail(TAX_RATE_INVALID_MESSAGE, path)
   return normalizeTaxRate(value)
+}
+
+// Optional percent ("" = unset), validated against the shared percent VO (≤ 100).
+// Like `optionalRate` but takes its own invalid-message so each caller throws its
+// section's error copy (commission uses its own message).
+function optionalPercent(
+  value: unknown,
+  path: string,
+  fail: (m: string, f?: string) => never,
+  invalidMessage: string,
+): string {
+  if (typeof value !== "string" || value.trim() === "") return ""
+  if (!isValidPercent(value)) fail(invalidMessage, path)
+  return normalizePercent(value)
 }
 
 // Optional boolean form field: use the value when it's a real boolean, else fall
@@ -345,21 +366,108 @@ export function validateTemplateServiceItemsDiffInput(
   return { added, modified, deleted }
 }
 
+// --- Commissions section diff validator ---
+// The THIRD table in the "products" section. Optional entity link (the sales rep,
+// label-only), a manual percent (≤ 100), and free-text notes. No required fields
+// (mirrors entity-involvement). Uses its OWN structural require helpers so EVERY
+// error (structural + field-level) throws the commission error class + code — the
+// client keys off it to route errors to the right table.
+
+function failCommission(message: string, field?: string): never {
+  throw new TemplateCommissionExecutionError({
+    code: "TEMPLATE_COMMISSION_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+function requireCommissionsArray(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) failCommission(`${path} must be an array`, path)
+  return value
+}
+
+function requireCommissionsObject(value: unknown, path: string): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    failCommission(`${path} must be an object`, path)
+  }
+  return value as Record<string, unknown>
+}
+
+// Nullable entity link id: null/undefined/"" = unlinked, a non-empty string = the
+// linked entity (the sales rep). Folds missing → null; the FK (P2003) is the backstop.
+function optionalCommissionEntityId(value: unknown, field: string): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") failCommission(`${field} must be a string`, field)
+  const trimmed = (value as string).trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function validateCommissionForm(value: unknown, path: string): TemplateCommissionForm {
+  const obj = requireCommissionsObject(value, path)
+  return {
+    entityId: optionalCommissionEntityId(obj.entityId, `${path}.entityId`),
+    // Manual percent (≤ 100), blank = unset. Its own invalid message + error class.
+    percent: optionalPercent(
+      obj.percent,
+      `${path}.percent`,
+      failCommission,
+      TEMPLATE_COMMISSION_PERCENT_INVALID_MESSAGE,
+    ),
+    notes:
+      optionalBoundedText(obj.notes, TEMPLATE_COMMISSION_NOTES_MAX, `${path}.notes`, failCommission) ?? "",
+  }
+}
+
+export function validateTemplateCommissionsDiffInput(
+  body: Record<string, unknown>,
+): TemplateCommissionsDiff {
+  const added = requireCommissionsArray(body.added, "added").map((entry, idx) => {
+    const obj = requireCommissionsObject(entry, `added[${idx}]`)
+    return {
+      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failCommission),
+      form: validateCommissionForm(obj.form, `added[${idx}].form`),
+    }
+  })
+
+  const modified = requireCommissionsArray(body.modified, "modified").map((entry, idx) => {
+    const obj = requireCommissionsObject(entry, `modified[${idx}]`)
+    return {
+      id: requireString(obj.id, `modified[${idx}].id`, failCommission),
+      form: validateCommissionForm(obj.form, `modified[${idx}].form`),
+    }
+  })
+
+  const deleted = requireCommissionsArray(body.deleted, "deleted").map((entry, idx) => {
+    const obj = requireCommissionsObject(entry, `deleted[${idx}]`)
+    return { id: requireString(obj.id, `deleted[${idx}].id`, failCommission) }
+  })
+
+  return { added, modified, deleted }
+}
+
 // --- Combined "products" section input ---
-// The section saves BOTH tables in one atomic PATCH: { plannedProducts, serviceItems },
-// each a section diff. One transaction so a single Save is all-or-nothing across
-// both grids (and one round-trip). NOTE: child-row writes don't bump the parent
-// `template.updatedAt`, so the section's optimistic-concurrency token only guards
-// against a concurrent PARENT edit, not concurrent child edits.
+// The section saves THREE tables in one atomic PATCH: { plannedProducts, serviceItems,
+// commissions }, each a section diff. One transaction so a single Save is
+// all-or-nothing across every grid (and one round-trip). NOTE: child-row writes
+// don't bump the parent `template.updatedAt`, so the section's optimistic-concurrency
+// token only guards against a concurrent PARENT edit, not concurrent child edits.
 export function validateTemplateProductsSectionInput(
   body: Record<string, unknown>,
-): { plannedProducts: TemplatePlannedProductsDiff; serviceItems: TemplateServiceItemsDiff } {
+): {
+  plannedProducts: TemplatePlannedProductsDiff
+  serviceItems: TemplateServiceItemsDiff
+  commissions: TemplateCommissionsDiff
+} {
   return {
     plannedProducts: validateTemplatePlannedProductsDiffInput(
       requireObject(body.plannedProducts, "plannedProducts"),
     ),
     serviceItems: validateTemplateServiceItemsDiffInput(
       requireServiceItemsObject(body.serviceItems, "serviceItems"),
+    ),
+    commissions: validateTemplateCommissionsDiffInput(
+      requireCommissionsObject(body.commissions, "commissions"),
     ),
   }
 }

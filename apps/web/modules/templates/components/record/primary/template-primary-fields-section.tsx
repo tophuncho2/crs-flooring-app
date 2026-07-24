@@ -24,10 +24,17 @@ import {
   TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type PaletteColor,
+  type TemplateCostLedger,
   type TemplateForm,
 } from "@builders/domain"
 import { usePropertyJoinedOverride } from "@/modules/templates/controllers/record/primary/use-property-joined-override"
 import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group"
+
+// Render a ledger margin percent: "" (no revenue to measure against) → "—", else the
+// canonical "X.XX" string suffixed with "%". Negative margins carry their sign.
+function formatMarginPercent(value: string): string {
+  return value === "" ? "—" : `${value}%`
+}
 
 /**
  * Slim joined-name + joined-property snapshot the section needs from
@@ -72,10 +79,7 @@ export function TemplatePrimaryFieldsSection({
   draft,
   detail,
   disabled,
-  materialCost,
-  laborCost,
-  miscCost,
-  taxCost,
+  ledger,
   onFieldChange,
   onFieldsChange,
 }: {
@@ -83,25 +87,13 @@ export function TemplatePrimaryFieldsSection({
   detail: TemplatePrimaryDetail | null
   disabled: boolean
   /**
-   * Derived roll-up = sum of the saved planned-product line totals (canonical
-   * money string, "0.00" when none). Read-only reference figure shown beside the
-   * manual Total Transaction; it reflects the last-saved products, not live
-   * unsaved edits in the products section. "0.00" on the create flow.
+   * The full derived cost/profit/margin ledger (from `computeTemplateCostLedger`).
+   * Read-only reference figures shown beside the manual Total Transaction; they
+   * reflect the last-saved products, not live unsaved edits in the products section.
+   * All zeroed / "—" on the create flow. Dollar figures are canonical money strings;
+   * margins are "X.XX" percent strings or "" (rendered "—") when there's no revenue.
    */
-  materialCost: string
-  /**
-   * Per-item-type service-cost roll-ups (canonical money strings, "0.00" when none)
-   * from the saved service items — Labor Cost + Misc. Cost stacked under Material
-   * Cost. Same saved-record basis as materialCost; "0.00" on the create flow.
-   */
-  laborCost: string
-  miscCost: string
-  /**
-   * Derived Tax Cost roll-up (canonical money string, "0.00" when no tax) = the
-   * saved taxRate applied to the saved taxed line totals. Same saved-record basis as
-   * the other roll-ups; sits under Misc. Cost. "0.00" on the create flow.
-   */
-  taxCost: string
+  ledger: TemplateCostLedger
   onFieldChange: (field: keyof TemplateForm, value: string | PaletteColor) => void
   /** Multi-field setter — used by the property-unit cluster for the entity→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
@@ -262,23 +254,45 @@ export function TemplatePrimaryFieldsSection({
 
       <RecordSectionDivider />
 
-      {/* Transaction totals row: the left column stacks the derived read-only cost
-          roll-ups of the saved rows — Material Cost (planned products) then Labor
-          Cost + Misc. Cost (service items, per item type) — beside Total Transaction
-          (the manual money field). Then a second divider closes it above the footer. */}
+      {/* Transaction totals row: the left column stacks the full derived read-only
+          ledger of the saved rows — the direct costs (Material / Labor / Misc), the
+          Net Cost subtotal + its Margin % / Profit, then Commission + Tax, and the
+          Projected Cost / Profit / Margin — beside Total Transaction + Tax Rate (the
+          manual inputs). A second divider then closes it above the footer. */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-2">
         <div className="space-y-2">
           <FormField label="Material Cost">
-            <StaticFieldValue>{formatMoney(materialCost) || "$0.00"}</StaticFieldValue>
+            <StaticFieldValue>{formatMoney(ledger.materialCost) || "$0.00"}</StaticFieldValue>
           </FormField>
           <FormField label="Labor Cost">
-            <StaticFieldValue>{formatMoney(laborCost) || "$0.00"}</StaticFieldValue>
+            <StaticFieldValue>{formatMoney(ledger.laborCost) || "$0.00"}</StaticFieldValue>
           </FormField>
           <FormField label="Misc. Cost">
-            <StaticFieldValue>{formatMoney(miscCost) || "$0.00"}</StaticFieldValue>
+            <StaticFieldValue>{formatMoney(ledger.miscCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Net Cost">
+            <StaticFieldValue>{formatMoney(ledger.netCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Net Margin">
+            <StaticFieldValue>{formatMarginPercent(ledger.netMargin)}</StaticFieldValue>
+          </FormField>
+          <FormField label="Net Profit">
+            <StaticFieldValue>{formatMoney(ledger.netProfit) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Commission Cost">
+            <StaticFieldValue>{formatMoney(ledger.commissionCost) || "$0.00"}</StaticFieldValue>
           </FormField>
           <FormField label="Tax Cost">
-            <StaticFieldValue>{formatMoney(taxCost) || "$0.00"}</StaticFieldValue>
+            <StaticFieldValue>{formatMoney(ledger.taxCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Projected Cost">
+            <StaticFieldValue>{formatMoney(ledger.projectedCost) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Projected Profit">
+            <StaticFieldValue>{formatMoney(ledger.projectedProfit) || "$0.00"}</StaticFieldValue>
+          </FormField>
+          <FormField label="Projected Margin">
+            <StaticFieldValue>{formatMarginPercent(ledger.projectedMargin)}</StaticFieldValue>
           </FormField>
         </div>
         <div className="space-y-2">

@@ -7,65 +7,36 @@
 // consumes the rate as a resolved string, so the math is unaffected.
 
 import { normalizeMoneyAmount } from "../shared/money.js"
+import { isValidPercent, normalizePercent, PERCENT_MAX, PERCENT_SCALE } from "../shared/percent.js"
 import {
   sumTemplatePlannedProductLineTotals,
   type TemplatePlannedProductLineInputs,
 } from "./planned-products/math.js"
 
 /** Fractional digits a tax rate carries (percent, e.g. 8.375). */
-export const TAX_RATE_SCALE = 3
+export const TAX_RATE_SCALE = PERCENT_SCALE
 /** Max accepted rate — a percentage over 100 is treated as a typo. */
-export const TAX_RATE_MAX = 100
+export const TAX_RATE_MAX = PERCENT_MAX
 export const TAX_RATE_INVALID_MESSAGE = "Tax rate must be a percentage between 0 and 100"
-
-// Non-negative, up to 3 integer digits, up to TAX_RATE_SCALE fractional digits.
-const TAX_RATE_INPUT_PATTERN = /^\d{1,3}(\.\d{1,3})?$/
-
-function stripLeadingZeros(digits: string): string {
-  const trimmed = digits.replace(/^0+/, "")
-  return trimmed === "" ? "0" : trimmed
-}
 
 /**
  * True when `input` is a well-formed tax rate: non-negative, ≤ TAX_RATE_SCALE
  * decimals, and ≤ TAX_RATE_MAX. Empty string is NOT valid here — callers treat
- * empty as "unset" upstream.
+ * empty as "unset" upstream. Thin wrapper over the shared percent VO.
  */
 export function isValidTaxRate(input: string): boolean {
-  const trimmed = input.trim()
-  if (!TAX_RATE_INPUT_PATTERN.test(trimmed)) return false
-  return Number(trimmed) <= TAX_RATE_MAX
+  return isValidPercent(input, TAX_RATE_MAX)
 }
 
 /**
  * Canonicalize a tax rate to a fixed-scale-3 string ("8" → "8.000", "8.25" →
- * "8.250"). Empty/garbage → "". More than TAX_RATE_SCALE decimals round half-up via
- * integer math. The fixed-scale-3-WITH-DOT invariant is LOAD-BEARING: the tax math
- * does `normalizeTaxRate(rate).replace(".", "")` to read the rate as an integer of
- * thousandths-of-a-percent, so an unpadded string ("8.25" instead of "8.250") would
- * silently mis-scale the tax by 10×.
+ * "8.250"). Empty/garbage → "". The fixed-scale-3-WITH-DOT invariant is
+ * LOAD-BEARING: the tax math does `normalizeTaxRate(rate).replace(".", "")` to read
+ * the rate as an integer of thousandths-of-a-percent, so an unpadded string would
+ * silently mis-scale the tax by 10×. Delegates to the shared percent VO.
  */
 export function normalizeTaxRate(input: string): string {
-  const raw = input.trim().replace(/^\+/, "")
-  if (raw === "") return ""
-
-  const match = /^(\d+)(?:\.(\d+))?$/.exec(raw)
-  if (!match) return ""
-
-  const intPart = match[1]
-  const fracPart = match[2] ?? ""
-
-  if (fracPart.length <= TAX_RATE_SCALE) {
-    return `${stripLeadingZeros(intPart)}.${fracPart.padEnd(TAX_RATE_SCALE, "0")}`
-  }
-
-  // More than three decimals: round half-up on the digit string with BigInt.
-  const kept = BigInt(intPart + fracPart.slice(0, TAX_RATE_SCALE))
-  const roundUp = fracPart.charCodeAt(TAX_RATE_SCALE) - 48 >= 5
-  const scaled = (roundUp ? kept + 1n : kept).toString().padStart(TAX_RATE_SCALE + 1, "0")
-  const whole = stripLeadingZeros(scaled.slice(0, -TAX_RATE_SCALE))
-  const frac = scaled.slice(-TAX_RATE_SCALE)
-  return `${whole}.${frac}`
+  return normalizePercent(input)
 }
 
 /**

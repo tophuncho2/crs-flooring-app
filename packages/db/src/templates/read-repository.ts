@@ -6,6 +6,7 @@ import { buildTemplatesOrderBy } from "./order-by.js"
 import { entityTypeSelect } from "../entities/read-repository.js"
 import { templateEntityInvolvementSelect } from "./entity-involvement/read-repository.js"
 import { templateServiceItemSelect } from "./service-items/read-repository.js"
+import { templateCommissionSelect } from "./commissions/read-repository.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeTemplate,
@@ -148,6 +149,13 @@ const templateDetailSelect = {
   // to a synced work order. Reuses the shared select fragment.
   entityInvolvements: {
     select: templateEntityInvolvementSelect,
+    orderBy: { createdAt: "asc" as const },
+  },
+  // Commissions — 3rd grid in the "products" section (entity link + manual percent).
+  // Detail-only; the record view reads the array directly. Template-only (does NOT
+  // carry into a synced work order). Reuses the shared select fragment.
+  commissions: {
+    select: templateCommissionSelect,
     orderBy: { createdAt: "asc" as const },
   },
 } as const

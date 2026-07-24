@@ -178,6 +178,7 @@ model Entity {
   imports         FlooringImportEntry[]
   templatePlannedPayments TemplatePlannedPayment[]
   templateEntityInvolvements TemplateEntityInvolvement[]
+  templateCommissions TemplateCommission[]
   workOrderPlannedPayments FlooringWorkOrderPlannedPayment[]
   workOrderEntityInvolvements FlooringWorkOrderEntityInvolvement[]
   certificates    Certificate[]
@@ -813,6 +814,7 @@ model Template {
   serviceItems         TemplateServiceItem[]
   plannedPayments      TemplatePlannedPayment[]
   entityInvolvements   TemplateEntityInvolvement[]
+  commissions          TemplateCommission[]
   workOrders           FlooringWorkOrder[]
 
   @@index([templateNumberInt])
@@ -946,6 +948,37 @@ model TemplateServiceItem {
   @@index([templateId, createdAt])
   @@index([unitId])
   @@map("template_service_item")
+}
+
+// A sales-rep commission line item on a template — the THIRD table in the
+// "products" record section (saved in the same atomic diff as TemplatePlannedProduct
+// + TemplateServiceItem). Optionally links an Entity (SetNull, the sales rep —
+// label-only, does NOT drive the math). `percent` is a manual scale-3 percent
+// (mirrors Template.taxRate); the line total (percent × the template's Net Cost) is
+// computed on read/at the ledger, never stored — and Net Cost is cross-row, so no
+// per-row column. Commission is NEVER taxed (no `taxed` flag) and carries no
+// payment-purpose. Structure mirrors the other template child tables (Cascade off
+// the template, actor + timestamp pair). NULL = unset on every optional column.
+model TemplateCommission {
+  id         String   @id @default(uuid())
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  entityId   String?
+  entity     Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  // Manual commission rate as a PERCENT (e.g. 5, 7.5). Nullable — NULL = unset
+  // (contributes 0). Scale-3 to reuse the shared percent value-object (mirrors
+  // Template.taxRate).
+  percent    Decimal? @db.Decimal(6, 3)
+  notes      String?  @db.VarChar(30)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  createdBy  String?
+  updatedBy  String?
+
+  @@index([templateId])
+  @@index([templateId, createdAt])
+  @@index([entityId])
+  @@map("template_commission")
 }
 
 model FlooringWarehouse {

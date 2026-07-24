@@ -81,7 +81,9 @@ describe("validateTemplateServiceItemsDiffInput — service item form", () => {
 })
 
 describe("validateTemplateProductsSectionInput — combined envelope", () => {
-  it("parses both named diffs together", () => {
+  const EMPTY_DIFF = { added: [], modified: [], deleted: [] }
+
+  it("parses all three named diffs together", () => {
     const parsed = validateTemplateProductsSectionInput({
       plannedProducts: {
         added: [{ tempId: "p1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } }],
@@ -89,12 +91,20 @@ describe("validateTemplateProductsSectionInput — combined envelope", () => {
         deleted: [],
       },
       serviceItems: diffWith({}),
+      commissions: {
+        added: [{ tempId: "c1", form: { entityId: null, percent: "10", notes: "" } }],
+        modified: [],
+        deleted: [],
+      },
     })
     expect(parsed.plannedProducts.added[0].form.productId).toBe("prod-1")
     expect(parsed.serviceItems.added[0].form.itemType).toBe("LABOR")
+    expect(parsed.commissions.added[0].form.percent).toBe("10.000")
   })
 
   it("throws when a named diff is missing", () => {
-    expect(() => validateTemplateProductsSectionInput({ serviceItems: diffWith({}) })).toThrow()
+    expect(() =>
+      validateTemplateProductsSectionInput({ serviceItems: diffWith({}), commissions: EMPTY_DIFF }),
+    ).toThrow()
   })
 })

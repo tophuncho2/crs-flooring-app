@@ -18,7 +18,12 @@ export const PATCH = createMutationRoute({
   },
   useCase: ({ input, access, params }) =>
     saveTemplateProductsSectionUseCase(
-      { templateId: params.id, plannedProducts: input.plannedProducts, serviceItems: input.serviceItems },
+      {
+        templateId: params.id,
+        plannedProducts: input.plannedProducts,
+        serviceItems: input.serviceItems,
+        commissions: input.commissions,
+      },
       access.user.email,
     ),
   telemetry: ({ params }) => ({

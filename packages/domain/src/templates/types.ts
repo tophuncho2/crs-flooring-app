@@ -3,6 +3,7 @@ import type { TemplatePlannedProductRow } from "./planned-products/types.js"
 import type { TemplatePlannedPaymentRow } from "./planned-payments/types.js"
 import type { TemplateEntityInvolvementRow } from "./entity-involvement/types.js"
 import type { TemplateServiceItemRow } from "./service-items/types.js"
+import type { TemplateCommissionRow } from "./commissions/types.js"
 
 export type TemplateListRow = {
   id: string
@@ -66,6 +67,10 @@ export type TemplateDetail = TemplateListRow & {
   // Entity-involvement rows — optional entity link + free-text involvement type.
   // Read as an array by the record view; carries forward to a synced work order.
   entityInvolvements: TemplateEntityInvolvementRow[]
+  // Sales-rep commission rows — 3rd grid in the "products" section (optional entity
+  // link + manual percent). Read as an array by the record view; template-only (does
+  // NOT carry into a synced work order).
+  commissions: TemplateCommissionRow[]
   /**
    * Neighbors by global template-number order (`templateNumberInt`), ignoring
    * property/entity filters — powers the record-view shell stepper (◀ TP-# ▶). Null
