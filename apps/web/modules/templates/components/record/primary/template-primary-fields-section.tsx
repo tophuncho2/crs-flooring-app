@@ -254,67 +254,91 @@ export function TemplatePrimaryFieldsSection({
 
       <RecordSectionDivider />
 
-      {/* Transaction totals row: the left column stacks the full derived read-only
-          ledger of the saved rows — the direct costs (Material / Labor / Misc), the
-          Net Cost subtotal + its Margin % / Profit, then Commission + Tax, and the
-          Projected Cost / Profit / Margin — beside Total Transaction + Tax Rate (the
-          manual inputs). A second divider then closes it above the footer. */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-        <div className="space-y-2">
-          <FormField label="Material Cost">
-            <StaticFieldValue>{formatMoney(ledger.materialCost) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Labor Cost">
-            <StaticFieldValue>{formatMoney(ledger.laborCost) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Misc. Cost">
-            <StaticFieldValue>{formatMoney(ledger.miscCost) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Net Cost">
-            <StaticFieldValue>{formatMoney(ledger.netCost) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Net Margin">
-            <StaticFieldValue>{formatMarginPercent(ledger.netMargin)}</StaticFieldValue>
-          </FormField>
-          <FormField label="Net Profit">
-            <StaticFieldValue>{formatMoney(ledger.netProfit) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Commission Cost">
-            <StaticFieldValue>{formatMoney(ledger.commissionCost) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Tax Cost">
-            <StaticFieldValue>{formatMoney(ledger.taxCost) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Projected Cost">
-            <StaticFieldValue>{formatMoney(ledger.projectedCost) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Projected Profit">
-            <StaticFieldValue>{formatMoney(ledger.projectedProfit) || "$0.00"}</StaticFieldValue>
-          </FormField>
-          <FormField label="Projected Margin">
-            <StaticFieldValue>{formatMarginPercent(ledger.projectedMargin)}</StaticFieldValue>
-          </FormField>
-        </div>
-        <div className="space-y-2">
-          <FormField label="Total Transaction">
-            <MoneyCell
-              editable={editable}
-              value={draft.totalTransaction}
-              onChange={(next) => onFieldChange("totalTransaction", next)}
-              ariaLabel="Total transaction"
-            />
-          </FormField>
-          <FormField label="Tax Rate %">
-            <NumberCell
-              editable={editable}
-              value={draft.taxRate}
-              onChange={(next) => onFieldChange("taxRate", next)}
-              placeholder="e.g. 8.375"
-              ariaLabel="Tax rate percent"
-            />
-          </FormField>
-        </div>
-      </div>
+      {/* Transaction totals: a column break flanks the manual inputs + direct-cost
+          buildup (left) against the derived summary (right). Left flank — Total
+          Transaction + Tax Rate share the top row (half width each, sitting over
+          Material Cost), then the cost stack Material / Labor / Misc / Commission /
+          Tax Cost runs down full-width. Right flank — two vertical columns: the
+          Projected column (Cost → Profit → Margin) beside the Net column (Cost →
+          Profit → Margin). A second divider then closes it above the footer. */}
+      <RecordColumnBreak
+        left={
+          <FieldSection gap="0.5rem">
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Total Transaction">
+                <MoneyCell
+                  editable={editable}
+                  value={draft.totalTransaction}
+                  onChange={(next) => onFieldChange("totalTransaction", next)}
+                  ariaLabel="Total transaction"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={4}>
+              <FormField label="Tax Rate %">
+                <NumberCell
+                  editable={editable}
+                  value={draft.taxRate}
+                  onChange={(next) => onFieldChange("taxRate", next)}
+                  placeholder="e.g. 8.375"
+                  ariaLabel="Tax rate percent"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={8}>
+              <FormField label="Material Cost">
+                <StaticFieldValue>{formatMoney(ledger.materialCost) || "$0.00"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={3} colSpan={8}>
+              <FormField label="Labor Cost">
+                <StaticFieldValue>{formatMoney(ledger.laborCost) || "$0.00"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={4} colSpan={8}>
+              <FormField label="Misc. Cost">
+                <StaticFieldValue>{formatMoney(ledger.miscCost) || "$0.00"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={5} colSpan={8}>
+              <FormField label="Commission Cost">
+                <StaticFieldValue>{formatMoney(ledger.commissionCost) || "$0.00"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={6} colSpan={8}>
+              <FormField label="Tax Cost">
+                <StaticFieldValue>{formatMoney(ledger.taxCost) || "$0.00"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        }
+        right={
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+            <div className="space-y-2">
+              <FormField label="Projected Cost">
+                <StaticFieldValue>{formatMoney(ledger.projectedCost) || "$0.00"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Projected Profit">
+                <StaticFieldValue>{formatMoney(ledger.projectedProfit) || "$0.00"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Projected Margin">
+                <StaticFieldValue>{formatMarginPercent(ledger.projectedMargin)}</StaticFieldValue>
+              </FormField>
+            </div>
+            <div className="space-y-2">
+              <FormField label="Net Cost">
+                <StaticFieldValue>{formatMoney(ledger.netCost) || "$0.00"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Net Profit">
+                <StaticFieldValue>{formatMoney(ledger.netProfit) || "$0.00"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Net Margin">
+                <StaticFieldValue>{formatMarginPercent(ledger.netMargin)}</StaticFieldValue>
+              </FormField>
+            </div>
+          </div>
+        }
+      />
 
       <RecordSectionDivider />
 
