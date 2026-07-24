@@ -97,7 +97,7 @@ describe("saveTemplateProductsSectionUseCase", () => {
     expect(listTemplateServiceItemsMock).toHaveBeenCalledWith("tpl-1", expect.anything())
   })
 
-  it("passes a manual service-item bidCost straight through to the service writer", async () => {
+  it("passes a manual service-item cost straight through to the service writer", async () => {
     await saveTemplateProductsSectionUseCase(
       {
         templateId: "tpl-1",
@@ -111,7 +111,7 @@ describe("saveTemplateProductsSectionUseCase", () => {
                 itemName: "Install",
                 quantity: "2",
                 unitId: "",
-                bidCost: "10.00",
+                cost: "10.00",
                 taxed: true,
               },
             },
@@ -124,8 +124,8 @@ describe("saveTemplateProductsSectionUseCase", () => {
       ACTOR,
     )
     const [, diff] = applyTemplateServiceItemsDiffMock.mock.calls[0]
-    // Manual bid cost + taxed flag survive to the writer (no product join, no re-seed).
-    expect(diff.added[0].input.bidCost).toBe("10.00")
+    // Manual cost + taxed flag survive to the writer (no product join, no re-seed).
+    expect(diff.added[0].input.cost).toBe("10.00")
     expect(diff.added[0].input.taxed).toBe(true)
   })
 

@@ -5,7 +5,7 @@ import {
 } from "@/app/api/templates/_validators"
 
 // Covers the service / misc item form at the API edge: itemType is a REQUIRED enum
-// (ServiceItemType — LABOR | MISCELLANEOUS), itemName is free-text + bounded, bidCost
+// (ServiceItemType — LABOR | MISCELLANEOUS), itemName is free-text + bounded, cost
 // is a MANUAL money column that validates + canonicalizes, quantity is optional
 // ("" = unset).
 function diffWith(form: Record<string, unknown>) {
@@ -18,7 +18,7 @@ function diffWith(form: Record<string, unknown>) {
           itemName: "Install",
           quantity: "2",
           unitId: "",
-          bidCost: "10",
+          cost: "10",
           ...form,
         },
       },
@@ -30,11 +30,11 @@ function diffWith(form: Record<string, unknown>) {
 
 describe("validateTemplateServiceItemsDiffInput — service item form", () => {
   it("accepts a well-formed row and canonicalizes money to scale-2", () => {
-    const diff = validateTemplateServiceItemsDiffInput(diffWith({ bidCost: "10.5" }))
+    const diff = validateTemplateServiceItemsDiffInput(diffWith({ cost: "10.5" }))
     expect(diff.added[0].form).toMatchObject({
       itemType: "LABOR",
       itemName: "Install",
-      bidCost: "10.50",
+      cost: "10.50",
     })
   })
 
@@ -63,8 +63,8 @@ describe("validateTemplateServiceItemsDiffInput — service item form", () => {
     expect(validateTemplateServiceItemsDiffInput(diffWith({ taxed: true })).added[0].form.taxed).toBe(true)
   })
 
-  it("rejects a malformed money amount (bidCost)", () => {
-    expect(() => validateTemplateServiceItemsDiffInput(diffWith({ bidCost: "abc" }))).toThrow()
+  it("rejects a malformed money amount (cost)", () => {
+    expect(() => validateTemplateServiceItemsDiffInput(diffWith({ cost: "abc" }))).toThrow()
   })
 
   it("rejects an itemName over the length cap", () => {

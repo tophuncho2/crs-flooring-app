@@ -52,13 +52,13 @@ export function TemplateRecordPanel({
     taxRate: primary.record.taxRate,
     plannedProducts: primary.record.plannedProducts.map((row) => ({
       quantity: row.quantity,
-      bidCost: row.productCost,
+      cost: row.productCost,
       taxed: row.taxed,
     })),
     serviceItems: primary.record.serviceItems.map((row) => ({
       itemType: row.itemType,
       quantity: row.quantity,
-      bidCost: row.bidCost,
+      cost: row.cost,
       taxed: row.taxed,
     })),
     commissions: primary.record.commissions.map((row) => ({ percent: row.percent })),

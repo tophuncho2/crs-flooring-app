@@ -58,7 +58,7 @@ export type TemplateDetail = TemplateListRow & {
   propertyInstructions: string
   plannedProducts: TemplatePlannedProductRow[]
   // Service / miscellaneous line items — same "products" record section as planned
-  // products (one Save envelope). Read as an array by the record view. bidCost is a
+  // products (one Save envelope). Read as an array by the record view. cost is a
   // manual persisted column here (not a live product join).
   serviceItems: TemplateServiceItemRow[]
   // Planned payments on the template — the §3 payment plan (own table). Read as an

@@ -249,7 +249,7 @@ function validatePlannedProductForm(value: unknown, path: string): TemplatePlann
     // Editable unit FK (UoM epic 2C); "" = no unit.
     unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
-    // No stored money column — bid cost is a live product join (the line-total
+    // No stored money column — cost is a live product join (the line-total
     // basis), not a form field.
     notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
     // Taxed flag — materials default to taxed on a stale client.
@@ -286,7 +286,7 @@ export function validateTemplatePlannedProductsDiffInput(
 
 // --- Service / misc items section diff validator ---
 // The second table in the "products" section. No product link. itemType is a
-// REQUIRED enum (ServiceItemType); itemName is free-text (bounded); bidCost is a
+// REQUIRED enum (ServiceItemType); itemName is free-text (bounded); cost is a
 // MANUAL money column (unlike planned products' live product-cost join). Uses its OWN structural
 // require helpers so EVERY error (structural + field-level) throws the service-item
 // error class + code — the client keys off it to route errors to the right table
@@ -330,9 +330,9 @@ function validateServiceItemForm(value: unknown, path: string): TemplateServiceI
     // Editable unit FK (UoM epic 2C); "" = no unit.
     unitId: optionalString(obj.unitId) ?? "",
     // Job-costing money column (money standard) — blank clears, else validated +
-    // canonicalized. bidCost is MANUAL here (a persisted column, not a join) and is
+    // canonicalized. cost is MANUAL here (a persisted column, not a join) and is
     // the per-unit basis for the derived line total.
-    bidCost: optionalMoney(obj.bidCost, `${path}.bidCost`, failServiceItem),
+    cost: optionalMoney(obj.cost, `${path}.cost`, failServiceItem),
     // Taxed flag — service / labor lines default to NOT taxed on a stale client.
     taxed: optionalBoolean(obj.taxed, false),
   }

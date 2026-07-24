@@ -11,8 +11,8 @@ describe("normalizeTemplateServiceItem", () => {
     quantity: { toString: () => "10" } as { toString(): string },
     unitId: "unit-1",
     unit: { name: "Hour", abbreviation: "hr" },
-    // MANUAL bid cost (no product join) — the per-unit basis for the line total.
-    bidCost: { toString: () => "3.5" } as { toString(): string },
+    // MANUAL cost (no product join) — the per-unit basis for the line total.
+    cost: { toString: () => "3.5" } as { toString(): string },
     taxed: false,
     createdAt: "2026-07-08T00:00:00.000Z",
     updatedAt: "2026-07-08T00:00:00.000Z",
@@ -20,10 +20,10 @@ describe("normalizeTemplateServiceItem", () => {
     updatedBy: "editor@example.com",
   }
 
-  it("derives the line total off the manual bid cost", () => {
+  it("derives the line total off the manual cost", () => {
     const row = normalizeTemplateServiceItem(base)
-    expect(row.bidCost).toBe("3.50")
-    // 10 × 3.50 (bid cost) = 35.00
+    expect(row.cost).toBe("3.50")
+    // 10 × 3.50 (cost) = 35.00
     expect(row.lineTotal).toBe("35.00")
     // Taxed flag passes straight through.
     expect(row.taxed).toBe(false)
@@ -37,14 +37,14 @@ describe("normalizeTemplateServiceItem", () => {
       unitId: null,
       unit: null,
       itemName: null,
-      bidCost: null,
+      cost: null,
       createdBy: null,
       updatedBy: null,
     })
     expect(row.itemType).toBe("MISCELLANEOUS")
     expect(row.itemName).toBe("")
     expect(row.quantity).toBe("")
-    expect(row.bidCost).toBe("")
+    expect(row.cost).toBe("")
     // All inputs blank → blank line total (UI renders "—").
     expect(row.lineTotal).toBe("")
     expect(row.createdBy).toBeNull()
@@ -52,7 +52,7 @@ describe("normalizeTemplateServiceItem", () => {
 })
 
 describe("validateTemplateServiceItemForm", () => {
-  const form = { itemType: "LABOR", itemName: "", quantity: "", bidCost: "" }
+  const form = { itemType: "LABOR", itemName: "", quantity: "", cost: "" }
 
   it("accepts a row with a valid itemType and nothing else", () => {
     expect(validateTemplateServiceItemForm(form)).toBe("")
@@ -72,7 +72,7 @@ describe("validateTemplateServiceItemForm", () => {
   })
 
   it("rejects an invalid money amount in the bid-cost field", () => {
-    expect(validateTemplateServiceItemForm({ ...form, bidCost: "abc" })).toMatch(/Bid cost/)
+    expect(validateTemplateServiceItemForm({ ...form, cost: "abc" })).toMatch(/Cost/)
   })
 
   it("rejects a non-positive quantity when provided", () => {
@@ -83,9 +83,9 @@ describe("validateTemplateServiceItemForm", () => {
 describe("sumTemplateServiceItemLineTotalsByType", () => {
   it("sums line totals grouped by item type", () => {
     const result = sumTemplateServiceItemLineTotalsByType([
-      { itemType: "LABOR", quantity: "10", bidCost: "3.50" }, // 35.00
-      { itemType: "LABOR", quantity: "2", bidCost: "5.00" }, // 10.00
-      { itemType: "MISCELLANEOUS", quantity: "4", bidCost: "1.25" }, // 5.00
+      { itemType: "LABOR", quantity: "10", cost: "3.50" }, // 35.00
+      { itemType: "LABOR", quantity: "2", cost: "5.00" }, // 10.00
+      { itemType: "MISCELLANEOUS", quantity: "4", cost: "1.25" }, // 5.00
     ])
     expect(result.LABOR).toBe("45.00")
     expect(result.MISCELLANEOUS).toBe("5.00")
@@ -93,7 +93,7 @@ describe("sumTemplateServiceItemLineTotalsByType", () => {
 
   it("returns 0.00 for a type with no items", () => {
     const result = sumTemplateServiceItemLineTotalsByType([
-      { itemType: "LABOR", quantity: "1", bidCost: "9.99" },
+      { itemType: "LABOR", quantity: "1", cost: "9.99" },
     ])
     expect(result.LABOR).toBe("9.99")
     expect(result.MISCELLANEOUS).toBe("0.00")

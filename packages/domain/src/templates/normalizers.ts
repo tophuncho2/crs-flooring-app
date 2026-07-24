@@ -79,7 +79,7 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     customerName: template.customerName ?? "",
     description: template.description ?? "",
     // Money-on-read: canonical "X.XX" / "" so dirty-checks compare stable strings
-    // (no trailing-zero false-dirty). Mirrors the service-item bidCost normalizer.
+    // (no trailing-zero false-dirty). Mirrors the service-item cost normalizer.
     totalTransaction:
       template.totalTransaction == null ? "" : normalizeMoneyAmount(template.totalTransaction.toString()),
     // Rate-on-read: canonical scale-3 "X.XXX" / "" so dirty-checks compare stable

@@ -34,7 +34,7 @@ describe("normalizeTaxRate", () => {
 })
 
 describe("computeTemplateTaxCost", () => {
-  const line = (quantity: string, bidCost: string) => ({ quantity, bidCost })
+  const line = (quantity: string, cost: string) => ({ quantity, cost })
 
   it("applies the rate to a single taxed line total (half-up)", () => {
     // $100.00 base × 8.375% = $8.375 → $8.38

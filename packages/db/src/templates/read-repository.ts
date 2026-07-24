@@ -106,7 +106,7 @@ const templateDetailSelect = {
       // de-referenced (2D drops them).
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
-      // Bid cost = live product.cost above (the per-unit basis for the derived
+      // Cost = live product.cost above (the per-unit basis for the derived
       // line total) — not a stored column here.
       notes: true,
       taxed: true,
@@ -119,7 +119,7 @@ const templateDetailSelect = {
   },
   // Service / miscellaneous line items — same "products" record section as planned
   // products (one Save envelope). Detail-only; the record view reads the array
-  // directly. No product join (bid cost is a stored column here). Reuses the
+  // directly. No product join (cost is a stored column here). Reuses the
   // shared select fragment.
   serviceItems: {
     select: templateServiceItemSelect,

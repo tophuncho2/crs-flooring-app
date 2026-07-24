@@ -15,13 +15,13 @@ import {
 import type { TemplatePlannedProductLocal } from "@/modules/templates/controllers/record/products/use-template-products-section"
 
 const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductLocal>[] = [
-  // Product carries the wide 360 floor + sole grow. Bid Cost is a read-only live
+  // Product carries the wide 360 floor + sole grow. Cost is a read-only live
   // join off the product and the per-unit basis for Line Total; Line Total is the
   // derived total. Notes is the pinned tail.
   { key: "product", label: "Product", minWidth: 360, grow: 1 },
   { key: "quantity", label: "Quantity", width: 120, align: "end" },
   { key: "unit", label: "Unit", width: 130 },
-  { key: "bidCost", label: "Bid Cost", width: 110, align: "end" },
+  { key: "cost", label: "Cost", width: 110, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
   { key: "notes", label: "Notes", width: 240 },
   { key: "taxed", label: "Taxed", width: 90, align: "center" },
@@ -104,24 +104,24 @@ export function TemplatePlannedProductsGrid({
                 ariaLabel="Planned product quantity"
               />
             )
-          case "bidCost":
-            // Bid cost = live cost read-joined off the product — read-only. "—"
+          case "cost":
+            // Cost = live cost read-joined off the product — read-only. "—"
             // when the product has no cost set.
             return (
               <NumberCell
                 editable={false}
                 align="end"
                 value={item.productCost ? formatMoney(item.productCost) : "—"}
-                ariaLabel="Planned product bid cost (from product)"
+                ariaLabel="Planned product cost (from product)"
               />
             )
           case "lineTotal": {
-            // Derived: qty × bidCost, where bid cost is the live product cost.
+            // Derived: qty × cost, where cost is the live product cost.
             // Read-only, recomputed live from the local row. "—" when all inputs
             // are blank.
             const lineTotal = computeTemplatePlannedProductLineTotal({
               quantity: item.quantity,
-              bidCost: item.productCost,
+              cost: item.productCost,
             })
             return (
               <NumberCell

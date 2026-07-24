@@ -3,7 +3,7 @@ import { isServiceItemType, SERVICE_ITEM_TYPE_INVALID_MESSAGE } from "../../shar
 import type { TemplateServiceItemForm } from "./types.js"
 
 // itemType is a REQUIRED enum (ServiceItemType); itemName is free-text/optional.
-// The bid-cost money field is optional; a provided value must be a valid money
+// The cost money field is optional; a provided value must be a valid money
 // amount (defense — the API validator normalizes too). Quantity is optional; a
 // provided value must be a finite number greater than zero.
 export function validateTemplateServiceItemForm(input: TemplateServiceItemForm) {
@@ -14,7 +14,7 @@ export function validateTemplateServiceItemForm(input: TemplateServiceItemForm) 
     return SERVICE_ITEM_TYPE_INVALID_MESSAGE
   }
   const moneyFields: Array<[string, string]> = [
-    ["Bid cost", input.bidCost],
+    ["Cost", input.cost],
   ]
   for (const [label, value] of moneyFields) {
     if (value.trim() && !isValidMoneyAmount(value)) {

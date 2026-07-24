@@ -14,14 +14,14 @@ import type { TemplateServiceItemLocal } from "@/modules/templates/controllers/r
 import { SERVICE_ITEM_TYPE_OPTIONS } from "./service-item-type-options"
 
 const TEMPLATE_SERVICE_ITEMS_COLUMNS: DataTableColumn<TemplateServiceItemLocal>[] = [
-  // Item Type + Name are free-text; Bid Cost is a MANUAL editable money column
+  // Item Type + Name are free-text; Cost is a MANUAL editable money column
   // (the divergence from planned products, where it's a read-only product join) and
   // the per-unit basis for Line Total; Line Total is derived.
   { key: "itemType", label: "Item Type", minWidth: 160, grow: 1 },
   { key: "itemName", label: "Item Name", minWidth: 200, grow: 1 },
   { key: "quantity", label: "Quantity", width: 120, align: "end" },
   { key: "unit", label: "Unit", width: 130 },
-  { key: "bidCost", label: "Bid Cost", width: 120, align: "end" },
+  { key: "cost", label: "Cost", width: 120, align: "end" },
   { key: "lineTotal", label: "Line Total", width: 120, align: "end" },
   { key: "taxed", label: "Taxed", width: 90, align: "center" },
 ]
@@ -106,24 +106,24 @@ export function TemplateServiceItemsGrid({
                 ariaLabel="Service item unit"
               />
             )
-          case "bidCost":
-            // Manual bid cost — an EDITABLE money column here (the divergence from
+          case "cost":
+            // Manual cost — an EDITABLE money column here (the divergence from
             // planned products, where it's a read-only live product-cost join).
             return (
               <MoneyCell
                 editable={editable}
-                value={item.bidCost}
-                onChange={(next) => onChangeField(item.id, "bidCost", next)}
-                ariaLabel="Service item bid cost"
+                value={item.cost}
+                onChange={(next) => onChangeField(item.id, "cost", next)}
+                ariaLabel="Service item cost"
               />
             )
           case "lineTotal": {
-            // Derived: qty × bidCost, using the manual bid cost (reuses the
+            // Derived: qty × cost, using the manual cost (reuses the
             // planned-product line math). Read-only, recomputed live. "—" when all
             // inputs blank.
             const lineTotal = computeTemplatePlannedProductLineTotal({
               quantity: item.quantity,
-              bidCost: item.bidCost,
+              cost: item.cost,
             })
             return (
               <NumberCell

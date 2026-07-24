@@ -24,7 +24,7 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
   const quantity = item.quantity == null ? "" : item.quantity.toString()
   // Live product cost (read-join). Normalize on read to a canonical "X.XX" so the
   // line total and any dirty-check compare against a stable string. "" = no cost.
-  // This is the "bid cost" — the per-unit basis for the line total.
+  // This is the "cost" — the per-unit basis for the line total.
   const productCost = item.product.cost == null ? "" : normalizeMoneyAmount(item.product.cost.toString())
   return {
     id: item.id,
@@ -40,8 +40,8 @@ export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInpu
     notes: item.notes ?? "",
     taxed: item.taxed,
     productCost,
-    // Line total = qty × bidCost, where bidCost is the live product cost.
-    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, bidCost: productCost }),
+    // Line total = qty × cost, where cost is the live product cost.
+    lineTotal: computeTemplatePlannedProductLineTotal({ quantity, cost: productCost }),
     createdAt: toIsoTimestamp(item.createdAt),
     updatedAt: toIsoTimestamp(item.updatedAt),
     createdBy: item.createdBy ?? null,

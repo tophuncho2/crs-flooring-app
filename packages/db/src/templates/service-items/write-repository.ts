@@ -3,7 +3,7 @@ import { normalizeMoneyAmount, type ServiceItemType, type TemplateServiceItemFor
 
 // Wire-input shape for service-item writes. The user-supplied form carries the
 // required itemType enum, free-text itemName, the editable unit FK, and the manual
-// money column (bidCost).
+// money column (cost).
 export type WriteTemplateServiceItemInput = TemplateServiceItemForm
 
 // Quantity is optional: a blank string means "unset" (stored NULL); a non-blank
@@ -68,7 +68,7 @@ export async function applyTemplateServiceItemsDiff(
         itemName: toText(draft.input.itemName),
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
-        bidCost: toMoney(draft.input.bidCost),
+        cost: toMoney(draft.input.cost),
         taxed: draft.input.taxed,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
@@ -84,7 +84,7 @@ export async function applyTemplateServiceItemsDiff(
         itemName: toText(update.input.itemName),
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),
-        bidCost: toMoney(update.input.bidCost),
+        cost: toMoney(update.input.cost),
         taxed: update.input.taxed,
         updatedBy: input.actorEmail,
       },

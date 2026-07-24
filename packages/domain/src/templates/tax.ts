@@ -42,7 +42,7 @@ export function normalizeTaxRate(input: string): string {
 /**
  * Derived Tax Cost = taxRate% × the summed pre-tax line totals of the TAXED rows.
  * `taxedLineInputs` is the already-filtered set of taxed rows (both tables), each as
- * { quantity, bidCost } — the same shape the line-total math consumes. Integer-cents,
+ * { quantity, cost } — the same shape the line-total math consumes. Integer-cents,
  * half-up. A blank/invalid rate → "0.00".
  */
 export function computeTemplateTaxCost(

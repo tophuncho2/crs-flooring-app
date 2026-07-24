@@ -15,7 +15,7 @@ const templatePlannedProductSelect = {
   // display name/abbrev (snapshot columns fully de-referenced, 2D drops them).
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
-  // Bid cost is the live product join above (the per-unit basis for the derived
+  // Cost is the live product join above (the per-unit basis for the derived
   // line total) — not a stored column here.
   notes: true,
   taxed: true,

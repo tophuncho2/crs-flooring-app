@@ -38,10 +38,10 @@ describe("computeTemplateCostLedger", () => {
   const base: TemplateLedgerInputs = {
     totalTransaction: "1000.00",
     taxRate: "8",
-    plannedProducts: [{ quantity: "10", bidCost: "40.00", taxed: true }],
+    plannedProducts: [{ quantity: "10", cost: "40.00", taxed: true }],
     serviceItems: [
-      { itemType: "LABOR", quantity: "1", bidCost: "150.00", taxed: false },
-      { itemType: "MISCELLANEOUS", quantity: "1", bidCost: "50.00", taxed: false },
+      { itemType: "LABOR", quantity: "1", cost: "150.00", taxed: false },
+      { itemType: "MISCELLANEOUS", quantity: "1", cost: "50.00", taxed: false },
     ],
     commissions: [{ percent: "10" }],
   }

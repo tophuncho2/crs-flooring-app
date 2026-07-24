@@ -25,14 +25,14 @@ import { computeTemplateTaxCost } from "./tax.js"
 export type TemplateLedgerPlannedInput = {
   quantity: string
   // Per-unit basis (for a planned product this is the live product cost).
-  bidCost: string
+  cost: string
   taxed: boolean
 }
 
 export type TemplateLedgerServiceInput = {
   itemType: string
   quantity: string
-  bidCost: string
+  cost: string
   taxed: boolean
 }
 
@@ -104,11 +104,11 @@ function computeMarginPercent(profitCents: bigint, revenueCents: bigint): string
 export function computeTemplateCostLedger(inputs: TemplateLedgerInputs): TemplateCostLedger {
   const plannedLines = inputs.plannedProducts.map((row) => ({
     quantity: row.quantity,
-    bidCost: row.bidCost,
+    cost: row.cost,
   }))
   const serviceLines = inputs.serviceItems.map((row) => ({
     quantity: row.quantity,
-    bidCost: row.bidCost,
+    cost: row.cost,
   }))
 
   const materialCost = sumTemplatePlannedProductLineTotals(plannedLines)
@@ -116,7 +116,7 @@ export function computeTemplateCostLedger(inputs: TemplateLedgerInputs): Templat
     inputs.serviceItems.map((row) => ({
       itemType: row.itemType,
       quantity: row.quantity,
-      bidCost: row.bidCost,
+      cost: row.cost,
     })),
   )
   // Net Cost = every planned + service line total, computed directly from the rows
@@ -125,8 +125,8 @@ export function computeTemplateCostLedger(inputs: TemplateLedgerInputs): Templat
 
   // Tax = taxRate × the taxed line totals across both tables (unchanged).
   const taxedLines = [
-    ...inputs.plannedProducts.filter((row) => row.taxed).map((row) => ({ quantity: row.quantity, bidCost: row.bidCost })),
-    ...inputs.serviceItems.filter((row) => row.taxed).map((row) => ({ quantity: row.quantity, bidCost: row.bidCost })),
+    ...inputs.plannedProducts.filter((row) => row.taxed).map((row) => ({ quantity: row.quantity, cost: row.cost })),
+    ...inputs.serviceItems.filter((row) => row.taxed).map((row) => ({ quantity: row.quantity, cost: row.cost })),
   ]
   const taxCost = computeTemplateTaxCost(taxedLines, inputs.taxRate)
 

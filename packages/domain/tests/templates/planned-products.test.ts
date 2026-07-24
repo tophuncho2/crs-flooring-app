@@ -8,7 +8,7 @@ describe("normalizeTemplatePlannedProduct", () => {
     id: "plan-1",
     productId: "prod-1",
     // `cost` is a LIVE read-join off the product (10.5 → canonical "10.50"). It is
-    // the "bid cost" — the per-unit basis for the line total.
+    // the "cost" — the per-unit basis for the line total.
     product: {
       name: "Oak Plank",
       cost: { toString: () => "10.5" } as { toString(): string },
@@ -38,9 +38,9 @@ describe("normalizeTemplatePlannedProduct", () => {
     expect(row.taxed).toBe(true)
   })
 
-  it("derives the line total off bid cost", () => {
+  it("derives the line total off cost", () => {
     const row = normalizeTemplatePlannedProduct(base)
-    // 10 × 10.50 (bid cost) = 105.00
+    // 10 × 10.50 (cost) = 105.00
     expect(row.lineTotal).toBe("105.00")
   })
 
@@ -93,11 +93,11 @@ describe("validateTemplatePlannedProductForm", () => {
 })
 
 describe("computeTemplatePlannedProductLineTotal", () => {
-  it("computes qty × bidCost", () => {
+  it("computes qty × cost", () => {
     expect(
       computeTemplatePlannedProductLineTotal({
         quantity: "10",
-        bidCost: "3.50",
+        cost: "3.50",
       }),
     ).toBe("35.00")
   })
@@ -106,24 +106,24 @@ describe("computeTemplatePlannedProductLineTotal", () => {
     expect(
       computeTemplatePlannedProductLineTotal({
         quantity: "",
-        bidCost: "3.50",
+        cost: "3.50",
       }),
     ).toBe("0.00")
   })
 
   it("returns blank when every input is blank", () => {
     expect(
-      computeTemplatePlannedProductLineTotal({ quantity: "", bidCost: "" }),
+      computeTemplatePlannedProductLineTotal({ quantity: "", cost: "" }),
     ).toBe("")
   })
 
-  it("rounds the qty × bid cost product half-up to cents", () => {
+  it("rounds the qty × cost product half-up to cents", () => {
     // 0.5 × 0.05 = 0.025 → 0.03 half-up (would be 0.02 under floor). Both factors
     // are valid 2-decimal stored values; the sub-cent lands in the product.
     expect(
       computeTemplatePlannedProductLineTotal({
         quantity: "0.5",
-        bidCost: "0.05",
+        cost: "0.05",
       }),
     ).toBe("0.03")
   })

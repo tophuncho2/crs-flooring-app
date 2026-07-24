@@ -21,7 +21,7 @@ export type TemplatePlannedProductRow = {
   // Display only — never sent in the diff (like productName). This is the "bid
   // cost" and the per-unit basis for the line total.
   productCost: string
-  // Derived line total (qty × bidCost, where bidCost = the live productCost),
+  // Derived line total (qty × cost, where cost = the live productCost),
   // computed on read via computeTemplatePlannedProductLineTotal.
   // Display only — never sent in the diff. "" when all inputs are blank.
   lineTotal: string

@@ -53,7 +53,7 @@ export type TemplatePlannedProductLocal = {
   taxed: boolean
   // LIVE cost read-joined off the product (seeded from the picked ProductOption
   // for unsaved rows; re-resolved server-side on save). Display only — NEVER sent
-  // in the diff. This is the "bid cost" and the per-unit basis for the line total.
+  // in the diff. This is the "cost" and the per-unit basis for the line total.
   productCost: string
   // Client-only ergonomic for narrowing the row's product picker. NOT persisted.
   categoryFilterId: string | null
@@ -73,10 +73,10 @@ export type TemplateServiceItemLocal = {
   unitId: string
   unitName: string
   unitAbbrev: string
-  // MANUAL persisted bid cost (the key divergence from planned products, where bid
-  // cost is a live product join). Editable money, sent in the diff. It is the
+  // MANUAL persisted cost (the key divergence from planned products, where cost
+  // is a live product join). Editable money, sent in the diff. It is the
   // per-unit basis for the line total.
-  bidCost: string
+  cost: string
   // Whether this line is taxed (feeds the Tax Cost roll-up). Sent in the diff.
   taxed: boolean
 }
@@ -130,7 +130,7 @@ function toServiceLocal(row: TemplateServiceItemRow): TemplateServiceItemLocal {
     unitId: row.unitId,
     unitName: row.unitName,
     unitAbbrev: row.unitAbbrev,
-    bidCost: row.bidCost,
+    cost: row.cost,
     taxed: row.taxed,
   }
 }
@@ -162,7 +162,7 @@ function createItemsRevisionKey(record: TemplateDetail) {
     ),
     serviceItems: record.serviceItems.map(
       (row) =>
-        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.bidCost}:${row.taxed}`,
+        `${row.id}:${row.itemType}:${row.itemName}:${row.quantity}:${row.unitId}:${row.cost}:${row.taxed}`,
     ),
     commissions: record.commissions.map(
       (row) => `${row.id}:${row.entityId}:${row.percent}`,
@@ -213,7 +213,7 @@ function serviceDiffers(local: TemplateServiceItemLocal, server: TemplateService
     local.itemName !== server.itemName ||
     local.quantity !== server.quantity ||
     local.unitId !== server.unitId ||
-    local.bidCost !== server.bidCost ||
+    local.cost !== server.cost ||
     local.taxed !== server.taxed
   )
 }
@@ -224,7 +224,7 @@ function toServiceForm(local: TemplateServiceItemLocal): TemplateServiceItemForm
     itemName: local.itemName,
     quantity: local.quantity,
     unitId: local.unitId,
-    bidCost: local.bidCost,
+    cost: local.cost,
     taxed: local.taxed,
   }
 }
@@ -275,11 +275,11 @@ function buildCommissionDiff(
 // Live Net Cost = Σ of every planned-product + service-item line total, computed
 // directly from the current local rows (the commission line total is a % of this).
 // Planned products use their live productCost as the per-unit basis; service items
-// use the manual bidCost. Mirrors the domain ledger's Net Cost, on unsaved edits.
+// use the manual cost. Mirrors the domain ledger's Net Cost, on unsaved edits.
 function computeLiveNetCost(state: TemplateProductsLocalState): string {
   return sumTemplatePlannedProductLineTotals([
-    ...state.plannedProducts.map((row) => ({ quantity: row.quantity, bidCost: row.productCost })),
-    ...state.serviceItems.map((row) => ({ quantity: row.quantity, bidCost: row.bidCost })),
+    ...state.plannedProducts.map((row) => ({ quantity: row.quantity, cost: row.productCost })),
+    ...state.serviceItems.map((row) => ({ quantity: row.quantity, cost: row.cost })),
   ])
 }
 
@@ -472,7 +472,7 @@ export function useTemplateProductsSection({
           unitId: "",
           unitName: "",
           unitAbbrev: "",
-          bidCost: "",
+          cost: "",
           taxed: false,
         },
       ],
