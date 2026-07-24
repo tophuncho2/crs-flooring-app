@@ -7,6 +7,7 @@ import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
 } from "../structure/record-section-tokens"
 import { RecordSectionShell } from "../structure/record-section-shell"
+import { RecordSectionNoticeStrip } from "../structure/record-section-notice-strip"
 import { TableBleed } from "../structure/table-bleed"
 import {
   RecordSectionSubHeader,
@@ -38,6 +39,7 @@ export type RecordFieldSectionProps = {
   discardLabel?: string
   deleteLabel?: string
   showHeader?: boolean
+  flush?: boolean
   capabilities?: RecordSectionCapabilities
   statusExtra?: ReactNode
   actions?: RecordSectionSubHeaderProps["actions"]
@@ -66,6 +68,7 @@ export function RecordFieldSection({
   discardLabel = "Discard",
   deleteLabel = "Delete",
   showHeader = true,
+  flush = false,
   capabilities,
   statusExtra,
   actions = [],
@@ -105,7 +108,20 @@ export function RecordFieldSection({
     return (
       <TableBleed variant="record">
         {actionPanel}
-        <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
+        {/* Headerless section: notices surface in a standalone strip above the
+            body (no header band to host them). */}
+        <RecordSectionNoticeStrip
+          message={noticeMessage}
+          error={error}
+          noticeError={noticeError}
+          info={noticeInfo}
+        />
+        <div
+          className={joinRecordSectionClasses(
+            flush ? "px-0 py-5 space-y-0" : "px-5 py-5 space-y-0",
+            RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
+          )}
+        >
           {children}
         </div>
       </TableBleed>
@@ -118,6 +134,11 @@ export function RecordFieldSection({
       metrics={metrics}
       bodyClassName="space-y-0"
       statusPanel={actionPanel}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
+      noticeInfo={noticeInfo}
+      error={error}
+      flush={flush}
       sectionType="field"
       capabilities={resolvedCapabilities}
     >

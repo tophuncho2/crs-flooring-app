@@ -104,6 +104,7 @@ export function WorkOrderRequestedMaterialGrid({
   return (
     <DataTable<WorkOrderMaterialItemLocal>
       variant="editable"
+      flush
       rows={section.items}
       columns={REQUESTED_MATERIAL_COLUMNS}
       empty="No material items yet."

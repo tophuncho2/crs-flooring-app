@@ -1,13 +1,17 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { ChevronDown } from "lucide-react"
+import type { RecordSectionError } from "@/types/record/section-error"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
+  RECORD_SECTION_HEADER_ACCENT_SPINE_CLASS_NAME,
   RECORD_SECTION_HEADER_HOVER_CLASS_NAME,
   RECORD_SECTION_HEADER_SURFACE_CLASS_NAME,
 } from "./record-section-tokens"
 import { RecordSectionMetricsGroup } from "../metrics/record-section-metrics-group"
+import { RecordSectionNoticeStrip } from "./record-section-notice-strip"
 
 export function RecordSectionHeader({
   title,
@@ -15,6 +19,10 @@ export function RecordSectionHeader({
   onToggle,
   metrics,
   actions,
+  noticeMessage,
+  noticeError,
+  noticeInfo,
+  error,
   className,
 }: {
   title: string
@@ -22,43 +30,66 @@ export function RecordSectionHeader({
   onToggle: () => void
   metrics?: ReactNode
   actions?: ReactNode
+  noticeMessage?: string
+  noticeError?: string
+  noticeInfo?: string
+  error?: ReactNode | RecordSectionError | null
   className?: string
 }) {
   return (
     <div
       className={joinRecordSectionClasses(
         "relative",
+        RECORD_SECTION_HEADER_SURFACE_CLASS_NAME,
         isOpen ? "border-b" : undefined,
         RECORD_SECTION_BORDER_CLASS_NAME,
         className,
       )}
     >
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
+      {/* Identity accent spine — square, flush against the section's left edge. */}
+      <span
+        aria-hidden="true"
         className={joinRecordSectionClasses(
-          "group absolute inset-0 z-0 w-full text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
-          RECORD_SECTION_HEADER_SURFACE_CLASS_NAME,
-          RECORD_SECTION_HEADER_HOVER_CLASS_NAME,
+          "pointer-events-none absolute inset-y-0 left-0 w-[3px]",
+          RECORD_SECTION_HEADER_ACCENT_SPINE_CLASS_NAME,
         )}
       />
-      <div className="pointer-events-none relative z-[1] flex items-start gap-4 px-5 py-5">
-        <div className="flex min-w-0 flex-1 items-start gap-4">
-          <div className="min-w-0">
-            <div className="inline-flex items-center border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-base font-semibold text-[var(--foreground)] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-              {title}
-            </div>
-          </div>
-        </div>
-        {(metrics || actions) ? (
-          <div className="ml-auto flex min-w-0 shrink-0 flex-col items-end gap-3 self-start">
+      <div className="flex items-center gap-3 px-5 py-3.5">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
+          className={joinRecordSectionClasses(
+            "flex size-7 shrink-0 items-center justify-center rounded-md text-[var(--foreground)]/55 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
+            RECORD_SECTION_HEADER_HOVER_CLASS_NAME,
+          )}
+        >
+          <ChevronDown
+            size={18}
+            aria-hidden="true"
+            className={joinRecordSectionClasses(
+              "transition-transform duration-200",
+              isOpen ? undefined : "-rotate-90",
+            )}
+          />
+        </button>
+        <h3 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-[var(--foreground)]">
+          {title}
+        </h3>
+        {metrics || actions ? (
+          <div className="ml-auto flex shrink-0 items-center gap-3">
             <RecordSectionMetricsGroup>{metrics}</RecordSectionMetricsGroup>
-            {actions ? <div className="pointer-events-auto relative z-[2] flex items-start">{actions}</div> : null}
+            {actions ? <div className="flex items-center">{actions}</div> : null}
           </div>
         ) : null}
       </div>
+      <RecordSectionNoticeStrip
+        message={noticeMessage}
+        error={error}
+        noticeError={noticeError}
+        info={noticeInfo}
+      />
     </div>
   )
 }

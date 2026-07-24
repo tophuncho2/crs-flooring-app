@@ -229,6 +229,7 @@ export function WorkOrderAdjustmentsGrid({
             </div>
             {group.rows.length > 0 ? (
               <DataTable<EnrichedInventoryAdjustmentRow>
+                flush
                 rows={group.rows}
                 columns={ADJUSTMENTS_LIST_COLUMNS}
                 renderCell={renderAdjustmentsRowCell}

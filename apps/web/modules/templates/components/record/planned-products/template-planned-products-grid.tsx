@@ -54,6 +54,7 @@ export function TemplatePlannedProductsGrid({
   return (
     <DataTable<TemplatePlannedProductLocal>
       variant="editable"
+      flush
       rows={items}
       columns={TEMPLATE_PLANNED_PRODUCTS_COLUMNS}
       empty="No planned products yet."

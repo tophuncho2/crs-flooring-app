@@ -100,6 +100,7 @@ export function InventoryAdjustmentsList({
     <>
       {deleteError ? <p className="mb-2 text-sm text-rose-400">{deleteError}</p> : null}
       <DataTable<EnrichedInventoryAdjustmentRow>
+        flush
         rows={rows}
         columns={ADJUSTMENTS_LIST_COLUMNS}
         renderCell={renderAdjustmentsRowCell}

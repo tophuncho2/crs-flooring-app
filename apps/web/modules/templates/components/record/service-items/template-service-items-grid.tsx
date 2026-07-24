@@ -49,6 +49,7 @@ export function TemplateServiceItemsGrid({
   return (
     <DataTable<TemplateServiceItemLocal>
       variant="editable"
+      flush
       rows={items}
       columns={TEMPLATE_SERVICE_ITEMS_COLUMNS}
       empty="No service or misc items yet."

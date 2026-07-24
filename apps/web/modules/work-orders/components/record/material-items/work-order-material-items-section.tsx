@@ -232,6 +232,7 @@ export function WorkOrderMaterialItemsSection({
     <>
       <RecordItemSection
         title={activeLabel}
+        flush
         capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={section.noticeMessage}
         noticeError={section.noticeError}

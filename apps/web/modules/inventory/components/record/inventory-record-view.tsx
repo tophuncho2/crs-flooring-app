@@ -367,6 +367,7 @@ export function InventoryRecordView({
         // embedded face supplies its own Save / Discard / Delete sub-header.
         <RecordItemSection
           title="Adjustments"
+          flush
           subHeader={
             selectedAdjustmentId === null
               ? {

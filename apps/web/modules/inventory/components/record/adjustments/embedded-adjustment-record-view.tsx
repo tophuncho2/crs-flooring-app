@@ -7,6 +7,7 @@ import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
   RecordFooterNeutralButton,
   RecordSectionSubHeader,
+  RecordSectionNoticeStrip,
   RecordDeleteDialog,
   buildDeleteConfirmationMessage,
   useRecordDeleteConfirmation,
@@ -186,6 +187,9 @@ export function EmbeddedAdjustmentRecordView({
         actions={actions}
         actionsTrailing={optionsMenu}
       />
+      {/* Notices relocated out of the toolbar: standalone strip above the body,
+          since this embedded view has no section header to host them. */}
+      <RecordSectionNoticeStrip error={error} />
       <div className={`px-5 py-5 ${RECORD_SECTION_BODY_SURFACE_CLASS_NAME}`}>
         <AdjustmentRecordFields controller={controller} mode="edit" adjustment={adjustment} />
       </div>

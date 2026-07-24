@@ -1,8 +1,8 @@
 "use client"
 
 import { type ReactNode, useEffect, useRef, useState } from "react"
+import type { RecordSectionError } from "@/types/record/section-error"
 import { TableBleed } from "./table-bleed"
-import { RecordFormNotices } from "../../feedback/record-form-notices"
 import { RecordSectionHeader } from "./record-section-header"
 import { RecordSectionMetric, type RecordSectionMetricValue } from "../metrics/record-section-metric"
 import type { RecordSectionCapabilities, RecordSectionType } from "./record-section-capabilities"
@@ -11,6 +11,7 @@ import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
   RECORD_SECTION_BORDER_CLASS_NAME,
   RECORD_SECTION_SHELL_CLASS_NAME,
+  RECORD_SECTION_SHELL_FLUSH_CLASS_NAME,
 } from "./record-section-tokens"
 
 export function RecordSectionShell({
@@ -21,10 +22,13 @@ export function RecordSectionShell({
   statusPanel,
   noticeMessage,
   noticeError,
+  noticeInfo,
+  error,
   defaultOpen = true,
   onOpenChange,
   bodyClassName,
   className,
+  flush = false,
   sectionType,
   capabilities,
 }: {
@@ -35,10 +39,15 @@ export function RecordSectionShell({
   statusPanel?: ReactNode
   noticeMessage?: string
   noticeError?: string
+  noticeInfo?: string
+  error?: ReactNode | RecordSectionError | null
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   bodyClassName?: string
   className?: string
+  /** Table sections: square the shell + strip the body's horizontal padding so
+   *  the table bleeds edge-to-edge (nav rail → viewport) like a list page. */
+  flush?: boolean
   sectionType?: RecordSectionType
   capabilities?: RecordSectionCapabilities
 }) {
@@ -70,24 +79,35 @@ export function RecordSectionShell({
 
   return (
     <TableBleed variant="record">
-      <section className={joinRecordSectionClasses(RECORD_SECTION_SHELL_CLASS_NAME, RECORD_SECTION_BORDER_CLASS_NAME, className)}>
+      <section
+        className={joinRecordSectionClasses(
+          flush ? RECORD_SECTION_SHELL_FLUSH_CLASS_NAME : RECORD_SECTION_SHELL_CLASS_NAME,
+          RECORD_SECTION_BORDER_CLASS_NAME,
+          className,
+        )}
+      >
         <RecordSectionHeader
           title={title}
           isOpen={isOpen}
           onToggle={() => setIsOpen((current) => !current)}
           metrics={metricContent}
           actions={actions}
+          noticeMessage={noticeMessage}
+          noticeError={noticeError}
+          noticeInfo={noticeInfo}
+          error={error}
         />
         {isOpen ? (
           <>
             {statusPanel}
-            {statusPanel ? null : (
-              <RecordFormNotices message={noticeMessage} error={noticeError} />
-            )}
             <div
               data-record-section-type={sectionType}
               data-record-section-capabilities={capabilities ? JSON.stringify(capabilities) : undefined}
-              className={joinRecordSectionClasses("px-5 py-5", RECORD_SECTION_BODY_SURFACE_CLASS_NAME, bodyClassName)}
+              className={joinRecordSectionClasses(
+                flush ? "px-0 py-5" : "px-5 py-5",
+                RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
+                bodyClassName,
+              )}
             >
               {children}
             </div>

@@ -23,6 +23,9 @@ export type RecordItemSectionProps = {
   noticeError?: string
   capabilities?: RecordSectionCapabilities
   bodyClassName?: string
+  /** Table section: bleed the body edge-to-edge (nav rail → viewport) + square
+   *  the shell, so the contained table sits flush like a list page. */
+  flush?: boolean
   loading?: boolean
   loadingState?: ReactNode
   isEmpty?: boolean
@@ -38,6 +41,7 @@ export function RecordItemSection({
   noticeError,
   capabilities,
   bodyClassName = "space-y-4",
+  flush = false,
   loading = false,
   loadingState,
   isEmpty = false,
@@ -67,8 +71,11 @@ export function RecordItemSection({
         title={title}
         bodyClassName={bodyClassName}
         statusPanel={statusPanel}
-        noticeMessage={noticeMessage}
-        noticeError={noticeError}
+        noticeMessage={noticeMessage ?? subHeader?.noticeMessage}
+        noticeError={noticeError ?? subHeader?.noticeError}
+        noticeInfo={subHeader?.noticeInfo}
+        error={subHeader?.error}
+        flush={flush}
         metrics={resolvedCapabilities.supportsMetrics ? metrics : undefined}
         sectionType="item"
         capabilities={resolvedCapabilities}

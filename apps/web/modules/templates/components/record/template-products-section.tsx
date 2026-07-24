@@ -23,6 +23,7 @@ export function TemplateProductsSection({ products }: { products: ProductsContro
   return (
     <RecordItemSection
       title="Planned Products"
+      flush
       capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
       noticeMessage={products.noticeMessage}
       noticeError={products.noticeError}

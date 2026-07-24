@@ -74,10 +74,9 @@ export type RecordSectionSubHeaderProps = {
 
 export function RecordSectionSubHeader({
   summary,
-  error,
-  noticeMessage,
-  noticeError,
-  noticeInfo,
+  // `error` / `notice*` remain on the props contract (consumers still pass
+  // them) but are NOT rendered here — the section panels route them to the
+  // header's `RecordSectionNoticeStrip`. Intentionally not destructured.
   isDirty,
   isSaving,
   hasConflict,
@@ -159,10 +158,6 @@ export function RecordSectionSubHeader({
   return (
     <RecordSectionActionPanel
       summary={resolvedCapabilities.supportsSummary ? summary : null}
-      error={error ?? null}
-      noticeMessage={noticeMessage}
-      noticeError={noticeError}
-      noticeInfo={noticeInfo}
       status={statusContent}
       actions={managedActions}
     />

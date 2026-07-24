@@ -44,6 +44,7 @@ export function TemplateCommissionsGrid({
   return (
     <DataTable<TemplateCommissionLocal>
       variant="editable"
+      flush
       rows={items}
       columns={TEMPLATE_COMMISSIONS_COLUMNS}
       empty="No commissions yet."

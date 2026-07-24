@@ -240,6 +240,16 @@ export type DataTableProps<TRow extends DataTableRow> = {
    */
   fill?: boolean
   /**
+   * **Flush border mode.** Squares the card's corners and drops the rounding +
+   * drop-shadow so the table sits flush against whatever borders it (a
+   * record-view section that bleeds to the nav rail / viewport edge). Unlike
+   * {@link fill} this is independent of the `editable` variant and does NOT
+   * change the height/scroll model — the document-flow `overflow-x-auto`
+   * horizontal scroll is preserved. `fill` already squares its own corners, so
+   * this only affects the non-fill (document-flow) path.
+   */
+  flush?: boolean
+  /**
    * Adjustable column widths (fill tables only). The table seeds each column's
    * width by measuring its natural (content-fit) width on first paint, then
    * switches to `table-layout: fixed` and renders a drag handle on every header
@@ -288,6 +298,7 @@ export function DataTable<TRow extends DataTableRow>({
   variant = "list",
   rowActionsWidth,
   fill = false,
+  flush = false,
   resizable = false,
   columnWidths,
   onColumnWidthsChange,
@@ -468,11 +479,15 @@ export function DataTable<TRow extends DataTableRow>({
       className={joinClassNames(
         "border border-[var(--panel-border)] bg-[var(--panel-background)]",
         // Fill: bounded full-height flex column running edge-to-edge — squared
-        // corners + no shadow so it sits flush against its border. Non-fill:
-        // legacy rounded, shadowed, clipped document-flow card.
+        // corners + no shadow so it sits flush against its border. Flush
+        // (non-fill): squared/unshadowed document-flow card that bleeds to the
+        // section edge, horizontal scroll preserved. Non-fill: legacy rounded,
+        // shadowed, clipped document-flow card.
         isFill
           ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-          : "overflow-hidden rounded-xl shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
+          : flush
+            ? "overflow-hidden"
+            : "overflow-hidden rounded-xl shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
         className,
       )}
     >
