@@ -292,14 +292,14 @@ export function TemplatePrimaryFieldsSection({
                   ariaLabel="Total transaction"
                 />
               </FormField>
-              <FormField label="Projected Cost">
-                <StaticFieldValue>{formatMoney(ledger.projectedCost) || "$0.00"}</StaticFieldValue>
+              <FormField label="Net Cost">
+                <StaticFieldValue>{formatMoney(ledger.netCost) || "$0.00"}</StaticFieldValue>
               </FormField>
-              <FormField label="Projected Profit">
-                <StaticFieldValue>{formatMoney(ledger.projectedProfit) || "$0.00"}</StaticFieldValue>
+              <FormField label="Net Profit">
+                <StaticFieldValue>{formatMoney(ledger.netProfit) || "$0.00"}</StaticFieldValue>
               </FormField>
-              <FormField label="Projected Margin">
-                <StaticFieldValue>{formatMarginPercent(ledger.projectedMargin)}</StaticFieldValue>
+              <FormField label="Net Margin">
+                <StaticFieldValue>{formatMarginPercent(ledger.netMargin)}</StaticFieldValue>
               </FormField>
             </div>
             <div className="space-y-2">
@@ -312,14 +312,14 @@ export function TemplatePrimaryFieldsSection({
                   ariaLabel="Tax rate percent"
                 />
               </FormField>
-              <FormField label="Net Cost">
-                <StaticFieldValue>{formatMoney(ledger.netCost) || "$0.00"}</StaticFieldValue>
+              <FormField label="Projected Cost">
+                <StaticFieldValue>{formatMoney(ledger.projectedCost) || "$0.00"}</StaticFieldValue>
               </FormField>
-              <FormField label="Net Profit">
-                <StaticFieldValue>{formatMoney(ledger.netProfit) || "$0.00"}</StaticFieldValue>
+              <FormField label="Projected Profit">
+                <StaticFieldValue>{formatMoney(ledger.projectedProfit) || "$0.00"}</StaticFieldValue>
               </FormField>
-              <FormField label="Net Margin">
-                <StaticFieldValue>{formatMarginPercent(ledger.netMargin)}</StaticFieldValue>
+              <FormField label="Projected Margin">
+                <StaticFieldValue>{formatMarginPercent(ledger.projectedMargin)}</StaticFieldValue>
               </FormField>
             </div>
           </div>
