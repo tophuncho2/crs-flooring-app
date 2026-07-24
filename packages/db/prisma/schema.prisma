@@ -969,7 +969,6 @@ model TemplateCommission {
   // (contributes 0). Scale-3 to reuse the shared percent value-object (mirrors
   // Template.taxRate).
   percent    Decimal? @db.Decimal(6, 3)
-  notes      String?  @db.VarChar(30)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   createdBy  String?
